@@ -1,0 +1,8 @@
+consentManagers:
+  - host: NCG_HOST
+    id: ncg
+  - host: NHS_HOST
+    id: nhs
+hip:
+  - host: HIP1_HOST
+    id: 1000005
