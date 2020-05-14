@@ -1,0 +1,8 @@
+version: '3'
+services:
+  gateway:
+    build: .
+    container_name: gateway
+    hostname: gateway
+    ports:
+      - "9002:8000"
