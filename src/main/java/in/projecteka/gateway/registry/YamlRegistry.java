@@ -13,5 +13,5 @@ import java.util.List;
 @Getter
 public class YamlRegistry {
     List<YamlRegistryMapping> consentManagers;
-    List<YamlRegistryMapping> hip;
+    List<YamlRegistryMapping> bridges;
 }

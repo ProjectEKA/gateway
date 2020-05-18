@@ -3,6 +3,8 @@ consentManagers:
     id: ncg
   - host: NHS_HOST
     id: nhs
-hip:
-  - host: HIP1_HOST
-    id: 1000005
+bridges:
+  - host: ${HIP_BASE_URL}
+    id: 10000005
+    servesAs:
+      - HIP
