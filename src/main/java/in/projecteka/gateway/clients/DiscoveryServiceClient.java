@@ -18,7 +18,18 @@ public class DiscoveryServiceClient {
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
-                        clientResponse -> Mono.error(ClientError.unableToConnectToProvider()))//TODO Error handling
+                        clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
+                .bodyToMono(Void.class);
+    }
+
+    public Mono<Void> patientDiscoveryResultNotify(String request, String cmUrl) {
+        return webClientBuilder.build()
+                .post()
+                .uri(cmUrl + "/patients/care-contexts/on-discover")
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
+                        clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
                 .bodyToMono(Void.class);
     }
 }
