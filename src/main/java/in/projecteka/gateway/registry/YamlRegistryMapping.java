@@ -12,5 +12,5 @@ import java.util.List;
 public class YamlRegistryMapping {
     public String id;
     public String host;
-    public List<String> servesAs;
+    public List<ServiceType> servesAs;
 }

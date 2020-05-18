@@ -1,10 +1,9 @@
 package in.projecteka.gateway.link.discovery;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.model.Error;
-import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
@@ -19,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,6 +26,8 @@ import java.util.UUID;
 
 @RestController
 public class DiscoveryController {
+    ObjectMapper objectMapper = new ObjectMapper();//TODO
+    Map<String,String> cacheMap = new HashMap<>();//TODO
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryController.class);
     public static final String X_HIP_ID = "X-HIP-ID";
     public static final String X_CM_ID = "X-CM-ID";
@@ -56,8 +58,24 @@ public class DiscoveryController {
            //TODO error handling
             return Mono.empty();
         }
-        return discoveryServiceClient.patientFor(requestEntity.getBody(), hipConfig.get().getHost())
-                .onErrorResume(throwable -> Mono.empty());//TODO call on complete
+        UUID gatewayRequestId = UUID.randomUUID();
+        return deserializeRequest(requestEntity).map(deserializedRequest -> {
+            String cmRequestId = (String) deserializedRequest.get("requestId");
+            cacheMap.put(gatewayRequestId.toString(), cmRequestId);
+            deserializedRequest.put("requestId", gatewayRequestId);
+            return deserializedRequest;
+        }).flatMap(updatedRequest -> discoveryServiceClient
+                .patientFor(updatedRequest, hipConfig.get().getHost())
+                .onErrorResume(throwable -> Mono.empty()));//TODO call on complete
+    }
+
+    private Mono<Map<String, Object>> deserializeRequest(HttpEntity<String> requestEntity) {
+        try {
+            return Mono.just(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() { }));
+        } catch (JsonProcessingException e) {
+            logger.error("Error in deserializing", e);
+            return Mono.empty();
+        }
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -72,6 +90,12 @@ public class DiscoveryController {
     private Mono<Void> doOnDiscoverCareContext(HttpEntity<String> requestEntity, List<String> xCmIds) {
         String xCmId = xCmIds.get(0);
         Optional<YamlRegistryMapping> cmConfig = cmRegistry.getConfigFor(xCmId);
-        return discoveryServiceClient.patientDiscoveryResultNotify(requestEntity.getBody(),cmConfig.get().getHost());
+        return deserializeRequest(requestEntity).map(deserializedRequest -> {
+            String gatewayRequestId = (String) deserializedRequest.get("requestId");
+            String cmRequestId = cacheMap.get(gatewayRequestId);
+            deserializedRequest.put("requestId",cmRequestId);
+            return deserializedRequest;
+        }).flatMap(updatedRequest -> discoveryServiceClient
+                .patientDiscoveryResultNotify(updatedRequest,cmConfig.get().getHost()));
     }
 }
