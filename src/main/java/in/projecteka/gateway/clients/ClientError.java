@@ -17,7 +17,7 @@ public class ClientError extends Throwable{
         this.error = errorRepresentation;
     }
 
-    public static ClientError unableToConnectToProvider() {
+    public static ClientError unableToConnect() {
         return new ClientError(INTERNAL_SERVER_ERROR,
                 new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, CANNOT_PROCESS_REQUEST_TRY_LATER)));
     }
