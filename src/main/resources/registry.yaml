@@ -1,7 +1,7 @@
 consentManagers:
-  - host: NCG_HOST
+  - host: ${NCG_BASE_URL}
     id: ncg
-  - host: NHS_HOST
+  - host: ${NHS_BASE_URL}
     id: nhs
 bridges:
   - host: ${HIP_BASE_URL}

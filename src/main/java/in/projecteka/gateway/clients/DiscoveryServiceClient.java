@@ -26,7 +26,7 @@ public class DiscoveryServiceClient {
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(url + "/patients/discover/carecontexts")
+                                .uri(url + "/patients/care-contexts/discover")
                                 .bodyValue(serializedRequest)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
