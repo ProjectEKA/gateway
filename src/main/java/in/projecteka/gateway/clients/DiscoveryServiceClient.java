@@ -2,6 +2,7 @@ package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,17 @@ public class DiscoveryServiceClient {
             logger.error("Error in serializing request body", e);
             return Mono.empty();
         }
+    }
+
+    public Mono<Void> patientErrorResultNotify(PatientDiscoveryResult request, String cmUrl) {
+        return webClientBuilder.build()
+                .post()
+                .uri(cmUrl + "/patients/care-contexts/on-discover")
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
+                        clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
+                .bodyToMono(Void.class);
     }
 
     public Mono<Void> patientDiscoveryResultNotify(Map<String, Object> request, String cmUrl) {
