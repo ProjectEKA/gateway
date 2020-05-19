@@ -21,7 +21,6 @@ public class DiscoveryController {
         return Mono.empty();
     }
 
-
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/patients/care-contexts/on-discover")
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
