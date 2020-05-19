@@ -1,10 +1,10 @@
 package in.projecteka.gateway.link.discovery;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,16 +13,14 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import static in.projecteka.gateway.link.discovery.Constants.REQUEST_ID;
 
 @Component
 public class DiscoveryHelper {
-    Map<String,String> cacheMap = new HashMap<>();//TODO
-    static ObjectMapper objectMapper = new ObjectMapper();//TODO
+    @Autowired
+    CacheAdapter<String,String> requestIdMappings;
 
     @Autowired
     DiscoveryValidator discoveryValidator;
@@ -37,17 +35,16 @@ public class DiscoveryHelper {
         return discoveryValidator.validateDiscoverRequest(requestEntity)
                 .filter(Tuple2::getT2)
                 .flatMap(validatedTuple -> Utils.deserializeRequest(requestEntity)
-                        .map(deserializedRequest -> {
+                        .flatMap(deserializedRequest -> {
                             String cmRequestId = (String) deserializedRequest.get(REQUEST_ID);
                             if (cmRequestId==null || cmRequestId.isEmpty()) {
                                 logger.error("No {} found on the payload",REQUEST_ID);
-                                return new HashMap<String,Object>();
+                                return Mono.empty();
                             }
-                            cacheMap.put(gatewayRequestId.toString(), cmRequestId);
                             deserializedRequest.put(REQUEST_ID, gatewayRequestId);
-                            return deserializedRequest;
+                            return requestIdMappings.put(gatewayRequestId.toString(), cmRequestId)
+                                    .thenReturn(deserializedRequest);
                         })
-                        .filter(map -> !map.isEmpty())
                         .flatMap(updatedRequest -> discoveryServiceClient
                                 .patientFor(updatedRequest, validatedTuple.getT1().getHipConfig().getHost())
                                 .onErrorResume(throwable -> discoveryValidator.errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Error in making call to Bridge").build()))));
@@ -57,24 +54,26 @@ public class DiscoveryHelper {
         return discoveryValidator.validateDiscoverResponse(requestEntity)
                 .filter(Tuple2::getT2)
                 .flatMap(validRequest -> Utils.deserializeRequestAsJsonNode(requestEntity)
-                        .map(deserializedRequest -> {
+                        .flatMap(deserializedRequest -> {
                             String gatewayRequestId = deserializedRequest.get("Resp").get(REQUEST_ID).asText();
                             if (gatewayRequestId==null || gatewayRequestId.isEmpty()) {
                                 logger.error("No {} found on the payload",REQUEST_ID);
-                                return objectMapper.createObjectNode();
+                                return Mono.empty();
                             }
-                            String cmRequestId = cacheMap.get(gatewayRequestId);
-                            if (cmRequestId==null || cmRequestId.isEmpty()) {
-                                logger.error("No cmRequestId mapping found for {}",gatewayRequestId);
-                                return objectMapper.createObjectNode();
-                            }
-                            ObjectNode mutableNode = (ObjectNode) deserializedRequest;
-                            mutableNode.put(REQUEST_ID,UUID.randomUUID().toString());
-                            ObjectNode respNode = (ObjectNode) mutableNode.get("Resp");
-                            respNode.put(REQUEST_ID,cmRequestId);
-                            return deserializedRequest;
+                            return requestIdMappings.get(gatewayRequestId)
+                                    .doOnSuccess(cmRequestId -> {
+                                        if (cmRequestId == null || cmRequestId.isEmpty()) {
+                                            logger.error("No cmRequestId mapping found for {}", gatewayRequestId);
+                                        }
+                                    })
+                                    .map(cmRequestId -> {
+                                        ObjectNode mutableNode = (ObjectNode) deserializedRequest;
+                                        mutableNode.put(REQUEST_ID, UUID.randomUUID().toString());
+                                        ObjectNode respNode = (ObjectNode) mutableNode.get("Resp");
+                                        respNode.put(REQUEST_ID, cmRequestId);
+                                        return deserializedRequest;
+                                    });
                         })
-                        .filter(map -> !map.isEmpty())
                         .flatMap(updatedRequest -> discoveryServiceClient
                                 .patientDiscoveryResultNotify(updatedRequest,validRequest.getT1().getCmConfig().getHost())
                                 .onErrorResume(throwable -> {
