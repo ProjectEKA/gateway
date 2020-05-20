@@ -3,18 +3,23 @@ package in.projecteka.gateway.clients;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Component
 public class DiscoveryServiceClient {
+    @Autowired
+    ServiceOptions serviceOptions;
     ObjectMapper objectMapper = new ObjectMapper();
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryServiceClient.class);
 
@@ -26,12 +31,14 @@ public class DiscoveryServiceClient {
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(url + "/patients/discover/carecontexts")
+                                .uri(url + "/patients/care-contexts/discover")
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                                         clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
-                                .bodyToMono(Void.class));
+                                .bodyToMono(Void.class)
+                                .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
     }
 
     private Mono<String> serializeRequest(Map<String, Object> request) {
@@ -69,10 +76,12 @@ public class DiscoveryServiceClient {
                         webClientBuilder.build()
                                 .post()
                                 .uri(cmUrl + "/patients/care-contexts/on-discover")
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                                         clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
-                                .bodyToMono(Void.class));
+                                .bodyToMono(Void.class)
+                                .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
     }
 }
