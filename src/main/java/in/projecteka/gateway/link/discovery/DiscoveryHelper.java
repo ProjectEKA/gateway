@@ -58,7 +58,7 @@ public class DiscoveryHelper {
                 .filter(Tuple2::getT2)
                 .flatMap(validRequest -> Utils.deserializeRequestAsJsonNode(requestEntity)
                         .flatMap(deserializedRequest -> {
-                            String gatewayRequestId = deserializedRequest.get("Resp").get(REQUEST_ID).asText();
+                            String gatewayRequestId = deserializedRequest.get("resp").get(REQUEST_ID).asText();
                             if (gatewayRequestId==null || gatewayRequestId.isEmpty()) {
                                 logger.error("No {} found on the payload",REQUEST_ID);
                                 return Mono.empty();
@@ -72,7 +72,7 @@ public class DiscoveryHelper {
                                     .map(cmRequestId -> {
                                         ObjectNode mutableNode = (ObjectNode) deserializedRequest;
                                         mutableNode.put(REQUEST_ID, UUID.randomUUID().toString());
-                                        ObjectNode respNode = (ObjectNode) mutableNode.get("Resp");
+                                        ObjectNode respNode = (ObjectNode) mutableNode.get("resp");
                                         respNode.put(REQUEST_ID, cmRequestId);
                                         return deserializedRequest;
                                     });

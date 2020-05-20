@@ -8,6 +8,7 @@ import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -31,6 +32,7 @@ public class DiscoveryServiceClient {
                         webClientBuilder.build()
                                 .post()
                                 .uri(url + "/patients/care-contexts/discover")
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
@@ -74,6 +76,7 @@ public class DiscoveryServiceClient {
                         webClientBuilder.build()
                                 .post()
                                 .uri(cmUrl + "/patients/care-contexts/on-discover")
+                                .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
