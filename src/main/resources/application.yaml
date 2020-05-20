@@ -8,3 +8,6 @@ gateway:
     host: ${REDIS_HOST}
     port: 6379
     password: ${REDIS_PASSWORD}
+  # timeout in seconds
+  serviceoptions:
+    timeout: ${SERVICE_TIMEOUT}

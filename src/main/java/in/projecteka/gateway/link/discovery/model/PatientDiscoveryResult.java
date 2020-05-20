@@ -13,4 +13,5 @@ public class PatientDiscoveryResult {
     UUID transactionId;
     Object patient;
     Error error;
+    GatewayResponse resp;
 }

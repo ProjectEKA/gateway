@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.link.discovery.Constants.REQUEST_ID;
 
@@ -47,6 +48,8 @@ public class DiscoveryHelper {
                         })
                         .flatMap(updatedRequest -> discoveryServiceClient
                                 .patientFor(updatedRequest, validatedTuple.getT1().getHipConfig().getHost())
+                                .onErrorResume(throwable -> (throwable instanceof TimeoutException),
+                                        throwable -> discoveryValidator .errorNotify(requestEntity,Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Timedout When calling bridge").build()))
                                 .onErrorResume(throwable -> discoveryValidator.errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Error in making call to Bridge").build()))));
     }
 

@@ -3,6 +3,7 @@ package in.projecteka.gateway.link.discovery;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
+import in.projecteka.gateway.link.discovery.model.GatewayResponse;
 import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -70,7 +71,8 @@ public class DiscoveryValidator {
                     return !isNullOrEmpty.test(requestId) && !isNullOrEmpty.test(transactionId);
                 })
                 .map(tuple -> PatientDiscoveryResult.builder().error(error)
-                        .requestId(UUID.fromString(tuple.getT1()))
+                        .resp(GatewayResponse.builder().requestId(tuple.getT1()).build())
+                        .requestId(UUID.randomUUID())
                         .transactionId(UUID.fromString(tuple.getT2()))
                         .build()).flatMap(errorResult -> {
                     YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when cmid is dynamic
