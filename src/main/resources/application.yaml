@@ -1,2 +1,7 @@
 server:
   port: 8000
+clientregistry:
+  XAuthToken: c3f88ccc-2374-4a6d-bdba-63403e454979
+  clientId: consent-manager
+  url: http://localhost:8080
+  jwkUrl: http://localhost:8080/certs
