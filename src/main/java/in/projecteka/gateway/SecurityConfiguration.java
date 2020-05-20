@@ -41,9 +41,7 @@ import java.util.Map;
 public class SecurityConfiguration {
 
     private static final List<Map.Entry<String, HttpMethod>> SERVICE_ONLY_URLS = new ArrayList<>() {
-        {
-
-        }
+        { } 
     };
 
     @Bean
@@ -51,16 +49,7 @@ public class SecurityConfiguration {
             ServerHttpSecurity httpSecurity,
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
-        final String[] WHITELISTED_URLS = {"/**.json",
-                "/ValueSet/**.json",
-                "/**.html",
-                "/**.js",
-                "/**.yaml",
-                "/**.css",
-                "/**.png",
-                "/health-information/fetch/**/attachments/**",
-                "/sessions",
-                "/config"};
+        final String[] WHITELISTED_URLS = { };
         httpSecurity.authorizeExchange().pathMatchers(WHITELISTED_URLS).permitAll();
         httpSecurity.httpBasic().disable().formLogin().disable().csrf().disable().logout().disable();
         httpSecurity.authorizeExchange().pathMatchers("/**").hasAnyRole("VERIFIED");
