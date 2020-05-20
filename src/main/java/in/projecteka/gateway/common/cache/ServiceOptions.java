@@ -11,4 +11,5 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 @ConstructorBinding
 public class ServiceOptions {
     public int timeout;
+    public String registryPath;
 }
