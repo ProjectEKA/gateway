@@ -1,7 +1,7 @@
 server:
   port: 8000
 clientregistry:
-  XAuthToken: ${Auth_Token}
+  XAuthToken: ${AUTH_TOKEN}
   clientId: ${CENTRAL_REGISTRY_ID}
-  url: ${Client_Registry_Url}
+  url: ${CLIENT_REGISTRY_URL}
   jwkUrl: ${CENTRAL_REGISTRY_JWK_URL}
