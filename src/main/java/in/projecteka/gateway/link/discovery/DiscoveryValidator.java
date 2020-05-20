@@ -20,9 +20,11 @@ import reactor.util.function.Tuples;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static in.projecteka.gateway.link.discovery.Constants.REQUEST_ID;
 import static in.projecteka.gateway.link.discovery.Constants.TEMP_CM_ID;
+import static in.projecteka.gateway.link.discovery.Constants.TRANSACTION_ID;
 import static in.projecteka.gateway.link.discovery.Constants.X_CM_ID;
 import static in.projecteka.gateway.link.discovery.Constants.X_HIP_ID;
 
@@ -54,15 +56,23 @@ public class DiscoveryValidator {
 
     public Mono<Void> errorNotify(HttpEntity<String> requestEntity, String cmId, Error error) {
         return Utils.deserializeRequest(requestEntity)
-                .map(deserializedRequest -> (String)deserializedRequest.get(REQUEST_ID))
-                .filter(requestId -> {
-                    boolean requestIdIsNotEmpty = !requestId.isEmpty();
-                    if (!requestIdIsNotEmpty) {
+                .map(deserializedRequest -> Tuples.of((String)deserializedRequest.get(REQUEST_ID),(String)deserializedRequest.get(TRANSACTION_ID)))
+                .filter(tuple -> {
+                    String requestId = tuple.getT1();
+                    String transactionId = tuple.getT2();
+                    Predicate<String> isNullOrEmpty = (String value) -> value == null || value.isEmpty();
+                    if (isNullOrEmpty.test(requestId)) {
                         logger.error("RequestId is empty");
                     }
-                    return requestIdIsNotEmpty;
+                    if (isNullOrEmpty.test(transactionId)) {
+                        logger.error("TransactionId is empty");
+                    }
+                    return !isNullOrEmpty.test(requestId) && !isNullOrEmpty.test(transactionId);
                 })
-                .map(requestId -> PatientDiscoveryResult.builder().error(error).requestId(UUID.fromString(requestId)).build()).flatMap(errorResult -> {
+                .map(tuple -> PatientDiscoveryResult.builder().error(error)
+                        .requestId(UUID.fromString(tuple.getT1()))
+                        .transactionId(UUID.fromString(tuple.getT2()))
+                        .build()).flatMap(errorResult -> {
                     YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when cmid is dynamic
                     return discoveryServiceClient.patientErrorResultNotify(errorResult,cmRegistryMapping.getHost());
                 });

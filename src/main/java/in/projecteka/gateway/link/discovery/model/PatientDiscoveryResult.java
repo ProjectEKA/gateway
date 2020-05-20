@@ -10,6 +10,7 @@ import java.util.UUID;
 @Builder
 public class PatientDiscoveryResult {
     UUID requestId;
+    UUID transactionId;
     Object patient;
     Error error;
 }
