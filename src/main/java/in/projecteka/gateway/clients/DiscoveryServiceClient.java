@@ -31,7 +31,7 @@ public class DiscoveryServiceClient {
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(url + "/patients/care-contexts/discover")
+                                .uri(url + "/care-contexts/discover")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
@@ -62,7 +62,7 @@ public class DiscoveryServiceClient {
     public Mono<Void> patientErrorResultNotify(PatientDiscoveryResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
-                .uri(cmUrl + "/patients/care-contexts/on-discover")
+                .uri(cmUrl + "/care-contexts/on-discover")
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
@@ -75,7 +75,7 @@ public class DiscoveryServiceClient {
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(cmUrl + "/patients/care-contexts/on-discover")
+                                .uri(cmUrl + "/care-contexts/on-discover")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()

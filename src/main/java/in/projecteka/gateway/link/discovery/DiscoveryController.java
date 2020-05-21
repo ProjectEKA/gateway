@@ -14,7 +14,7 @@ public class DiscoveryController {
     DiscoveryHelper discoveryHelper;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/patients/care-contexts/discover")
+    @PostMapping("/care-contexts/discover")
     public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
         Mono<Void> tobeFiredAndForgotten = discoveryHelper.doDiscoverCareContext(requestEntity);
         tobeFiredAndForgotten.subscribe();
@@ -22,7 +22,7 @@ public class DiscoveryController {
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/patients/care-contexts/on-discover")
+    @PostMapping("/care-contexts/on-discover")
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
         Mono<Void> tobeFiredAndForgotten = discoveryHelper.doOnDiscoverCareContext(requestEntity);
         tobeFiredAndForgotten.subscribe();
