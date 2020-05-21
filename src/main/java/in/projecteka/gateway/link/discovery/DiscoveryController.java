@@ -1,6 +1,6 @@
 package in.projecteka.gateway.link.discovery;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 @RestController
+@AllArgsConstructor
 public class DiscoveryController {
-    @Autowired
     DiscoveryHelper discoveryHelper;
 
     @ResponseStatus(HttpStatus.ACCEPTED)

@@ -5,11 +5,10 @@ import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -17,15 +16,12 @@ import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.link.discovery.Constants.REQUEST_ID;
 
-@Component
+@AllArgsConstructor
 public class DiscoveryHelper {
-    @Autowired
     CacheAdapter<String,String> requestIdMappings;
 
-    @Autowired
     DiscoveryValidator discoveryValidator;
 
-    @Autowired
     DiscoveryServiceClient discoveryServiceClient;
 
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryHelper.class);

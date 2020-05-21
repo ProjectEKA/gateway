@@ -5,26 +5,23 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Map;
 
-@Component
+@AllArgsConstructor
 public class DiscoveryServiceClient {
-    @Autowired
-    ServiceOptions serviceOptions;
-    ObjectMapper objectMapper = new ObjectMapper();
-    private static final Logger logger = LoggerFactory.getLogger(DiscoveryServiceClient.class);
-
-    @Autowired
+    private ServiceOptions serviceOptions;
     private WebClient.Builder webClientBuilder;
+    private ObjectMapper objectMapper;
+
+    private static final Logger logger = LoggerFactory.getLogger(DiscoveryServiceClient.class);
 
     public Mono<Void> patientFor(Map<String, Object> request, String url) {
         return serializeRequest(request)

@@ -5,17 +5,23 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.link.discovery.DiscoveryHelper;
+import in.projecteka.gateway.link.discovery.DiscoveryValidator;
+import in.projecteka.gateway.registry.BridgeRegistry;
+import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,5 +64,41 @@ public class GatewayConfiguration {
     public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         return objectMapper.readValue(new File(serviceOptions.getRegistryPath()), YamlRegistry.class);
+    }
+
+    @Bean
+    public CMRegistry cmRegistry(YamlRegistry yamlRegistry) {
+        return new CMRegistry(yamlRegistry);
+    }
+
+    @Bean
+    public BridgeRegistry bridgeRegistry(YamlRegistry yamlRegistry) {
+        return new BridgeRegistry(yamlRegistry);
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
+    }
+
+    @Bean
+    public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
+                                                         WebClient.Builder builder,
+                                                         ObjectMapper objectMapper) {
+        return new DiscoveryServiceClient(serviceOptions,builder,objectMapper);
+    }
+
+    @Bean
+    public DiscoveryValidator discoveryValidator(BridgeRegistry bridgeRegistry,
+                                                 CMRegistry cmRegistry,
+                                                 DiscoveryServiceClient discoveryServiceClient) {
+        return new DiscoveryValidator(bridgeRegistry, cmRegistry, discoveryServiceClient);
+    }
+
+    @Bean
+    public DiscoveryHelper discoveryHelper(CacheAdapter<String, String> requestIdMappings,
+                                           DiscoveryValidator discoveryValidator,
+                                           DiscoveryServiceClient discoveryServiceClient) {
+        return new DiscoveryHelper(requestIdMappings, discoveryValidator, discoveryServiceClient);
     }
 }

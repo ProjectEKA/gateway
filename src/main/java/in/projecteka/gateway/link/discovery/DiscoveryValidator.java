@@ -12,9 +12,7 @@ import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
@@ -28,16 +26,12 @@ import static in.projecteka.gateway.link.discovery.Constants.TRANSACTION_ID;
 import static in.projecteka.gateway.link.discovery.Constants.X_CM_ID;
 import static in.projecteka.gateway.link.discovery.Constants.X_HIP_ID;
 
-@Component
 @AllArgsConstructor
 public class DiscoveryValidator {
-    @Autowired
     BridgeRegistry bridgeRegistry;
 
-    @Autowired
     CMRegistry cmRegistry;
 
-    @Autowired
     DiscoveryServiceClient discoveryServiceClient;
 
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryValidator.class);
