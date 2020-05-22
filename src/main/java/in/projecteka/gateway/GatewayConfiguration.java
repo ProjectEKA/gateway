@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.LinkOnInitServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
@@ -13,6 +14,8 @@ import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.discovery.DiscoveryHelper;
 import in.projecteka.gateway.link.discovery.DiscoveryValidator;
+import in.projecteka.gateway.link.link.LinkHelper;
+import in.projecteka.gateway.link.link.LinkValidator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -100,5 +103,23 @@ public class GatewayConfiguration {
                                            DiscoveryValidator discoveryValidator,
                                            DiscoveryServiceClient discoveryServiceClient) {
         return new DiscoveryHelper(requestIdMappings, discoveryValidator, discoveryServiceClient);
+    }
+
+    @Bean
+    public LinkValidator linkValidator(CMRegistry cmRegistry,
+                                       CacheAdapter<String,String> requestIdMappings) {
+        return new LinkValidator(cmRegistry,requestIdMappings);
+    }
+
+    @Bean
+    public LinkOnInitServiceClient linkOnInitServiceClient(ServiceOptions serviceOptions,
+                                                           WebClient.Builder builder) {
+        return new LinkOnInitServiceClient(builder,serviceOptions);
+    }
+
+    @Bean
+    public LinkHelper linkHelper(LinkValidator linkValidator,
+                                 LinkOnInitServiceClient linkOnInitServiceClient) {
+        return new LinkHelper(linkValidator, linkOnInitServiceClient);
     }
 }
