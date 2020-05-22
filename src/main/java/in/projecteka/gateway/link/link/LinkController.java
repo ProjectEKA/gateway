@@ -1,5 +1,7 @@
 package in.projecteka.gateway.link.link;
 
+import in.projecteka.gateway.clients.LinkServiceClient;
+import in.projecteka.gateway.link.discovery.Orchestrator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -11,12 +13,12 @@ import reactor.core.publisher.Mono;
 @RestController
 @AllArgsConstructor
 public class LinkController {
-    LinkHelper linkHelper;
+    Orchestrator<LinkServiceClient> linkOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/init")
     public Mono<Void> linkInit(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = linkHelper.doLinkInit(requestEntity);
+        Mono<Void> tobeFiredAndForgotten = linkOrchestrator.processRequest(requestEntity);
         tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
@@ -24,7 +26,7 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/on-init")
     public Mono<Void> linkOnInit(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = linkHelper.doOnLinkInit(requestEntity);
+        Mono<Void> toBeFiredAndForgotten = linkOrchestrator.processResponse(requestEntity);
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }

@@ -13,11 +13,12 @@ import java.time.Duration;
 import java.util.Map;
 
 @AllArgsConstructor
-public class LinkServiceClient {
+public class LinkServiceClient implements ServiceClient{
     private WebClient.Builder webClientBuilder;
     private ServiceOptions serviceOptions;
 
-    public Mono<Void> linkInit(Map<String, Object> request, String url) {
+    @Override
+    public Mono<Void> routeRequest(Map<String, Object> request, String url) {
         return Utils.serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
@@ -32,7 +33,8 @@ public class LinkServiceClient {
                                 .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
     }
 
-    public Mono<Void> linkInitErrorResultNotify(ErrorResult request, String cmUrl) {
+    @Override
+    public Mono<Void> notifyError(ErrorResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
                 .uri(cmUrl + "/v1/links/link/on-init")
@@ -43,7 +45,8 @@ public class LinkServiceClient {
                 .bodyToMono(Void.class);
     }
 
-    public Mono<Void> linkOnInitResultNotify(JsonNode request, String cmUrl) {
+    @Override
+    public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
         return Utils.serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()

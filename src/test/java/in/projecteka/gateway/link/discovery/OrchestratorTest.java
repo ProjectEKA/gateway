@@ -36,7 +36,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DiscoveryHelperTest {
+class OrchestratorTest {
     @Mock
     Validator discoveryValidator;
     @Mock
@@ -51,13 +51,13 @@ class DiscoveryHelperTest {
     private @Captor ArgumentCaptor<String> requestIdCaptor;
     private @Captor ArgumentCaptor<Error> errorArgumentCaptor;
     private @Captor ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
-    DiscoveryHelper discoveryHelper;
+    Orchestrator orchestrator;
     @Mock
     CMRegistry cmRegistry;
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        discoveryHelper = Mockito.spy(new DiscoveryHelper(requestIdMappings,discoveryValidator,discoveryServiceClient,cmRegistry));
+        orchestrator = Mockito.spy(new Orchestrator(requestIdMappings,discoveryValidator,discoveryServiceClient,cmRegistry));
     }
 
     @Test
@@ -65,7 +65,7 @@ class DiscoveryHelperTest {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
         when(discoveryValidator.validateRequest(requestEntity)).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryHelper.doDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processRequest(requestEntity))
                 .verifyComplete();
     }
 
@@ -74,7 +74,7 @@ class DiscoveryHelperTest {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
         when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryHelper.doOnDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processResponse(requestEntity))
                 .verifyComplete();
     }
 
@@ -82,12 +82,12 @@ class DiscoveryHelperTest {
     public void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
         ClientError clientError = ClientError.hipIdMissing();
-        doReturn(Mono.empty()).when(discoveryHelper).errorNotify(requestEntity,TEMP_CM_ID,clientError.getError().getError());
+        doReturn(Mono.empty()).when(orchestrator).errorNotify(requestEntity,TEMP_CM_ID,clientError.getError().getError());
         when(discoveryValidator.validateRequest(requestEntity)).thenReturn(Mono.error(clientError));
 
-        StepVerifier.create(discoveryHelper.doDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processRequest(requestEntity))
                 .verifyComplete();
-        verify(discoveryHelper).errorNotify(requestEntity,TEMP_CM_ID,clientError.getError().getError());
+        verify(orchestrator).errorNotify(requestEntity,TEMP_CM_ID,clientError.getError().getError());
     }
 
     @Test
@@ -101,9 +101,9 @@ class DiscoveryHelperTest {
         when(hipConfig.getHost()).thenReturn(testhost);
         when(discoveryValidator.validateRequest(requestEntity)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.patientFor(captor.capture(),eq(testhost))).thenReturn(Mono.empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryHelper.doDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processRequest(requestEntity))
                 .verifyComplete();
 
         verify(hipConfig).getHost();
@@ -126,9 +126,9 @@ class DiscoveryHelperTest {
         when(cmConfig.getHost()).thenReturn(testhost);
         when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.just(new ValidatedResponse(cmConfig,cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(Mono.just(cmRequestId));
-        when(discoveryServiceClient.patientDiscoveryResultNotify(jsonNodeArgumentCaptor.capture(),eq(testhost))).thenReturn(Mono.empty());
+        when(discoveryServiceClient.routeResponse(jsonNodeArgumentCaptor.capture(),eq(testhost))).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryHelper.doOnDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processResponse(requestEntity))
                 .verifyComplete();
 
         verify(cmConfig).getHost();
@@ -148,10 +148,10 @@ class DiscoveryHelperTest {
         when(hipConfig.getHost()).thenReturn(testhost);
         when(discoveryValidator.validateRequest(requestEntity)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.patientFor(captor.capture(),eq(testhost))).thenReturn(Mono.error(new TimeoutException()));
-        doReturn(Mono.empty()).when(discoveryHelper).errorNotify(eq(requestEntity),eq(TEMP_CM_ID),errorArgumentCaptor.capture());
+        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.error(new TimeoutException()));
+        doReturn(Mono.empty()).when(orchestrator).errorNotify(eq(requestEntity),eq(TEMP_CM_ID),errorArgumentCaptor.capture());
 
-        StepVerifier.create(discoveryHelper.doDiscoverCareContext(requestEntity))
+        StepVerifier.create(orchestrator.processRequest(requestEntity))
                 .verifyComplete();
 
         verify(hipConfig).getHost();
@@ -171,10 +171,10 @@ class DiscoveryHelperTest {
         when(hipConfig.getHost()).thenReturn(testhost);
         when(discoveryValidator.validateRequest(requestEntity)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.patientFor(captor.capture(),eq(testhost))).thenReturn(Mono.error(new RuntimeException()));
+        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.error(new RuntimeException()));
 
-        doReturn(Mono.empty()).when(discoveryHelper).errorNotify(eq(requestEntity),eq(TEMP_CM_ID),errorArgumentCaptor.capture());
-        StepVerifier.create(discoveryHelper.doDiscoverCareContext(requestEntity))
+        doReturn(Mono.empty()).when(orchestrator).errorNotify(eq(requestEntity),eq(TEMP_CM_ID),errorArgumentCaptor.capture());
+        StepVerifier.create(orchestrator.processRequest(requestEntity))
                 .verifyComplete();
 
         verify(hipConfig).getHost();

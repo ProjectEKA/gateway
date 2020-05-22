@@ -2,15 +2,15 @@ package in.projecteka.gateway.link.link;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ClientError;
-import in.projecteka.gateway.clients.LinkServiceClient;
+import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.link.common.Constants;
 import in.projecteka.gateway.link.common.Utils;
 import in.projecteka.gateway.link.common.Validator;
-import in.projecteka.gateway.link.common.model.GatewayResponse;
 import in.projecteka.gateway.link.common.model.ErrorResult;
+import in.projecteka.gateway.link.common.model.GatewayResponse;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
@@ -32,7 +32,7 @@ public class LinkHelper {
     private static final Logger logger = LoggerFactory.getLogger(LinkHelper.class);
     Validator validator;
     CacheAdapter<String, String> requestIdMappings;
-    LinkServiceClient linkServiceClient;
+    ServiceClient linkServiceClient;
     CMRegistry cmRegistry;
 
     public Mono<Void> doLinkInit(HttpEntity<String> requestEntity) {
@@ -48,7 +48,7 @@ public class LinkHelper {
                     return requestIdMappings.put(gatewayRequestId.toString(), validatedLinkInitRequest.getCmRequestId())
                             .thenReturn(deserializedRequest)
                             .flatMap(updatedRequest -> linkServiceClient
-                                    .linkInit(updatedRequest, validatedLinkInitRequest.getHipConfig().getHost())
+                                    .routeRequest(updatedRequest, validatedLinkInitRequest.getHipConfig().getHost())
                                     .onErrorResume(throwable -> (throwable instanceof TimeoutException),
                                             throwable -> errorNotify(requestEntity,
                                                     Constants.TEMP_CM_ID,
@@ -67,7 +67,7 @@ public class LinkHelper {
                     JsonNode updatedJsonNode = Utils.updateRequestId(validatedLinkInitResponse.getDeserializedJsonNode(),
                             validatedLinkInitResponse.getCallerRequestId());
                     return linkServiceClient.
-                            linkOnInitResultNotify(updatedJsonNode,
+                            routeResponse(updatedJsonNode,
                                     validatedLinkInitResponse.getCmConfig().getHost())
                             .onErrorResume(throwable -> {
                                 logger.error("Error in notifying CM with result", throwable);
@@ -94,7 +94,7 @@ public class LinkHelper {
                         .build()).flatMap(errorResult -> {
                     YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when
                     // cmid is dynamic
-                    return linkServiceClient.linkInitErrorResultNotify(errorResult, cmRegistryMapping.getHost());
+                    return linkServiceClient.notifyError(errorResult, cmRegistryMapping.getHost());
                 });
     }
 }

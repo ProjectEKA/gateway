@@ -13,8 +13,7 @@ import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.common.Validator;
-import in.projecteka.gateway.link.discovery.DiscoveryHelper;
-import in.projecteka.gateway.link.link.LinkHelper;
+import in.projecteka.gateway.link.discovery.Orchestrator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -90,12 +89,12 @@ public class GatewayConfiguration {
         return new DiscoveryServiceClient(serviceOptions,builder,objectMapper);
     }
 
-    @Bean
-    public DiscoveryHelper discoveryHelper(CacheAdapter<String, String> requestIdMappings,
-                                           Validator validator,
-                                           DiscoveryServiceClient discoveryServiceClient,
-                                            CMRegistry cmRegistry) {
-        return new DiscoveryHelper(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
+    @Bean("discoveryOrchestrator")
+    public Orchestrator<DiscoveryServiceClient> discoveryHelper(CacheAdapter<String, String> requestIdMappings,
+                                        Validator validator,
+                                        DiscoveryServiceClient discoveryServiceClient,
+                                        CMRegistry cmRegistry) {
+        return new Orchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
     }
 
     @Bean
@@ -111,11 +110,19 @@ public class GatewayConfiguration {
         return new LinkServiceClient(builder,serviceOptions);
     }
 
-    @Bean
-    public LinkHelper linkHelper(Validator validator,
-                                 CacheAdapter<String,String> requestIdMappings,
-                                 LinkServiceClient linkServiceClient,
-                                 CMRegistry cmRegistry) {
-        return new LinkHelper(validator, requestIdMappings, linkServiceClient, cmRegistry);
+//    @Bean
+//    public LinkHelper linkHelper(Validator validator,
+//                                 CacheAdapter<String,String> requestIdMappings,
+//                                 LinkServiceClient linkServiceClient,
+//                                 CMRegistry cmRegistry) {
+//        return new LinkHelper(validator, requestIdMappings, linkServiceClient, cmRegistry);
+//    }
+
+    @Bean("linkOrchestrator")
+    public Orchestrator<LinkServiceClient> linkOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                Validator validator,
+                                                                LinkServiceClient linkServiceClient,
+                                                                CMRegistry cmRegistry) {
+        return new Orchestrator<>(requestIdMappings, validator, linkServiceClient, cmRegistry);
     }
 }

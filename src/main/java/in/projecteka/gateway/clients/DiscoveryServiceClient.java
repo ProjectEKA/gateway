@@ -16,14 +16,15 @@ import java.time.Duration;
 import java.util.Map;
 
 @AllArgsConstructor
-public class DiscoveryServiceClient {
+public class DiscoveryServiceClient implements ServiceClient{
     private ServiceOptions serviceOptions;
     private WebClient.Builder webClientBuilder;
     private ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryServiceClient.class);
 
-    public Mono<Void> patientFor(Map<String, Object> request, String url) {
+    @Override
+    public Mono<Void> routeRequest(Map<String, Object> request, String url) {
         return serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
@@ -56,7 +57,8 @@ public class DiscoveryServiceClient {
         }
     }
 
-    public Mono<Void> patientErrorResultNotify(ErrorResult request, String cmUrl) {
+    @Override
+    public Mono<Void> notifyError(ErrorResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
                 .uri(cmUrl + "/care-contexts/on-discover")
@@ -67,7 +69,8 @@ public class DiscoveryServiceClient {
                 .bodyToMono(Void.class);
     }
 
-    public Mono<Void> patientDiscoveryResultNotify(JsonNode request, String cmUrl) {
+    @Override
+    public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
         return serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
