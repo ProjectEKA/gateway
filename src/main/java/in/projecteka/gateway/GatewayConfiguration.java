@@ -6,7 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.LinkOnInitServiceClient;
+import in.projecteka.gateway.clients.LinkServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
@@ -106,20 +106,23 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public LinkValidator linkValidator(CMRegistry cmRegistry,
+    public LinkValidator linkValidator(BridgeRegistry bridgeRegistry,
+                                       CMRegistry cmRegistry,
+                                       LinkServiceClient linkServiceClient,
                                        CacheAdapter<String,String> requestIdMappings) {
-        return new LinkValidator(cmRegistry,requestIdMappings);
+        return new LinkValidator(bridgeRegistry, cmRegistry, linkServiceClient, requestIdMappings);
     }
 
     @Bean
-    public LinkOnInitServiceClient linkOnInitServiceClient(ServiceOptions serviceOptions,
-                                                           WebClient.Builder builder) {
-        return new LinkOnInitServiceClient(builder,serviceOptions);
+    public LinkServiceClient linkServiceClient(ServiceOptions serviceOptions,
+                                               WebClient.Builder builder) {
+        return new LinkServiceClient(builder,serviceOptions);
     }
 
     @Bean
     public LinkHelper linkHelper(LinkValidator linkValidator,
-                                 LinkOnInitServiceClient linkOnInitServiceClient) {
-        return new LinkHelper(linkValidator, linkOnInitServiceClient);
+                                 CacheAdapter<String,String> requestIdMappings,
+                                 LinkServiceClient linkServiceClient) {
+        return new LinkHelper(linkValidator, requestIdMappings, linkServiceClient);
     }
 }

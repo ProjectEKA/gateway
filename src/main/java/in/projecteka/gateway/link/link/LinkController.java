@@ -16,6 +16,8 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/init")
     public Mono<Void> linkInit(HttpEntity<String> requestEntity) {
+        Mono<Void> tobeFiredAndForgotten = linkHelper.doLinkInit(requestEntity);
+        tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
 
