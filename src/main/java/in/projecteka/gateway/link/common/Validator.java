@@ -1,7 +1,6 @@
 package in.projecteka.gateway.link.common;
 
 import in.projecteka.gateway.clients.ClientError;
-import in.projecteka.gateway.clients.LinkServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -25,7 +24,6 @@ public class Validator {
     private static final Logger logger = LoggerFactory.getLogger(Validator.class);
     BridgeRegistry bridgeRegistry;
     CMRegistry cmRegistry;
-    LinkServiceClient linkServiceClient;
     CacheAdapter<String, String> requestIdMappings;
 
 
@@ -49,9 +47,6 @@ public class Validator {
                     return Mono.just(new ValidatedRequest(hipConfig.get(), cmRequestId, deserializedRequest));
                 });
     }
-
-
-
 
     public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity) {
         List<String> xCmIds = requestEntity.getHeaders().get(X_CM_ID);

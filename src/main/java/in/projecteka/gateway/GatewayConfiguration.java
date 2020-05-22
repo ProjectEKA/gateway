@@ -101,9 +101,8 @@ public class GatewayConfiguration {
     @Bean
     public Validator linkValidator(BridgeRegistry bridgeRegistry,
                                    CMRegistry cmRegistry,
-                                   LinkServiceClient linkServiceClient,
                                    CacheAdapter<String,String> requestIdMappings) {
-        return new Validator(bridgeRegistry, cmRegistry, linkServiceClient, requestIdMappings);
+        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings);
     }
 
     @Bean
