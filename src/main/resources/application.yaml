@@ -1,7 +1,19 @@
 server:
-  port: 8000
+  port: 8004
+gateway:
+  #Valid values are guava(for local), redis
+  cacheMethod: ${CACHE_METHOD:guava}
+  redis:
+    #Will not be used if cacheMethod is guava
+    host: ${REDIS_HOST}
+    port: 6379
+    password: ${REDIS_PASSWORD}
+  # timeout in seconds
+  serviceoptions:
+    timeout: ${SERVICE_TIMEOUT:5}
+    registryPath: ${REGISTRY_PATH:registry-local.yaml}
 clientregistry:
-  XAuthToken: ${AUTH_TOKEN}
-  clientId: ${CENTRAL_REGISTRY_ID}
-  url: ${CLIENT_REGISTRY_URL}
-  jwkUrl: ${CENTRAL_REGISTRY_JWK_URL}
+  XAuthToken: c3f88ccc-2374-4a6d-bdba-63403e454979
+  clientId: consent-manager
+  url: http://localhost:8080
+  jwkUrl: http://localhost:8080/certs

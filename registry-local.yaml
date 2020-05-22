@@ -1,0 +1,10 @@
+consentManagers:
+  - host: http://localhost:9000
+    id: ncg
+  - host: http://localhost:8000
+    id: nhs
+bridges:
+  - host: http://localhost:8000
+    id: 10000005
+    servesAs:
+      - HIP

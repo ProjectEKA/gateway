@@ -1,19 +1,13 @@
 package in.projecteka.gateway;
 
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
-import in.projecteka.gateway.clients.common.Authenticator;
 import in.projecteka.gateway.clients.common.CentralRegistryTokenVerifier;
-import in.projecteka.gateway.clients.common.UserAuthenticator;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -24,35 +18,25 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.URL;
-import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
-
-    private static final List<Map.Entry<String, HttpMethod>> SERVICE_ONLY_URLS = new ArrayList<>() {
-        { } 
-    };
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity httpSecurity,
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
-        final String[] WHITELISTED_URLS = { };
-        httpSecurity.authorizeExchange().pathMatchers(WHITELISTED_URLS).permitAll();
         httpSecurity.httpBasic().disable().formLogin().disable().csrf().disable().logout().disable();
-        httpSecurity.authorizeExchange().pathMatchers("/**").hasAnyRole("VERIFIED");
+        httpSecurity.authorizeExchange().pathMatchers("/**").permitAll();
         return httpSecurity
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
@@ -75,31 +59,13 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(value = "hiu.loginMethod", havingValue = "jwt")
-    public Authenticator userAuthenticator(byte[] sharedSecret) throws JOSEException {
-        return new UserAuthenticator(sharedSecret);
-    }
-
-    @Bean
-    public static byte[] sharedSecret() {
-        SecureRandom random = new SecureRandom();
-        byte[] sharedSecret = new byte[32];
-        random.nextBytes(sharedSecret);
-        return sharedSecret;
-    }
-
-    @Bean
-    public SecurityContextRepository contextRepository(ReactiveAuthenticationManager manager,
-                                                       CentralRegistryTokenVerifier centralRegistryTokenVerifier,
-                                                       Authenticator authenticator) {
-        return new SecurityContextRepository(manager, centralRegistryTokenVerifier, authenticator);
+    public SecurityContextRepository contextRepository(CentralRegistryTokenVerifier centralRegistryTokenVerifier) {
+        return new SecurityContextRepository(centralRegistryTokenVerifier);
     }
 
     @AllArgsConstructor
     private static class SecurityContextRepository implements ServerSecurityContextRepository {
-        private final ReactiveAuthenticationManager manager;
         private final CentralRegistryTokenVerifier centralRegistryTokenVerifier;
-        private final Authenticator authenticator;
 
         @Override
         public Mono<Void> save(ServerWebExchange exchange, SecurityContext context) {
@@ -113,26 +79,7 @@ public class SecurityConfiguration {
                 return Mono.empty();
             }
 
-            if (isCentralRegistryAuthenticatedOnlyRequest(
-                    exchange.getRequest().getPath().toString(),
-                    exchange.getRequest().getMethod())) {
-                return checkCentralRegistry(token);
-            }
-            return check(token);
-        }
-
-        private Mono<SecurityContext> check(String token) {
-            return authenticator.verify(token)
-                    .map(caller ->
-                    {
-                        var grantedAuthority = new ArrayList<SimpleGrantedAuthority>();
-                        if (caller.isVerified()) {
-                            grantedAuthority.add(new SimpleGrantedAuthority("ROLE_VERIFIED"));
-                        }
-                        caller.getRole().map(role -> grantedAuthority.add(new SimpleGrantedAuthority("ROLE_".concat(role))));
-                        return new UsernamePasswordAuthenticationToken(caller, token, grantedAuthority);
-                    })
-                    .map(SecurityContextImpl::new);
+            return checkCentralRegistry(token);
         }
 
         private Mono<SecurityContext> checkCentralRegistry(String token) {
@@ -142,13 +89,6 @@ public class SecurityConfiguration {
                             token,
                             new ArrayList<SimpleGrantedAuthority>()))
                     .map(SecurityContextImpl::new);
-        }
-
-        private boolean isCentralRegistryAuthenticatedOnlyRequest(String url, HttpMethod method) {
-            AntPathMatcher antPathMatcher = new AntPathMatcher();
-            return SERVICE_ONLY_URLS.stream()
-                    .anyMatch(pattern ->
-                            antPathMatcher.matchStart(pattern.getKey(), url) && pattern.getValue().equals(method));
         }
 
         private boolean isEmpty(String authToken) {
