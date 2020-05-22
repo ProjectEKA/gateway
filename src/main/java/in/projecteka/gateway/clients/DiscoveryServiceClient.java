@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.discovery.model.PatientDiscoveryResult;
+import in.projecteka.gateway.link.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class DiscoveryServiceClient {
         }
     }
 
-    public Mono<Void> patientErrorResultNotify(PatientDiscoveryResult request, String cmUrl) {
+    public Mono<Void> patientErrorResultNotify(ErrorResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
                 .uri(cmUrl + "/care-contexts/on-discover")

@@ -3,7 +3,7 @@ package in.projecteka.gateway.clients;
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.common.Utils;
-import in.projecteka.gateway.link.link.model.LinkInitResult;
+import in.projecteka.gateway.link.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -32,7 +32,7 @@ public class LinkServiceClient {
                                 .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
     }
 
-    public Mono<Void> linkInitErrorResultNotify(LinkInitResult request, String cmUrl) {
+    public Mono<Void> linkInitErrorResultNotify(ErrorResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
                 .uri(cmUrl + "/v1/links/link/on-init")

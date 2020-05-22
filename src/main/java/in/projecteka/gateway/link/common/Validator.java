@@ -2,10 +2,7 @@ package in.projecteka.gateway.link.common;
 
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.LinkServiceClient;
-import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.link.model.GatewayResponse;
-import in.projecteka.gateway.link.link.model.LinkInitResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
@@ -15,14 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuples;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
-import static in.projecteka.gateway.link.common.Constants.TRANSACTION_ID;
 import static in.projecteka.gateway.link.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.link.common.Constants.X_HIP_ID;
 
@@ -57,28 +51,7 @@ public class Validator {
     }
 
 
-    public Mono<Void> errorNotify(HttpEntity<String> requestEntity, String cmId, Error error) {
-        return Utils.deserializeRequest(requestEntity)
-                .map(deserializedRequest ->
-                        Tuples.of((String) deserializedRequest.getOrDefault(REQUEST_ID, ""),
-                                (String) deserializedRequest.getOrDefault(TRANSACTION_ID, "")))
-                .filter(tuple -> {
-                    String transactionId = tuple.getT2();
-                    if (transactionId.isEmpty()) {
-                        logger.error("TransactionId is empty");
-                    }
-                    return !transactionId.isEmpty();
-                })
-                .map(tuple -> LinkInitResult.builder().error(error)
-                        .resp(GatewayResponse.builder().requestId(UUID.fromString(tuple.getT1())).build())
-                        .requestId(UUID.randomUUID())
-                        .transactionId(UUID.fromString(tuple.getT2()))
-                        .build()).flatMap(errorResult -> {
-                    YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when
-                    // cmid is dynamic
-                    return linkServiceClient.linkInitErrorResultNotify(errorResult, cmRegistryMapping.getHost());
-                });
-    }
+
 
     public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity) {
         List<String> xCmIds = requestEntity.getHeaders().get(X_CM_ID);

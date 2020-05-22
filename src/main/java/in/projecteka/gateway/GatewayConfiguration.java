@@ -93,8 +93,9 @@ public class GatewayConfiguration {
     @Bean
     public DiscoveryHelper discoveryHelper(CacheAdapter<String, String> requestIdMappings,
                                            Validator validator,
-                                           DiscoveryServiceClient discoveryServiceClient) {
-        return new DiscoveryHelper(requestIdMappings, validator, discoveryServiceClient);
+                                           DiscoveryServiceClient discoveryServiceClient,
+                                            CMRegistry cmRegistry) {
+        return new DiscoveryHelper(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
     }
 
     @Bean
@@ -114,7 +115,8 @@ public class GatewayConfiguration {
     @Bean
     public LinkHelper linkHelper(Validator validator,
                                  CacheAdapter<String,String> requestIdMappings,
-                                 LinkServiceClient linkServiceClient) {
-        return new LinkHelper(validator, requestIdMappings, linkServiceClient);
+                                 LinkServiceClient linkServiceClient,
+                                 CMRegistry cmRegistry) {
+        return new LinkHelper(validator, requestIdMappings, linkServiceClient, cmRegistry);
     }
 }
