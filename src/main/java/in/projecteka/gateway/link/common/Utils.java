@@ -1,15 +1,19 @@
-package in.projecteka.gateway.link.discovery;
+package in.projecteka.gateway.link.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.UUID;
+
+import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
 
 public class Utils {
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
@@ -51,5 +55,13 @@ public class Utils {
             logger.error("Error in serializing request body", e);
             return Mono.empty();
         }
+    }
+
+    public static JsonNode updateRequestId(JsonNode jsonNode, String callerRequestId) {
+        ObjectNode mutableNode = (ObjectNode) jsonNode;
+        mutableNode.put(REQUEST_ID, UUID.randomUUID().toString());
+        ObjectNode respNode = (ObjectNode) mutableNode.get("resp");
+        respNode.put(REQUEST_ID, callerRequestId);
+        return jsonNode;
     }
 }

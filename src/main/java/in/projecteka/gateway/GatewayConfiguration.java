@@ -12,10 +12,9 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.link.common.Validator;
 import in.projecteka.gateway.link.discovery.DiscoveryHelper;
-import in.projecteka.gateway.link.discovery.DiscoveryValidator;
 import in.projecteka.gateway.link.link.LinkHelper;
-import in.projecteka.gateway.link.link.LinkValidator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -92,25 +91,18 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public DiscoveryValidator discoveryValidator(BridgeRegistry bridgeRegistry,
-                                                 CMRegistry cmRegistry,
-                                                 DiscoveryServiceClient discoveryServiceClient) {
-        return new DiscoveryValidator(bridgeRegistry, cmRegistry, discoveryServiceClient);
-    }
-
-    @Bean
     public DiscoveryHelper discoveryHelper(CacheAdapter<String, String> requestIdMappings,
-                                           DiscoveryValidator discoveryValidator,
+                                           Validator validator,
                                            DiscoveryServiceClient discoveryServiceClient) {
-        return new DiscoveryHelper(requestIdMappings, discoveryValidator, discoveryServiceClient);
+        return new DiscoveryHelper(requestIdMappings, validator, discoveryServiceClient);
     }
 
     @Bean
-    public LinkValidator linkValidator(BridgeRegistry bridgeRegistry,
-                                       CMRegistry cmRegistry,
-                                       LinkServiceClient linkServiceClient,
-                                       CacheAdapter<String,String> requestIdMappings) {
-        return new LinkValidator(bridgeRegistry, cmRegistry, linkServiceClient, requestIdMappings);
+    public Validator linkValidator(BridgeRegistry bridgeRegistry,
+                                   CMRegistry cmRegistry,
+                                   LinkServiceClient linkServiceClient,
+                                   CacheAdapter<String,String> requestIdMappings) {
+        return new Validator(bridgeRegistry, cmRegistry, linkServiceClient, requestIdMappings);
     }
 
     @Bean
@@ -120,9 +112,9 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public LinkHelper linkHelper(LinkValidator linkValidator,
+    public LinkHelper linkHelper(Validator validator,
                                  CacheAdapter<String,String> requestIdMappings,
                                  LinkServiceClient linkServiceClient) {
-        return new LinkHelper(linkValidator, requestIdMappings, linkServiceClient);
+        return new LinkHelper(validator, requestIdMappings, linkServiceClient);
     }
 }

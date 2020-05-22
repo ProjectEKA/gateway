@@ -2,7 +2,7 @@ package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.discovery.Utils;
+import in.projecteka.gateway.link.common.Utils;
 import in.projecteka.gateway.link.link.model.LinkInitResult;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;

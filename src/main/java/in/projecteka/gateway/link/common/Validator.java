@@ -1,10 +1,9 @@
-package in.projecteka.gateway.link.link;
+package in.projecteka.gateway.link.common;
 
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.LinkServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.discovery.Utils;
 import in.projecteka.gateway.link.link.model.GatewayResponse;
 import in.projecteka.gateway.link.link.model.LinkInitResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -22,21 +21,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static in.projecteka.gateway.link.discovery.Constants.REQUEST_ID;
-import static in.projecteka.gateway.link.discovery.Constants.TRANSACTION_ID;
-import static in.projecteka.gateway.link.discovery.Constants.X_CM_ID;
-import static in.projecteka.gateway.link.discovery.Constants.X_HIP_ID;
+import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.link.common.Constants.TRANSACTION_ID;
+import static in.projecteka.gateway.link.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.link.common.Constants.X_HIP_ID;
 
 @AllArgsConstructor
-public class LinkValidator {
-    private static final Logger logger = LoggerFactory.getLogger(LinkValidator.class);
+public class Validator {
+    private static final Logger logger = LoggerFactory.getLogger(Validator.class);
     BridgeRegistry bridgeRegistry;
     CMRegistry cmRegistry;
     LinkServiceClient linkServiceClient;
     CacheAdapter<String, String> requestIdMappings;
 
 
-    public Mono<ValidatedLinkInitRequest> validateLinkInit(HttpEntity<String> requestEntity) {
+    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity) {
         List<String> xHipIds = requestEntity.getHeaders().get(X_HIP_ID);
         if (xHipIds == null || xHipIds.isEmpty()) {
             return Mono.error(ClientError.hipIdMissing());
@@ -53,7 +52,7 @@ public class LinkValidator {
                         logger.error("No {} found on the payload", REQUEST_ID);
                         return Mono.empty();
                     }
-                    return Mono.just(new ValidatedLinkInitRequest(hipConfig.get(), cmRequestId, deserializedRequest));
+                    return Mono.just(new ValidatedRequest(hipConfig.get(), cmRequestId, deserializedRequest));
                 });
     }
 
@@ -64,15 +63,11 @@ public class LinkValidator {
                         Tuples.of((String) deserializedRequest.getOrDefault(REQUEST_ID, ""),
                                 (String) deserializedRequest.getOrDefault(TRANSACTION_ID, "")))
                 .filter(tuple -> {
-                    String requestId = tuple.getT1();
                     String transactionId = tuple.getT2();
-                    if (requestId.isEmpty()) {
-                        logger.error("RequestId is empty");
-                    }
                     if (transactionId.isEmpty()) {
                         logger.error("TransactionId is empty");
                     }
-                    return !requestId.isEmpty() && !transactionId.isEmpty();
+                    return !transactionId.isEmpty();
                 })
                 .map(tuple -> LinkInitResult.builder().error(error)
                         .resp(GatewayResponse.builder().requestId(UUID.fromString(tuple.getT1())).build())
@@ -85,7 +80,7 @@ public class LinkValidator {
                 });
     }
 
-    Mono<ValidatedLinkInitResponse> validateOnLinkInit(HttpEntity<String> requestEntity) {
+    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity) {
         List<String> xCmIds = requestEntity.getHeaders().get(X_CM_ID);
         if (xCmIds == null || xCmIds.isEmpty()) {
             logger.error("No X-CM-ID found on Headers");
@@ -110,7 +105,7 @@ public class LinkValidator {
                                     logger.error("No mapping found for resp.requestId on cache");
                                 }
                             })
-                            .map(callerRequestId -> new ValidatedLinkInitResponse(cmConfig.get(), callerRequestId,
+                            .map(callerRequestId -> new ValidatedResponse(cmConfig.get(), callerRequestId,
                                     jsonNode));
                 });
     }
