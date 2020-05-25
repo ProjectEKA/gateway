@@ -29,7 +29,7 @@ public class DiscoveryServiceClient implements ServiceClient{
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(url + "/care-contexts/discover")
+                                .uri(url + "/v1/care-contexts/discover")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()
@@ -61,7 +61,7 @@ public class DiscoveryServiceClient implements ServiceClient{
     public Mono<Void> notifyError(ErrorResult request, String cmUrl) {
         return webClientBuilder.build()
                 .post()
-                .uri(cmUrl + "/care-contexts/on-discover")
+                .uri(cmUrl + "/v1/care-contexts/on-discover")
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
@@ -75,7 +75,7 @@ public class DiscoveryServiceClient implements ServiceClient{
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
-                                .uri(cmUrl + "/care-contexts/on-discover")
+                                .uri(cmUrl + "/v1/care-contexts/on-discover")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .bodyValue(serializedRequest)
                                 .retrieve()

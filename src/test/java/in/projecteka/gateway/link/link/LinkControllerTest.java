@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.discovery;
+package in.projecteka.gateway.link.link;
 
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.link.common.RequestOrchestrator;
@@ -18,7 +18,7 @@ import java.time.Duration;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class DiscoveryControllerTest {
+public class LinkControllerTest {
     @MockBean
     RequestOrchestrator<DiscoveryServiceClient> requestOrchestrator;
 
@@ -29,13 +29,13 @@ class DiscoveryControllerTest {
     private WebTestClient webTestClient;
 
     @Test
-    public void shouldFireAndForgetForDiscover() {
+    public void shouldFireAndForgetForLinkInit() {
         Mockito.when(requestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/v1/care-contexts/discover")
+                .uri("/v1/links/link/init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
@@ -43,17 +43,16 @@ class DiscoveryControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForOnDiscover() {
+    public void shouldFireAndForgetForLinkOnInit() {
         Mockito.when(responseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/v1/care-contexts/on-discover")
+                .uri("/v1/links/link/on-init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus().isAccepted();
     }
-
 }
