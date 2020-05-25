@@ -2,12 +2,13 @@ package in.projecteka.gateway;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
-import in.projecteka.gateway.clients.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -25,10 +27,19 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
+
+    private static final List<Map.Entry<String, HttpMethod>> SERVICE_ONLY_URLS = new ArrayList<>();
+
+    static {
+        SERVICE_ONLY_URLS.add(Map.entry("/care-contexts/discover",HttpMethod.POST));
+        SERVICE_ONLY_URLS.add(Map.entry("/care-contexts/on-discover",HttpMethod.POST));
+    }
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
@@ -78,8 +89,22 @@ public class SecurityConfiguration {
             if (isEmpty(token)) {
                 return Mono.empty();
             }
+            String requestPath = exchange.getRequest().getPath().toString();
+            HttpMethod requestMethod = exchange.getRequest().getMethod();
 
-            return checkCentralRegistry(token);
+            if (isCentralRegistryAuthenticatedOnlyRequest(
+                    requestPath,
+                    requestMethod)) {
+                return checkCentralRegistry(token);
+            }
+            return null; //TODO need to change
+        }
+
+        private boolean isCentralRegistryAuthenticatedOnlyRequest(String url, HttpMethod method) {
+            AntPathMatcher antPathMatcher = new AntPathMatcher();
+            return SERVICE_ONLY_URLS.stream()
+                    .anyMatch(pattern ->
+                            antPathMatcher.match(pattern.getKey(),url) && pattern.getValue().equals(method));
         }
 
         private Mono<SecurityContext> checkCentralRegistry(String token) {

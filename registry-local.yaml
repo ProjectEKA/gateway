@@ -1,5 +1,5 @@
 consentManagers:
-  - host: http://localhost:9000
+  - host: http://localhost:9000/v1
     id: ncg
   - host: http://localhost:8000
     id: nhs

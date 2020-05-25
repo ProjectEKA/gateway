@@ -13,7 +13,7 @@ gateway:
     timeout: ${SERVICE_TIMEOUT:5}
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
 clientregistry:
-  XAuthToken: c3f88ccc-2374-4a6d-bdba-63403e454979
-  clientId: consent-manager
+  XAuthToken: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
+  clientId: gateway
   url: http://localhost:8080
   jwkUrl: http://localhost:8080/certs

@@ -34,4 +34,22 @@ public class Utils {
             return Mono.empty();
         }
     }
+
+    public static Mono<String> serializeRequest(JsonNode jsonNode) {
+        try {
+            return Mono.just(objectMapper.writeValueAsString(jsonNode));
+        } catch (JsonProcessingException e) {
+            logger.error("Error in serializing request body", e);
+            return Mono.empty();
+        }
+    }
+
+    public static Mono<String> serializeRequest(Map<String, Object> request) {
+        try {
+            return Mono.just(objectMapper.writeValueAsString(request));
+        } catch (JsonProcessingException e) {
+            logger.error("Error in serializing request body", e);
+            return Mono.empty();
+        }
+    }
 }

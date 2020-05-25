@@ -35,6 +35,7 @@ dependencies {
 	compile 'net.logstash.logback:logstash-logback-encoder:6.3'
 	implementation 'com.nimbusds:nimbus-jose-jwt:8.15'
 	implementation 'com.google.guava:guava:29.0-jre'
+	implementation 'com.google.guava:guava:29.0-jre'
 }
 
 test {

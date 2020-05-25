@@ -1,4 +1,4 @@
-package in.projecteka.gateway.clients.common;
+package in.projecteka.gateway.common;
 
 
 import com.nimbusds.jose.JOSEException;
