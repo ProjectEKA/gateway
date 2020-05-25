@@ -6,9 +6,6 @@ import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.common.RequestOrchestrator;
-import in.projecteka.gateway.link.common.ValidatedRequest;
-import in.projecteka.gateway.link.common.Validator;
 import in.projecteka.gateway.link.common.model.ErrorResult;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
@@ -147,18 +144,6 @@ class RequestOrchestratorTest {
         verify(discoveryValidator).validateRequest(requestEntity);
         Assertions.assertEquals(requestIdCaptor.getValue(),((UUID)captor.getValue().get("requestId")).toString());
         Assertions.assertEquals("Error in making call to Bridge",errorArgumentCaptor.getValue().getMessage());
-    }
-
-
-
-    @Test
-    public void shouldNotErrorNotifyWhenTransactionIdIsNotPresent() throws JsonProcessingException {
-        Map<String,Object> requestBody = new HashMap<>();
-        requestBody.put("requestId", "testRequestId");
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
-
-        StepVerifier.create(requestOrchestrator.errorNotify(requestEntity,null,null))
-                .verifyComplete();
     }
 
     @Test

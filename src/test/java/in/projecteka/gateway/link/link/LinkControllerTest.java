@@ -1,6 +1,8 @@
 package in.projecteka.gateway.link.link;
 
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.LinkConfirmServiceClient;
+import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.link.common.RequestOrchestrator;
 import in.projecteka.gateway.link.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -20,17 +22,20 @@ import java.time.Duration;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class LinkControllerTest {
     @MockBean
-    RequestOrchestrator<DiscoveryServiceClient> requestOrchestrator;
+    RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
 
     @MockBean
-    ResponseOrchestrator<DiscoveryServiceClient> responseOrchestrator;
+    ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
 
     @Test
     public void shouldFireAndForgetForLinkInit() {
-        Mockito.when(requestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -44,12 +49,26 @@ public class LinkControllerTest {
 
     @Test
     public void shouldFireAndForgetForLinkOnInit() {
-        Mockito.when(responseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkInitResponseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
                 .uri("/v1/links/link/on-init")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isAccepted();
+    }
+
+    @Test
+    public void shouldFireAndForgetForLinkConfirm() {
+        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+
+        WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
+        mutatedWebTestClient
+                .post()
+                .uri("/v1/links/link/confirm")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
