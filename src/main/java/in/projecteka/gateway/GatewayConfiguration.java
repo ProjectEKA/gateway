@@ -6,7 +6,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.LinkServiceClient;
+import in.projecteka.gateway.clients.LinkConfirmServiceClient;
+import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
 import in.projecteka.gateway.common.CentralRegistry;
@@ -15,10 +16,9 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.discovery.DiscoveryHelper;
-import in.projecteka.gateway.link.discovery.DiscoveryValidator;
-import in.projecteka.gateway.link.link.LinkHelper;
-import in.projecteka.gateway.link.link.LinkValidator;
+import in.projecteka.gateway.link.common.Validator;
+import in.projecteka.gateway.link.common.RequestOrchestrator;
+import in.projecteka.gateway.link.common.ResponseOrchestrator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -41,7 +41,6 @@ public class GatewayConfiguration {
         RedisClient redisClient = getRedisClient(redisOptions);
         return new RedisCacheAdapter(redisClient, 5);
     }
-
     private RedisClient getRedisClient(RedisOptions redisOptions) {
         RedisURI redisUri = RedisURI.Builder.
                 redis(redisOptions.getHost())
@@ -50,7 +49,6 @@ public class GatewayConfiguration {
                 .build();
         return RedisClient.create(redisUri);
     }
-
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapter() {
@@ -92,45 +90,71 @@ public class GatewayConfiguration {
     @Bean
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
                                                          WebClient.Builder builder,
-                                                         ObjectMapper objectMapper,
-                                                         CentralRegistry centralRegistry) {
-        return new DiscoveryServiceClient(serviceOptions,builder,objectMapper, centralRegistry);
+                                                        CentralRegistry centralRegistry) {
+        return new DiscoveryServiceClient(serviceOptions,builder,centralRegistry);
+    }
+
+    @Bean("discoveryRequestOrchestrator")
+    public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(CacheAdapter<String, String> requestIdMappings,
+                                                                       Validator validator,
+                                                                       DiscoveryServiceClient discoveryServiceClient,
+                                                                       CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
+    }
+
+    @Bean("discoveryResponseOrchestrator")
+    public ResponseOrchestrator<DiscoveryServiceClient> discoveryResponseOrchestrator(Validator validator,
+                                                                                      DiscoveryServiceClient discoveryServiceClient) {
+        return new ResponseOrchestrator<>(validator, discoveryServiceClient);
     }
 
     @Bean
-    public DiscoveryValidator discoveryValidator(BridgeRegistry bridgeRegistry,
-                                                 CMRegistry cmRegistry,
-                                                 DiscoveryServiceClient discoveryServiceClient) {
-        return new DiscoveryValidator(bridgeRegistry, cmRegistry, discoveryServiceClient);
+    public Validator validator(BridgeRegistry bridgeRegistry,
+                               CMRegistry cmRegistry,
+                               CacheAdapter<String,String> requestIdMappings) {
+        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings);
     }
 
     @Bean
-    public DiscoveryHelper discoveryHelper(CacheAdapter<String, String> requestIdMappings,
-                                           DiscoveryValidator discoveryValidator,
-                                           DiscoveryServiceClient discoveryServiceClient) {
-        return new DiscoveryHelper(requestIdMappings, discoveryValidator, discoveryServiceClient);
+    public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
+                                                       WebClient.Builder builder) {
+        return new LinkInitServiceClient(builder,serviceOptions);
+    }
+
+    @Bean("linkInitRequestOrchestrator")
+    public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                              Validator validator,
+                                                                              LinkInitServiceClient linkInitServiceClient,
+                                                                              CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, cmRegistry);
+    }
+
+    @Bean("linkInitResponseOrchestrator")
+    public ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator(Validator validator,
+                                                                                LinkInitServiceClient linkInitServiceClient) {
+        return new ResponseOrchestrator<>(validator, linkInitServiceClient);
     }
 
     @Bean
-    public LinkValidator linkValidator(BridgeRegistry bridgeRegistry,
-                                       CMRegistry cmRegistry,
-                                       LinkServiceClient linkServiceClient,
-                                       CacheAdapter<String,String> requestIdMappings) {
-        return new LinkValidator(bridgeRegistry, cmRegistry, linkServiceClient, requestIdMappings);
+    public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
+                                                                        WebClient.Builder builder) {
+        return new LinkConfirmServiceClient(builder,serviceOptions);
     }
 
-    @Bean
-    public LinkServiceClient linkServiceClient(ServiceOptions serviceOptions,
-                                               WebClient.Builder builder) {
-        return new LinkServiceClient(builder,serviceOptions);
+    @Bean("linkConfirmRequestOrchestrator")
+    public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                              Validator validator,
+                                                                              LinkConfirmServiceClient linkConfirmServiceClient,
+                                                                              CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, cmRegistry);
     }
 
-    @Bean
-    public LinkHelper linkHelper(LinkValidator linkValidator,
-                                 CacheAdapter<String,String> requestIdMappings,
-                                 LinkServiceClient linkServiceClient) {
-        return new LinkHelper(linkValidator, requestIdMappings, linkServiceClient);
+    @Bean("linkConfirmResponseOrchestrator")
+    public ResponseOrchestrator<LinkConfirmServiceClient> linkConfirmResponseOrchestrator(Validator validator,
+                                                                                LinkConfirmServiceClient linkConfirmServiceClient) {
+        return new ResponseOrchestrator<>(validator, linkConfirmServiceClient);
     }
+
     @Bean
     public ClientRegistryClient clientRegistryClient(WebClient.Builder builder,
                                                      ClientRegistryProperties clientRegistryProperties) {

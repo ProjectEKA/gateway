@@ -37,8 +37,8 @@ public class SecurityConfiguration {
     private static final List<Map.Entry<String, HttpMethod>> SERVICE_ONLY_URLS = new ArrayList<>();
 
     static {
-        SERVICE_ONLY_URLS.add(Map.entry("/care-contexts/discover",HttpMethod.POST));
-        SERVICE_ONLY_URLS.add(Map.entry("/care-contexts/on-discover",HttpMethod.POST));
+        SERVICE_ONLY_URLS.add(Map.entry("/v1/care-contexts/discover",HttpMethod.POST));
+        SERVICE_ONLY_URLS.add(Map.entry("/v1/care-contexts/on-discover",HttpMethod.POST));
     }
 
     @Bean

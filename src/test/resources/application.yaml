@@ -1,5 +1,5 @@
 server:
-  port: 8004
+  port: 8001
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
@@ -10,10 +10,5 @@ gateway:
     password: ${REDIS_PASSWORD}
   # timeout in seconds
   serviceoptions:
-    timeout: ${SERVICE_TIMEOUT:50}
+    timeout: ${SERVICE_TIMEOUT:5}
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
-clientregistry:
-  XAuthToken: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
-  clientId: gateway
-  url: http://localhost:8080
-  jwkUrl: http://localhost:8080/certs
