@@ -11,6 +11,7 @@ import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.link.common.ValidatedRequest;
 import in.projecteka.gateway.link.common.ValidatedResponse;
 import in.projecteka.gateway.link.common.Validator;
+import in.projecteka.gateway.link.common.model.ErrorResult;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.Assertions;
@@ -27,6 +28,7 @@ import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
@@ -54,6 +56,8 @@ class OrchestratorTest {
     Orchestrator orchestrator;
     @Mock
     CMRegistry cmRegistry;
+    @Captor
+    ArgumentCaptor<ErrorResult> discoveryResultArgumentCaptor;
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
@@ -183,4 +187,35 @@ class OrchestratorTest {
         Assertions.assertEquals("Error in making call to Bridge",errorArgumentCaptor.getValue().getMessage());
     }
 
+
+
+    @Test
+    public void shouldNotErrorNotifyWhenTransactionIdIsNotPresent() throws JsonProcessingException {
+        Map<String,Object> requestBody = new HashMap<>();
+        requestBody.put("requestId", "testRequestId");
+        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
+
+        StepVerifier.create(orchestrator.errorNotify(requestEntity,null,null))
+                .verifyComplete();
+    }
+
+    @Test
+    public void shouldNotifyError() throws JsonProcessingException {
+        Map<String,Object> requestBody = new HashMap<>();
+        requestBody.put("requestId", UUID.randomUUID());
+        requestBody.put("transactionId", UUID.randomUUID());
+        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
+        String cmId = "testCmId";
+        when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.of(cmConfig));
+        String testCmHost = "testCmHost";
+        when(cmConfig.getHost()).thenReturn(testCmHost);
+        when(discoveryServiceClient.notifyError(discoveryResultArgumentCaptor.capture(),eq(testCmHost))).thenReturn(Mono.empty());
+
+        Error error = new Error();
+        StepVerifier.create(orchestrator.errorNotify(requestEntity,cmId,error))
+                .verifyComplete();
+
+        Assertions.assertEquals(error,discoveryResultArgumentCaptor.getValue().getError());
+
+    }
 }

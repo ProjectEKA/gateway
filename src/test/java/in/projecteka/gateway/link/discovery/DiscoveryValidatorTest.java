@@ -4,11 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import in.projecteka.gateway.clients.ClientError;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.link.common.Validator;
-import in.projecteka.gateway.link.common.model.ErrorResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
@@ -17,8 +14,6 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -43,15 +38,9 @@ class DiscoveryValidatorTest {
     @Mock
     HttpHeaders httpHeaders;
     Validator discoveryValidator;
-    @Captor
-    ArgumentCaptor<Error> errorArgumentCaptor;
-    @Captor
-    ArgumentCaptor<ErrorResult> discoveryResultArgumentCaptor;
     @Mock BridgeRegistry bridgeRegistry;
     @Mock
     CMRegistry cmRegistry;
-    @Mock
-    DiscoveryServiceClient discoveryServiceClient;
     @Mock
     CacheAdapter<String,String> requestIdMappings;
     @Mock
@@ -193,44 +182,4 @@ class DiscoveryValidatorTest {
                 })
                 .verifyComplete();
     }
-//
-//    @Test
-//    public void shouldNotErrorNotifyWhenRequestIdIsNotPresent() throws JsonProcessingException {
-//        Map<String,Object> requestBody = new HashMap<>();
-//        requestBody.put("foo", "bar");
-//        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
-//
-//        StepVerifier.create(discoveryValidator.errorNotify(requestEntity,null,null))
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    public void shouldNotErrorNotifyWhenTransactionIdIsNotPresent() throws JsonProcessingException {
-//        Map<String,Object> requestBody = new HashMap<>();
-//        requestBody.put("requestId", "testRequestId");
-//        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
-//
-//        StepVerifier.create(discoveryValidator.errorNotify(requestEntity,null,null))
-//                .verifyComplete();
-//    }
-//
-//    @Test
-//    public void shouldNotifyError() throws JsonProcessingException {
-//        Map<String,Object> requestBody = new HashMap<>();
-//        requestBody.put("requestId", UUID.randomUUID());
-//        requestBody.put("transactionId", UUID.randomUUID());
-//        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
-//        String cmId = "testCmId";
-//        when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.of(cmConfig));
-//        String testCmHost = "testCmHost";
-//        when(cmConfig.getHost()).thenReturn(testCmHost);
-//        when(discoveryServiceClient.patientErrorResultNotify(discoveryResultArgumentCaptor.capture(),eq(testCmHost))).thenReturn(Mono.empty());
-//
-//        Error error = new Error();
-//        StepVerifier.create(discoveryValidator.errorNotify(requestEntity,cmId,error))
-//                .verifyComplete();
-//
-//        Assertions.assertEquals(error,discoveryResultArgumentCaptor.getValue().getError());
-//
-//    }
 }
