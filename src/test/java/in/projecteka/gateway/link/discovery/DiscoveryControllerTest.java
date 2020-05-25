@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -22,8 +23,9 @@ class DiscoveryControllerTest {
     @MockBean
     RequestOrchestrator<DiscoveryServiceClient> requestOrchestrator;
 
+    @Qualifier("discoveryResponseOrchestrator")
     @MockBean
-    ResponseOrchestrator responseOrchestrator;
+    ResponseOrchestrator discoveryResponseOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
@@ -44,7 +46,7 @@ class DiscoveryControllerTest {
 
     @Test
     public void shouldFireAndForgetForOnDiscover() {
-        Mockito.when(responseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(discoveryResponseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

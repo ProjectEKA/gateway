@@ -170,7 +170,7 @@ public class GatewayConfiguration {
     }
 
     @Bean("linkInitResponseOrchestrator")
-    public ResponseOrchestrator linkResponseOrchestrator(Validator validator,
+    public ResponseOrchestrator linkInitResponseOrchestrator(Validator validator,
                                                          DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction) {
         return new ResponseOrchestrator(validator, linkInitResponseAction);
     }
@@ -190,7 +190,7 @@ public class GatewayConfiguration {
     }
 
     @Bean("linkConfirmResponseOrchestrator")
-    public ResponseOrchestrator linkResponseOrchestrator(Validator validator,
+    public ResponseOrchestrator linkConfirmResponseOrchestrator(Validator validator,
                                                          RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkConfirmResponseAction) {
         return new ResponseOrchestrator(validator, retryableLinkConfirmResponseAction);
     }
