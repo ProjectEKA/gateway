@@ -6,7 +6,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.LinkServiceClient;
+import in.projecteka.gateway.clients.LinkConfirmServiceClient;
+import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
@@ -105,29 +106,50 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public Validator linkValidator(BridgeRegistry bridgeRegistry,
-                                   CMRegistry cmRegistry,
-                                   CacheAdapter<String,String> requestIdMappings) {
+    public Validator validator(BridgeRegistry bridgeRegistry,
+                               CMRegistry cmRegistry,
+                               CacheAdapter<String,String> requestIdMappings) {
         return new Validator(bridgeRegistry, cmRegistry, requestIdMappings);
     }
 
     @Bean
-    public LinkServiceClient linkServiceClient(ServiceOptions serviceOptions,
-                                               WebClient.Builder builder) {
-        return new LinkServiceClient(builder,serviceOptions);
+    public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
+                                                       WebClient.Builder builder) {
+        return new LinkInitServiceClient(builder,serviceOptions);
     }
 
-    @Bean("linkRequestOrchestrator")
-    public RequestOrchestrator<LinkServiceClient> linkOrchestrator(CacheAdapter<String, String> requestIdMappings,
-                                                                   Validator validator,
-                                                                   LinkServiceClient linkServiceClient,
-                                                                   CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkServiceClient, cmRegistry);
+    @Bean("linkInitRequestOrchestrator")
+    public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                              Validator validator,
+                                                                              LinkInitServiceClient linkInitServiceClient,
+                                                                              CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, cmRegistry);
     }
 
-    @Bean("linkResponseOrchestrator")
-    public ResponseOrchestrator<LinkServiceClient> linkResponseOrchestrator(Validator validator,
-                                                                                           LinkServiceClient linkServiceClient) {
-        return new ResponseOrchestrator<>(validator, linkServiceClient);
+    @Bean("linkInitResponseOrchestrator")
+    public ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator(Validator validator,
+                                                                                LinkInitServiceClient linkInitServiceClient) {
+        return new ResponseOrchestrator<>(validator, linkInitServiceClient);
     }
+
+    @Bean
+    public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
+                                                                        WebClient.Builder builder) {
+        return new LinkConfirmServiceClient(builder,serviceOptions);
+    }
+
+    @Bean("linkConfirmRequestOrchestrator")
+    public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                              Validator validator,
+                                                                              LinkConfirmServiceClient linkConfirmServiceClient,
+                                                                              CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, cmRegistry);
+    }
+
+    @Bean("linkConfirmResponseOrchestrator")
+    public ResponseOrchestrator<LinkConfirmServiceClient> linkConfirmResponseOrchestrator(Validator validator,
+                                                                                LinkConfirmServiceClient linkConfirmServiceClient) {
+        return new ResponseOrchestrator<>(validator, linkConfirmServiceClient);
+    }
+
 }

@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.util.Map;
 
 @AllArgsConstructor
-public class LinkServiceClient implements ServiceClient{
+public class LinkInitServiceClient implements ServiceClient{
     private WebClient.Builder webClientBuilder;
     private ServiceOptions serviceOptions;
 
