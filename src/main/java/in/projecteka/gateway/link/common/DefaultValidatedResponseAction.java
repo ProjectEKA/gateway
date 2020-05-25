@@ -18,7 +18,7 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
     CMRegistry cmRegistry;
 
     @Override
-    public final Mono<Void> routeResponse(String xCmId, JsonNode updatedRequest) {
+    public Mono<Void> routeResponse(String xCmId, JsonNode updatedRequest) {
         Optional<YamlRegistryMapping> configFor = cmRegistry.getConfigFor(xCmId);
         if (configFor.isEmpty()) {
             logger.error("No mapping found for {}",xCmId);

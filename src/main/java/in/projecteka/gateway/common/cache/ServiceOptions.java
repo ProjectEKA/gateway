@@ -12,4 +12,5 @@ import org.springframework.boot.context.properties.ConstructorBinding;
 public class ServiceOptions {
     public int timeout;
     public String registryPath;
+    public int responseMaxRetryAttempts;
 }

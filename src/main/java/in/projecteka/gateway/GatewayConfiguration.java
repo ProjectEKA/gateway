@@ -36,6 +36,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static in.projecteka.gateway.link.common.Constants.GW_LINK_QUEUE;
+
 @Configuration
 public class GatewayConfiguration {
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
@@ -128,8 +130,8 @@ public class GatewayConfiguration {
     }
 
     @Bean("retryableLinkConfirmResponseAction")
-    public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction, AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter) {
-        return new RetryableValidatedResponseAction<>(amqpTemplate, converter, linkConfirmResponseAction);
+    public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction, AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter,ServiceOptions serviceOptions) {
+        return new RetryableValidatedResponseAction<>(amqpTemplate, converter, linkConfirmResponseAction, serviceOptions);
     }
 
     @Bean
@@ -137,7 +139,7 @@ public class GatewayConfiguration {
                                              RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction) {
         SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
-        container.setQueueNames("gw.link");//TODO
+        container.setQueueNames(GW_LINK_QUEUE);
         container.setMessageListener(retryableLinkResponseAction);
         return container;
     }
