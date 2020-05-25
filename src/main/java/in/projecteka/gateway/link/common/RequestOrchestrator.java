@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuples;
 
 import java.util.Map;
 import java.util.UUID;
@@ -22,23 +21,21 @@ import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.link.common.Constants.TEMP_CM_ID;
-import static in.projecteka.gateway.link.common.Constants.TRANSACTION_ID;
 
 @AllArgsConstructor
 public class RequestOrchestrator<T extends ServiceClient> {
-    CacheAdapter<String,String> requestIdMappings;
-
+    private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
+    CacheAdapter<String, String> requestIdMappings;
     Validator validator;
-
     T serviceClient;
     CMRegistry cmRegistry;
-
-    private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
 
     public Mono<Void> processRequest(HttpEntity<String> requestEntity) {
         UUID gatewayRequestId = UUID.randomUUID();
         return validator.validateRequest(requestEntity)
-                .onErrorResume(ClientError.class, clientError -> errorNotify(requestEntity,TEMP_CM_ID,clientError.getError().getError()).then(Mono.empty()))
+                .onErrorResume(ClientError.class,
+                        clientError -> errorNotify(requestEntity,TEMP_CM_ID, clientError.getError().getError())
+                                .then(Mono.empty()))
                 .flatMap(validatedDiscoverRequest -> {
                     Map<String, Object> deserializedRequest = validatedDiscoverRequest.getDeserializedRequest();
                     deserializedRequest.put(REQUEST_ID, gatewayRequestId);
@@ -47,31 +44,35 @@ public class RequestOrchestrator<T extends ServiceClient> {
                             .flatMap(updatedRequest -> serviceClient
                                     .routeRequest(updatedRequest, validatedDiscoverRequest.getHipConfig().getHost())
                                     .onErrorResume(TimeoutException.class,
-                                            throwable -> errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Timedout When calling bridge").build()))
-                                    .onErrorResume(throwable -> errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Error in making call to Bridge").build())));
-                        });
+                                            throwable -> errorNotify(requestEntity,
+                                                    Constants.TEMP_CM_ID,
+                                                    Error.builder()
+                                                            .code(ErrorCode.UNKNOWN_ERROR_OCCURRED)
+                                                            .message("Timedout When calling bridge").build()))
+                                    .onErrorResume(throwable -> errorNotify(requestEntity,
+                                            Constants.TEMP_CM_ID,
+                                            Error.builder()
+                                                    .code(ErrorCode.UNKNOWN_ERROR_OCCURRED)
+                                                    .message("Error in making call to Bridge").build())));
+                });
     }
 
     Mono<Void> errorNotify(HttpEntity<String> requestEntity, String cmId, Error error) {
         return Utils.deserializeRequest(requestEntity)
-                .map(deserializedRequest ->
-                        Tuples.of((String) deserializedRequest.getOrDefault(REQUEST_ID, ""),
-                                (String) deserializedRequest.getOrDefault(TRANSACTION_ID, "")))
-                .filter(tuple -> {
-                    String transactionId = tuple.getT2();
-                    if (transactionId.isEmpty()) {
-                        logger.error("TransactionId is empty");
-                    }
-                    return !transactionId.isEmpty();
-                })
-                .map(tuple -> ErrorResult.builder().error(error)
-                        .resp(GatewayResponse.builder().requestId(UUID.fromString(tuple.getT1())).build())
-                        .requestId(UUID.randomUUID())
-                        .transactionId(UUID.fromString(tuple.getT2()))
-                        .build()).flatMap(errorResult -> {
-                    YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when
-                    // cmid is dynamic
+                .map(deserializedRequest -> toErrorResult(error, deserializedRequest))
+                .flatMap(errorResult -> {
+                    YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO check backwhen cmid is dynamic
                     return serviceClient.notifyError(errorResult, cmRegistryMapping.getHost());
                 });
+    }
+
+    private ErrorResult toErrorResult(Error error, Map<String, Object> deserializedRequest) {
+        return ErrorResult.builder()
+                .requestId(UUID.randomUUID())
+                .error(error)
+                .resp(GatewayResponse.builder()
+                        .requestId(UUID.fromString((String) deserializedRequest.getOrDefault(REQUEST_ID, "")))
+                        .build())
+                .build();
     }
 }
