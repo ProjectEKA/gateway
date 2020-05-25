@@ -112,38 +112,6 @@ public class GatewayConfiguration {
         return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry);
     }
 
-    @Bean("linkInitResponseAction")
-    public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(LinkInitServiceClient linkInitServiceClient,
-                                                                                CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry);
-    }
-
-    @Bean("linkConfirmResponseAction")
-    public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(LinkConfirmServiceClient linkConfirmServiceClient,
-                                                                                        CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry);
-    }
-
-    @Bean
-    public Jackson2JsonMessageConverter converter() {
-        return new Jackson2JsonMessageConverter();
-    }
-
-    @Bean("retryableLinkConfirmResponseAction")
-    public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction, AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter,ServiceOptions serviceOptions) {
-        return new RetryableValidatedResponseAction<>(amqpTemplate, converter, linkConfirmResponseAction, serviceOptions);
-    }
-
-    @Bean
-    SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
-                                             RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction) {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.setQueueNames(GW_LINK_QUEUE);
-        container.setMessageListener(retryableLinkResponseAction);
-        return container;
-    }
-
     @Bean("discoveryResponseOrchestrator")
     public ResponseOrchestrator discoveryResponseOrchestrator(Validator validator,
                                                               DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction) {
@@ -171,6 +139,12 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, cmRegistry);
     }
 
+    @Bean("linkInitResponseAction")
+    public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(LinkInitServiceClient linkInitServiceClient,
+                                                                                        CMRegistry cmRegistry) {
+        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry);
+    }
+
     @Bean("linkInitResponseOrchestrator")
     public ResponseOrchestrator linkInitResponseOrchestrator(Validator validator,
                                                          DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction) {
@@ -190,6 +164,33 @@ public class GatewayConfiguration {
                                                                               CMRegistry cmRegistry) {
         return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, cmRegistry);
     }
+
+    @Bean("linkConfirmResponseAction")
+    public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(LinkConfirmServiceClient linkConfirmServiceClient,
+                                                                                              CMRegistry cmRegistry) {
+        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry);
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter converter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean("retryableLinkConfirmResponseAction")
+    public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction, AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter, ServiceOptions serviceOptions) {
+        return new RetryableValidatedResponseAction<>(amqpTemplate, converter, linkConfirmResponseAction, serviceOptions);
+    }
+
+    @Bean
+    SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
+                                             RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.setQueueNames(GW_LINK_QUEUE);
+        container.setMessageListener(retryableLinkResponseAction);
+        return container;
+    }
+
 
     @Bean("linkConfirmResponseOrchestrator")
     public ResponseOrchestrator linkConfirmResponseOrchestrator(Validator validator,

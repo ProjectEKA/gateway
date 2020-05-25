@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 public class LinkController {
     RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
     RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
-    ResponseOrchestrator linkResponseOrchestrator;
+    ResponseOrchestrator linkInitResponseOrchestrator;
     ResponseOrchestrator linkConfirmResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -31,7 +31,7 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/on-init")
     public Mono<Void> linkOnInit(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = linkResponseOrchestrator.processResponse(requestEntity);
+        Mono<Void> toBeFiredAndForgotten = linkInitResponseOrchestrator.processResponse(requestEntity);
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
