@@ -1,9 +1,8 @@
 package in.projecteka.gateway.clients;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.link.common.Utils;
 import in.projecteka.gateway.link.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -19,13 +18,12 @@ import java.util.Map;
 public class DiscoveryServiceClient implements ServiceClient{
     private ServiceOptions serviceOptions;
     private WebClient.Builder webClientBuilder;
-    private ObjectMapper objectMapper;
 
     private static final Logger logger = LoggerFactory.getLogger(DiscoveryServiceClient.class);
 
     @Override
     public Mono<Void> routeRequest(Map<String, Object> request, String url) {
-        return serializeRequest(request)
+        return Utils.serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()
@@ -37,24 +35,6 @@ public class DiscoveryServiceClient implements ServiceClient{
                                         clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
                                 .bodyToMono(Void.class)
                                 .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
-    }
-
-    private Mono<String> serializeRequest(Map<String, Object> request) {
-        try {
-            return Mono.just(objectMapper.writeValueAsString(request));
-        } catch (JsonProcessingException e) {
-            logger.error("Error in serializing request body", e);
-            return Mono.empty();
-        }
-    }
-
-    private Mono<String> serializeRequest(JsonNode jsonNode) {
-        try {
-            return Mono.just(objectMapper.writeValueAsString(jsonNode));
-        } catch (JsonProcessingException e) {
-            logger.error("Error in serializing request body", e);
-            return Mono.empty();
-        }
     }
 
     @Override
@@ -71,7 +51,7 @@ public class DiscoveryServiceClient implements ServiceClient{
 
     @Override
     public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-        return serializeRequest(request)
+        return Utils.serializeRequest(request)
                 .flatMap(serializedRequest ->
                         webClientBuilder.build()
                                 .post()

@@ -86,9 +86,8 @@ public class GatewayConfiguration {
 
     @Bean
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
-                                                         WebClient.Builder builder,
-                                                         ObjectMapper objectMapper) {
-        return new DiscoveryServiceClient(serviceOptions,builder,objectMapper);
+                                                         WebClient.Builder builder) {
+        return new DiscoveryServiceClient(serviceOptions,builder);
     }
 
     @Bean("discoveryRequestOrchestrator")
