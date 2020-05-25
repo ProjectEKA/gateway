@@ -13,7 +13,7 @@ import java.util.Optional;
 
 @AllArgsConstructor
 public class DefaultValidatedResponseAction<T extends ServiceClient> implements ValidatedResponseAction{
-    private static final Logger logger = LoggerFactory.getLogger(ResponseOrchestrator.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultValidatedResponseAction.class);
     T serviceClient;
     CMRegistry cmRegistry;
 
@@ -28,7 +28,7 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
     }
 
     @Override
-    public Mono<? extends Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
+    public Mono<Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
         //Does it make sense to call the same API back to notify only Error?
         logger.error("Error in notifying CM with result",throwable);
         return Mono.empty();

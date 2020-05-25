@@ -68,7 +68,7 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
     }
 
     @Override
-    public Mono<? extends Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
+    public Mono<Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
         logger.error("Error in notifying CM with result; pushing to DLQ for retry",throwable);
         MessagePostProcessor messagePostProcessor = message -> {
             Map<String, Object> headers = message.getMessageProperties().getHeaders();

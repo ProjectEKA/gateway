@@ -11,5 +11,5 @@ public interface ValidatedResponseAction {
 
     Mono<Void> routeResponse(String xCmId, JsonNode updatedRequest);
 
-    Mono<? extends Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode);
+    Mono<Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode);
 }
