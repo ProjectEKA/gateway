@@ -23,7 +23,7 @@ class DiscoveryControllerTest {
     RequestOrchestrator<DiscoveryServiceClient> requestOrchestrator;
 
     @MockBean
-    ResponseOrchestrator<DiscoveryServiceClient> responseOrchestrator;
+    ResponseOrchestrator responseOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;

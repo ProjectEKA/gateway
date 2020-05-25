@@ -12,3 +12,7 @@ gateway:
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
