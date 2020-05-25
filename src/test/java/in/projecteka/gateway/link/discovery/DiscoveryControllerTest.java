@@ -35,7 +35,7 @@ class DiscoveryControllerTest {
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/care-contexts/discover")
+                .uri("/v1/care-contexts/discover")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
@@ -49,7 +49,7 @@ class DiscoveryControllerTest {
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/care-contexts/on-discover")
+                .uri("/v1/care-contexts/on-discover")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
