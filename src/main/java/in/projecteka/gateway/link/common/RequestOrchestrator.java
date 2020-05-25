@@ -1,14 +1,10 @@
-package in.projecteka.gateway.link.discovery;
+package in.projecteka.gateway.link.common;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.common.Constants;
-import in.projecteka.gateway.link.common.Utils;
-import in.projecteka.gateway.link.common.Validator;
 import in.projecteka.gateway.link.common.model.ErrorResult;
 import in.projecteka.gateway.link.common.model.GatewayResponse;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -29,7 +25,7 @@ import static in.projecteka.gateway.link.common.Constants.TEMP_CM_ID;
 import static in.projecteka.gateway.link.common.Constants.TRANSACTION_ID;
 
 @AllArgsConstructor
-public class Orchestrator<T extends ServiceClient> {
+public class RequestOrchestrator<T extends ServiceClient> {
     CacheAdapter<String,String> requestIdMappings;
 
     Validator validator;
@@ -37,7 +33,7 @@ public class Orchestrator<T extends ServiceClient> {
     T serviceClient;
     CMRegistry cmRegistry;
 
-    private static final Logger logger = LoggerFactory.getLogger(Orchestrator.class);
+    private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
 
     public Mono<Void> processRequest(HttpEntity<String> requestEntity) {
         UUID gatewayRequestId = UUID.randomUUID();
@@ -54,21 +50,6 @@ public class Orchestrator<T extends ServiceClient> {
                                             throwable -> errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Timedout When calling bridge").build()))
                                     .onErrorResume(throwable -> errorNotify(requestEntity, Constants.TEMP_CM_ID, Error.builder().code(ErrorCode.UNKNOWN_ERROR_OCCURRED).message("Error in making call to Bridge").build())));
                         });
-    }
-
-    public Mono<Void> processResponse(HttpEntity<String> requestEntity) {
-        return validator.validateResponse(requestEntity)
-                .flatMap(validRequest -> {
-                    JsonNode updatedJsonNode = Utils.updateRequestId(validRequest.getDeserializedJsonNode(),
-                            validRequest.getCallerRequestId());
-                    return serviceClient
-                            .routeResponse(updatedJsonNode,validRequest.getCmConfig().getHost())
-                            .onErrorResume(throwable -> {
-                                //Does it make sense to call the same API back to notify only Error?
-                                logger.error("Error in notifying CM with result",throwable);
-                                return Mono.empty();
-                            });
-                });
     }
 
     Mono<Void> errorNotify(HttpEntity<String> requestEntity, String cmId, Error error) {

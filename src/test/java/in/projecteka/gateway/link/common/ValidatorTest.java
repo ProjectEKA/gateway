@@ -1,11 +1,10 @@
-package in.projecteka.gateway.link.discovery;
+package in.projecteka.gateway.link.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.common.Validator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
@@ -31,7 +30,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-class DiscoveryValidatorTest {
+class ValidatorTest {
 
     @Mock
     HttpEntity<String> requestEntity;

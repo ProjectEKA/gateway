@@ -13,7 +13,8 @@ import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.link.common.Validator;
-import in.projecteka.gateway.link.discovery.Orchestrator;
+import in.projecteka.gateway.link.common.RequestOrchestrator;
+import in.projecteka.gateway.link.common.ResponseOrchestrator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -89,12 +90,18 @@ public class GatewayConfiguration {
         return new DiscoveryServiceClient(serviceOptions,builder,objectMapper);
     }
 
-    @Bean("discoveryOrchestrator")
-    public Orchestrator<DiscoveryServiceClient> discoveryHelper(CacheAdapter<String, String> requestIdMappings,
-                                        Validator validator,
-                                        DiscoveryServiceClient discoveryServiceClient,
-                                        CMRegistry cmRegistry) {
-        return new Orchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
+    @Bean("discoveryRequestOrchestrator")
+    public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(CacheAdapter<String, String> requestIdMappings,
+                                                                       Validator validator,
+                                                                       DiscoveryServiceClient discoveryServiceClient,
+                                                                       CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
+    }
+
+    @Bean("discoveryResponseOrchestrator")
+    public ResponseOrchestrator<DiscoveryServiceClient> discoveryResponseOrchestrator(Validator validator,
+                                                                                      DiscoveryServiceClient discoveryServiceClient) {
+        return new ResponseOrchestrator<>(validator, discoveryServiceClient);
     }
 
     @Bean
@@ -110,11 +117,17 @@ public class GatewayConfiguration {
         return new LinkServiceClient(builder,serviceOptions);
     }
 
-    @Bean("linkOrchestrator")
-    public Orchestrator<LinkServiceClient> linkOrchestrator(CacheAdapter<String, String> requestIdMappings,
-                                                                Validator validator,
-                                                                LinkServiceClient linkServiceClient,
-                                                                CMRegistry cmRegistry) {
-        return new Orchestrator<>(requestIdMappings, validator, linkServiceClient, cmRegistry);
+    @Bean("linkRequestOrchestrator")
+    public RequestOrchestrator<LinkServiceClient> linkOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                   Validator validator,
+                                                                   LinkServiceClient linkServiceClient,
+                                                                   CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkServiceClient, cmRegistry);
+    }
+
+    @Bean("linkResponseOrchestrator")
+    public ResponseOrchestrator<LinkServiceClient> linkResponseOrchestrator(Validator validator,
+                                                                                           LinkServiceClient linkServiceClient) {
+        return new ResponseOrchestrator<>(validator, linkServiceClient);
     }
 }
