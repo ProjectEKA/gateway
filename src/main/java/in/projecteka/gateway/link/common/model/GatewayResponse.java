@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.link.model;
+package in.projecteka.gateway.link.common.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

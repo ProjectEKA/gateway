@@ -1,5 +1,8 @@
 package in.projecteka.gateway.link.discovery;
 
+import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.link.common.RequestOrchestrator;
+import in.projecteka.gateway.link.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -17,14 +20,17 @@ import java.time.Duration;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class DiscoveryControllerTest {
     @MockBean
-    DiscoveryHelper discoveryHelper;
+    RequestOrchestrator<DiscoveryServiceClient> requestOrchestrator;
+
+    @MockBean
+    ResponseOrchestrator<DiscoveryServiceClient> responseOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
 
     @Test
     public void shouldFireAndForgetForDiscover() {
-        Mockito.when(discoveryHelper.doDiscoverCareContext(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(requestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -38,7 +44,7 @@ class DiscoveryControllerTest {
 
     @Test
     public void shouldFireAndForgetForOnDiscover() {
-        Mockito.when(discoveryHelper.doOnDiscoverCareContext(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(responseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

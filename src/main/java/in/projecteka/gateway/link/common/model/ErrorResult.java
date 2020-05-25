@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.link.model;
+package in.projecteka.gateway.link.common.model;
 
 import in.projecteka.gateway.clients.model.Error;
 import lombok.Builder;
@@ -8,7 +8,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class LinkInitResult {
+public class ErrorResult {
     UUID requestId;
     UUID transactionId;
     Object link;

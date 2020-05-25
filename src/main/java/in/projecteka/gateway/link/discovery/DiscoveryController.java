@@ -1,5 +1,8 @@
 package in.projecteka.gateway.link.discovery;
 
+import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.link.common.RequestOrchestrator;
+import in.projecteka.gateway.link.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -11,12 +14,13 @@ import reactor.core.publisher.Mono;
 @RestController
 @AllArgsConstructor
 public class DiscoveryController {
-    DiscoveryHelper discoveryHelper;
+    RequestOrchestrator<DiscoveryServiceClient> discoveryRequestOrchestrator;
+    ResponseOrchestrator<DiscoveryServiceClient> discoveryResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/care-contexts/discover")
     public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = discoveryHelper.doDiscoverCareContext(requestEntity);
+        Mono<Void> tobeFiredAndForgotten = discoveryRequestOrchestrator.processRequest(requestEntity);
         tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
@@ -24,7 +28,7 @@ public class DiscoveryController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/care-contexts/on-discover")
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = discoveryHelper.doOnDiscoverCareContext(requestEntity);
+        Mono<Void> tobeFiredAndForgotten = discoveryResponseOrchestrator.processResponse(requestEntity);
         tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }

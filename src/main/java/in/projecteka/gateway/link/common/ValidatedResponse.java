@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.link;
+package in.projecteka.gateway.link.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class ValidatedLinkInitResponse {
+public class ValidatedResponse {
     YamlRegistryMapping cmConfig;
     String callerRequestId;
     JsonNode deserializedJsonNode;
