@@ -110,14 +110,6 @@ public class GatewayConfiguration {
         return new LinkServiceClient(builder,serviceOptions);
     }
 
-//    @Bean
-//    public LinkHelper linkHelper(Validator validator,
-//                                 CacheAdapter<String,String> requestIdMappings,
-//                                 LinkServiceClient linkServiceClient,
-//                                 CMRegistry cmRegistry) {
-//        return new LinkHelper(validator, requestIdMappings, linkServiceClient, cmRegistry);
-//    }
-
     @Bean("linkOrchestrator")
     public Orchestrator<LinkServiceClient> linkOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                 Validator validator,
