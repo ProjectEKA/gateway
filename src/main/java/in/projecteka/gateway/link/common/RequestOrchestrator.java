@@ -21,7 +21,6 @@ import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.link.common.Constants.TEMP_CM_ID;
-import static in.projecteka.gateway.link.common.Constants.TRANSACTION_ID;
 
 @AllArgsConstructor
 public class RequestOrchestrator<T extends ServiceClient> {
@@ -62,21 +61,18 @@ public class RequestOrchestrator<T extends ServiceClient> {
         return Utils.deserializeRequest(requestEntity)
                 .map(deserializedRequest -> toErrorResult(error, deserializedRequest))
                 .flatMap(errorResult -> {
-                    YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO checkback when
-                    // cmid is dynamic
+                    YamlRegistryMapping cmRegistryMapping = cmRegistry.getConfigFor(cmId).get();//TODO check backwhen cmid is dynamic
                     return serviceClient.notifyError(errorResult, cmRegistryMapping.getHost());
                 });
     }
 
     private ErrorResult toErrorResult(Error error, Map<String, Object> deserializedRequest) {
-        UUID transactionId = deserializedRequest.containsKey(TRANSACTION_ID) ?
-                UUID.fromString((String) deserializedRequest.getOrDefault(TRANSACTION_ID, "")) : null;
-        return ErrorResult.builder().error(error)
-                    .resp(GatewayResponse.builder()
-                            .requestId(UUID.fromString((String) deserializedRequest.getOrDefault(REQUEST_ID, "")))
-                            .build())
-                    .requestId(UUID.randomUUID())
-                    .transactionId(transactionId)
-                    .build();
+        return ErrorResult.builder()
+                .requestId(UUID.randomUUID())
+                .error(error)
+                .resp(GatewayResponse.builder()
+                        .requestId(UUID.fromString((String) deserializedRequest.getOrDefault(REQUEST_ID, "")))
+                        .build())
+                .build();
     }
 }

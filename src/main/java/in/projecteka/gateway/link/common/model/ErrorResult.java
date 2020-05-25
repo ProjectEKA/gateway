@@ -4,14 +4,16 @@ import in.projecteka.gateway.clients.model.Error;
 import lombok.Builder;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @Data
 @Builder
 public class ErrorResult {
+    @NotNull
     UUID requestId;
-    UUID transactionId;
     Object link;
     Error error;
+    @NotNull
     GatewayResponse resp;
 }
