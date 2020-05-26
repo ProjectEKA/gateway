@@ -47,7 +47,6 @@ public class SecurityConfiguration {
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
         httpSecurity.httpBasic().disable().formLogin().disable().csrf().disable().logout().disable();
-        httpSecurity.authorizeExchange().pathMatchers("/**").permitAll();
         return httpSecurity
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
