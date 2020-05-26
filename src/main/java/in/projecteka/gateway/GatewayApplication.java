@@ -9,13 +9,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 
 @SpringBootApplication
 @EnableConfigurationProperties({RedisOptions.class,
-		ServiceOptions.class,
-		ClientRegistryProperties.class})
+								ServiceOptions.class,
+						ClientRegistryProperties.class})
 public class GatewayApplication {
 
 	public static void main(String[] args) {
-	    System.setProperty("spring.config.location","classpath:/registry.yaml,classpath:/application.yaml");
 		SpringApplication.run(GatewayApplication.class, args);
 	}
-
 }

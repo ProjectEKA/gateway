@@ -1,6 +1,5 @@
 package in.projecteka.gateway.link.link;
 
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.link.common.RequestOrchestrator;
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -24,9 +24,9 @@ public class LinkControllerTest {
     @MockBean
     RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
 
+    @Qualifier("linkInitResponseOrchestrator")
     @MockBean
-    ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator;
-
+    ResponseOrchestrator linkInitResponseOrchestrator;
     @MockBean
     RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
 

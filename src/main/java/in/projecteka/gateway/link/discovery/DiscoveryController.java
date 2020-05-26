@@ -15,7 +15,7 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class DiscoveryController {
     RequestOrchestrator<DiscoveryServiceClient> discoveryRequestOrchestrator;
-    ResponseOrchestrator<DiscoveryServiceClient> discoveryResponseOrchestrator;
+    ResponseOrchestrator discoveryResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/care-contexts/discover")

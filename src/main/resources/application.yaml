@@ -1,5 +1,5 @@
 server:
-  port: 8004
+  port: 8000
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
@@ -10,8 +10,13 @@ gateway:
     password: ${REDIS_PASSWORD}
   # timeout in seconds
   serviceoptions:
-    timeout: ${SERVICE_TIMEOUT:50}
+    timeout: ${SERVICE_TIMEOUT:5}
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
+    responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
 clientregistry:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}

@@ -175,7 +175,7 @@ class ValidatorTest {
 
         StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
                 .assertNext(validatedDiscoverResponse -> {
-                    Assertions.assertEquals(cmConfig,validatedDiscoverResponse.getCmConfig());
+                    Assertions.assertEquals(testCmId,validatedDiscoverResponse.getXCmId());
                     Assertions.assertEquals(cachedRequestId,validatedDiscoverResponse.getCallerRequestId());
                     Assertions.assertEquals(objectNode,validatedDiscoverResponse.getDeserializedJsonNode());
                 })

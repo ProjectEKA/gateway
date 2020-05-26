@@ -73,7 +73,7 @@ public class Validator {
                                     logger.error("No mapping found for resp.requestId on cache");
                                 }
                             })
-                            .map(callerRequestId -> new ValidatedResponse(cmConfig.get(), callerRequestId,
+                            .map(callerRequestId -> new ValidatedResponse(xCmId, callerRequestId,
                                     jsonNode));
                 });
     }

@@ -36,6 +36,7 @@ dependencies {
 	implementation 'com.nimbusds:nimbus-jose-jwt:8.15'
 	implementation 'com.google.guava:guava:29.0-jre'
 	implementation 'com.google.guava:guava:29.0-jre'
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 }
 
 test {

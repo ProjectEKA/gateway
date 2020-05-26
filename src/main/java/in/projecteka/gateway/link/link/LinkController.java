@@ -16,8 +16,9 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class LinkController {
     RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
-    ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator;
     RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
+    ResponseOrchestrator linkInitResponseOrchestrator;
+    ResponseOrchestrator linkConfirmResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/init")
@@ -39,6 +40,14 @@ public class LinkController {
     @PostMapping("/v1/links/link/confirm")
     public Mono<Void> linkConfirm(HttpEntity<String> requestEntity) {
         Mono<Void> tobeFiredAndForgotten = linkConfirmRequestOrchestrator.processRequest(requestEntity);
+        tobeFiredAndForgotten.subscribe();
+        return Mono.empty();
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping("/v1/links/link/on-confirm")
+    public Mono<Void> linkOnConfirm(HttpEntity<String> requestEntity) {
+        Mono<Void> tobeFiredAndForgotten = linkConfirmResponseOrchestrator.processResponse(requestEntity);
         tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
