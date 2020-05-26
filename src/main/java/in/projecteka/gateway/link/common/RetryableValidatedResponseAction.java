@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 
 import static in.projecteka.gateway.link.common.Constants.GW_DEAD_LETTER_EXCHANGE;
-import static in.projecteka.gateway.link.common.Constants.GW_LINK_QUEUE;
 
 public class RetryableValidatedResponseAction<T extends ServiceClient> implements MessageListener,ValidatedResponseAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
@@ -26,12 +25,14 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
     private final Jackson2JsonMessageConverter converter;
     private final DefaultValidatedResponseAction<T> defaultValidatedResponseAction;
     private final ServiceOptions serviceOptions;
+    private String deadLetterRoutingKey;
 
-    public RetryableValidatedResponseAction(AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter, DefaultValidatedResponseAction<T> defaultValidatedResponseAction, ServiceOptions serviceOptions) {
+    public RetryableValidatedResponseAction(AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter, DefaultValidatedResponseAction<T> defaultValidatedResponseAction, ServiceOptions serviceOptions, String deadLetterRoutingKey) {
         this.amqpTemplate = amqpTemplate;
         this.converter = converter;
         this.defaultValidatedResponseAction = defaultValidatedResponseAction;
         this.serviceOptions = serviceOptions;
+        this.deadLetterRoutingKey = deadLetterRoutingKey;
     }
 
     @Override
@@ -76,7 +77,7 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
             return message;
         };
         return Mono.create(monoSink -> {
-            amqpTemplate.convertAndSend(GW_DEAD_LETTER_EXCHANGE, GW_LINK_QUEUE, jsonNode, messagePostProcessor);//TODO check queue names
+            amqpTemplate.convertAndSend(GW_DEAD_LETTER_EXCHANGE, deadLetterRoutingKey, jsonNode, messagePostProcessor);//TODO check queue names
             monoSink.success();
         });
     }

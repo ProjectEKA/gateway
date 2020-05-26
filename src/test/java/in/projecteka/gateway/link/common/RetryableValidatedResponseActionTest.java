@@ -54,7 +54,7 @@ class RetryableValidatedResponseActionTest {
     public void init() {
         MockitoAnnotations.initMocks(this);
         message = Mockito.mock(Message.class, RETURNS_DEEP_STUBS);
-        retryableValidatedResponseAction = Mockito.spy(new RetryableValidatedResponseAction<>(amqpTemplate,converter,defaultValidatedResponseAction, serviceOptions));
+        retryableValidatedResponseAction = Mockito.spy(new RetryableValidatedResponseAction<>(amqpTemplate,converter,defaultValidatedResponseAction, serviceOptions,Constants.GW_LINK_QUEUE ));
     }
 
     @Test
@@ -146,7 +146,7 @@ class RetryableValidatedResponseActionTest {
         String testCmId = "testCmId";
         Map<String, Object> headers = new HashMap<>();
 
-        doNothing().when(amqpTemplate).convertAndSend(eq("gw.dead-letter-exchange"), eq("gw.link"),eq(jsonNode), messagePostProcessorArgumentCaptor.capture());
+        doNothing().when(amqpTemplate).convertAndSend(eq("gw.dead-letter-exchange"), eq(Constants.GW_LINK_QUEUE),eq(jsonNode), messagePostProcessorArgumentCaptor.capture());
         when(message.getMessageProperties().getHeaders()).thenReturn(headers);
 
         StepVerifier.create(retryableValidatedResponseAction.handleError(new RuntimeException(),testCmId,jsonNode))
