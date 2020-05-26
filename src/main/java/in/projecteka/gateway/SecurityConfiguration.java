@@ -34,13 +34,6 @@ import java.util.Map;
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
 
-    private static final List<Map.Entry<String, HttpMethod>> SERVICE_ONLY_URLS = new ArrayList<>();
-
-    static {
-        SERVICE_ONLY_URLS.add(Map.entry("/v1/care-contexts/discover",HttpMethod.POST));
-        SERVICE_ONLY_URLS.add(Map.entry("/v1/care-contexts/on-discover",HttpMethod.POST));
-    }
-
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity httpSecurity,
@@ -88,22 +81,7 @@ public class SecurityConfiguration {
             if (isEmpty(token)) {
                 return Mono.empty();
             }
-            String requestPath = exchange.getRequest().getPath().toString();
-            HttpMethod requestMethod = exchange.getRequest().getMethod();
-
-            if (isCentralRegistryAuthenticatedOnlyRequest(
-                    requestPath,
-                    requestMethod)) {
-                return checkCentralRegistry(token);
-            }
-            return null; //TODO need to change
-        }
-
-        private boolean isCentralRegistryAuthenticatedOnlyRequest(String url, HttpMethod method) {
-            AntPathMatcher antPathMatcher = new AntPathMatcher();
-            return SERVICE_ONLY_URLS.stream()
-                    .anyMatch(pattern ->
-                            antPathMatcher.match(pattern.getKey(),url) && pattern.getValue().equals(method));
+            return checkCentralRegistry(token);
         }
 
         private Mono<SecurityContext> checkCentralRegistry(String token) {

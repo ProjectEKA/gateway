@@ -3,8 +3,6 @@ package in.projecteka.gateway.clients;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Optional;
-
 @AllArgsConstructor
 @Getter
 public class Caller {
@@ -13,7 +11,4 @@ public class Caller {
     private String role;
     private boolean verified;
 
-    public Optional<String> getRole() {
-        return Optional.ofNullable(role);
-    }
 }

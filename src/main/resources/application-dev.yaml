@@ -13,7 +13,7 @@ gateway:
     timeout: 50
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
 clientregistry:
-  XAuthToken: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
   clientId: gateway
+  clientSecret: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
   url: http://localhost:8080
   jwkUrl: http://localhost:8080/certs

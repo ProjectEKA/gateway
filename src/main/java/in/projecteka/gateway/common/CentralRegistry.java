@@ -14,7 +14,7 @@ public class CentralRegistry {
 
     public Mono<String> authenticate() {
         return clientRegistryClient
-                .getTokenFor(properties.getClientId(), properties.getXAuthToken())
+                .getTokenFor(properties.getClientId(), properties.getClientSecret())
                 .map(session -> format("%s %s", session.getTokenType(), session.getAccessToken()));
     }
 }
