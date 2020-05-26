@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.Assertions;
@@ -33,13 +32,13 @@ class ResponseOrchestratorTest {
     @Mock
     CacheAdapter<String,String> requestIdMappings;
     @Mock
-    DiscoveryServiceClient discoveryServiceClient;
+    ValidatedResponseAction validatedResponseAction;
     private @Captor ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
     ResponseOrchestrator responseOrchestrator;
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        responseOrchestrator = Mockito.spy(new ResponseOrchestrator(discoveryValidator,discoveryServiceClient));
+        responseOrchestrator = Mockito.spy(new ResponseOrchestrator(discoveryValidator,validatedResponseAction));
     }
     @Test
     public void shouldNotCallCMonValidationErrors() {
@@ -61,15 +60,14 @@ class ResponseOrchestratorTest {
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
 
         String testhost = "testhost";
-        when(cmConfig.getHost()).thenReturn(testhost);
-        when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.just(new ValidatedResponse(cmConfig,cmRequestId, objectNode)));
+        String testCmId = "testCmId";
+        when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.just(new ValidatedResponse(testCmId,cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(Mono.just(cmRequestId));
-        when(discoveryServiceClient.routeResponse(jsonNodeArgumentCaptor.capture(),eq(testhost))).thenReturn(Mono.empty());
+        when(validatedResponseAction.execute(eq(testCmId),jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
         StepVerifier.create(responseOrchestrator.processResponse(requestEntity))
                 .verifyComplete();
 
-        verify(cmConfig).getHost();
         verify(discoveryValidator).validateResponse(requestEntity);
         Assertions.assertEquals(cmRequestId,jsonNodeArgumentCaptor.getValue().path("resp").path("requestId").asText());
     }

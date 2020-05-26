@@ -47,6 +47,17 @@ public class LinkConfirmServiceClient implements ServiceClient{
 
     @Override
     public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-       return Mono.empty();
+        return Utils.serializeRequest(request)
+                .flatMap(serializedRequest ->
+                        webClientBuilder.build()
+                                .post()
+                                .uri(cmUrl + "/v1/links/link/on-confirm")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(serializedRequest)
+                                .retrieve()
+                                .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
+                                        clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Errorhandling
+                                .bodyToMono(Void.class)
+                                .timeout(Duration.ofSeconds(serviceOptions.getTimeout())));
     }
 }

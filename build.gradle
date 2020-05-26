@@ -32,6 +32,7 @@ dependencies {
 	testImplementation 'io.projectreactor:reactor-test'
 	compile 'net.logstash.logback:logstash-logback-encoder:6.3'
 	implementation 'com.google.guava:guava:29.0-jre'
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
 }
 
 test {

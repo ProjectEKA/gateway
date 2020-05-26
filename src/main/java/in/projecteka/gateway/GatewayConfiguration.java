@@ -13,14 +13,20 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.common.Validator;
+import in.projecteka.gateway.link.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.link.common.RequestOrchestrator;
 import in.projecteka.gateway.link.common.ResponseOrchestrator;
+import in.projecteka.gateway.link.common.RetryableValidatedResponseAction;
+import in.projecteka.gateway.link.common.Validator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import org.springframework.amqp.core.AmqpTemplate;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +35,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+
+import static in.projecteka.gateway.link.common.Constants.GW_LINK_QUEUE;
 
 @Configuration
 public class GatewayConfiguration {
@@ -84,7 +92,7 @@ public class GatewayConfiguration {
         return new ObjectMapper();
     }
 
-    @Bean
+    @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
                                                          WebClient.Builder builder) {
         return new DiscoveryServiceClient(serviceOptions,builder);
@@ -98,10 +106,16 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
     }
 
+    @Bean("discoveryResponseAction")
+    public DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction(DiscoveryServiceClient discoveryServiceClient,
+                                                                                          CMRegistry cmRegistry) {
+        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry);
+    }
+
     @Bean("discoveryResponseOrchestrator")
-    public ResponseOrchestrator<DiscoveryServiceClient> discoveryResponseOrchestrator(Validator validator,
-                                                                                      DiscoveryServiceClient discoveryServiceClient) {
-        return new ResponseOrchestrator<>(validator, discoveryServiceClient);
+    public ResponseOrchestrator discoveryResponseOrchestrator(Validator validator,
+                                                              DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction) {
+        return new ResponseOrchestrator(validator, discoveryResponseAction);
     }
 
     @Bean
@@ -111,7 +125,7 @@ public class GatewayConfiguration {
         return new Validator(bridgeRegistry, cmRegistry, requestIdMappings);
     }
 
-    @Bean
+    @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
                                                        WebClient.Builder builder) {
         return new LinkInitServiceClient(builder,serviceOptions);
@@ -125,10 +139,16 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, cmRegistry);
     }
 
+    @Bean("linkInitResponseAction")
+    public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(LinkInitServiceClient linkInitServiceClient,
+                                                                                        CMRegistry cmRegistry) {
+        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry);
+    }
+
     @Bean("linkInitResponseOrchestrator")
-    public ResponseOrchestrator<LinkInitServiceClient> linkInitResponseOrchestrator(Validator validator,
-                                                                                LinkInitServiceClient linkInitServiceClient) {
-        return new ResponseOrchestrator<>(validator, linkInitServiceClient);
+    public ResponseOrchestrator linkInitResponseOrchestrator(Validator validator,
+                                                         DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction) {
+        return new ResponseOrchestrator(validator, linkInitResponseAction);
     }
 
     @Bean
@@ -145,10 +165,37 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, cmRegistry);
     }
 
+    @Bean("linkConfirmResponseAction")
+    public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(LinkConfirmServiceClient linkConfirmServiceClient,
+                                                                                              CMRegistry cmRegistry) {
+        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry);
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter converter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @Bean("retryableLinkConfirmResponseAction")
+    public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction, AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter, ServiceOptions serviceOptions) {
+        return new RetryableValidatedResponseAction<>(amqpTemplate, converter, linkConfirmResponseAction, serviceOptions, GW_LINK_QUEUE);
+    }
+
+    @Bean
+    SimpleMessageListenerContainer container(ConnectionFactory connectionFactory,
+                                             RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.setQueueNames(GW_LINK_QUEUE);
+        container.setMessageListener(retryableLinkResponseAction);
+        return container;
+    }
+
+
     @Bean("linkConfirmResponseOrchestrator")
-    public ResponseOrchestrator<LinkConfirmServiceClient> linkConfirmResponseOrchestrator(Validator validator,
-                                                                                LinkConfirmServiceClient linkConfirmServiceClient) {
-        return new ResponseOrchestrator<>(validator, linkConfirmServiceClient);
+    public ResponseOrchestrator linkConfirmResponseOrchestrator(Validator validator,
+                                                         RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkConfirmResponseAction) {
+        return new ResponseOrchestrator(validator, retryableLinkConfirmResponseAction);
     }
 
 }
