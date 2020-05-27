@@ -8,7 +8,4 @@ import lombok.Getter;
 public class Caller {
     private String username;
     private Boolean isServiceAccount;
-    private String role;
-    private boolean verified;
-
 }

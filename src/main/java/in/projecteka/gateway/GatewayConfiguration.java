@@ -131,8 +131,9 @@ public class GatewayConfiguration {
 
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
-                                                       WebClient.Builder builder) {
-        return new LinkInitServiceClient(builder,serviceOptions);
+                                                       WebClient.Builder builder,
+                                                       CentralRegistry centralRegistry) {
+        return new LinkInitServiceClient(builder,serviceOptions,centralRegistry);
     }
 
     @Bean("linkInitRequestOrchestrator")
@@ -157,8 +158,9 @@ public class GatewayConfiguration {
 
     @Bean
     public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
-                                                                        WebClient.Builder builder) {
-        return new LinkConfirmServiceClient(builder,serviceOptions);
+                                                                        WebClient.Builder builder,
+                                                             CentralRegistry centralRegistry) {
+        return new LinkConfirmServiceClient(builder,serviceOptions,centralRegistry);
     }
 
     @Bean("linkConfirmRequestOrchestrator")
