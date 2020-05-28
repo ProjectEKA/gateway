@@ -2,8 +2,8 @@ package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.common.Utils;
-import in.projecteka.gateway.link.common.model.ErrorResult;
+import in.projecteka.gateway.common.Utils;
+import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

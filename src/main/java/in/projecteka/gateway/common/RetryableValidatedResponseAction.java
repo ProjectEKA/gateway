@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ServiceClient;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
-import static in.projecteka.gateway.link.common.Constants.GW_DEAD_LETTER_EXCHANGE;
+import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
 
 public class RetryableValidatedResponseAction<T extends ServiceClient> implements MessageListener,ValidatedResponseAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);

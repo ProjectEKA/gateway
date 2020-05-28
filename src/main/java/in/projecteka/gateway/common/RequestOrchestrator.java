@@ -1,12 +1,12 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.common.model.ErrorResult;
-import in.projecteka.gateway.link.common.model.GatewayResponse;
+import in.projecteka.gateway.common.model.ErrorResult;
+import in.projecteka.gateway.common.model.GatewayResponse;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
@@ -19,8 +19,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
-import static in.projecteka.gateway.link.common.Constants.TEMP_CM_ID;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 
 @AllArgsConstructor
 public class RequestOrchestrator<T extends ServiceClient> {

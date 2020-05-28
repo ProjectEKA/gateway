@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common.model;
+package in.projecteka.gateway.common.model;
 
 import in.projecteka.gateway.clients.model.Error;
 import lombok.Builder;
@@ -11,9 +11,9 @@ import java.util.UUID;
 @Builder
 public class ErrorResult {
     @NotNull
-    UUID requestId;
-    Object link;
-    Error error;
+    private final UUID requestId;
+    private final Object link;
+    private final Error error;
     @NotNull
-    GatewayResponse resp;
+    private final GatewayResponse resp;
 }

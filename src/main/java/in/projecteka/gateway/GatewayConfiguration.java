@@ -13,11 +13,11 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.common.DefaultValidatedResponseAction;
-import in.projecteka.gateway.link.common.RequestOrchestrator;
-import in.projecteka.gateway.link.common.ResponseOrchestrator;
-import in.projecteka.gateway.link.common.RetryableValidatedResponseAction;
-import in.projecteka.gateway.link.common.Validator;
+import in.projecteka.gateway.common.DefaultValidatedResponseAction;
+import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.RetryableValidatedResponseAction;
+import in.projecteka.gateway.common.Validator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -36,7 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static in.projecteka.gateway.link.common.Constants.GW_LINK_QUEUE;
+import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
 
 @Configuration
 public class GatewayConfiguration {

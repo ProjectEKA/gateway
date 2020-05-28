@@ -2,8 +2,8 @@ package in.projecteka.gateway.link.link;
 
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
-import in.projecteka.gateway.link.common.RequestOrchestrator;
-import in.projecteka.gateway.link.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
