@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common.model;
+package in.projecteka.gateway.common.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,5 +10,5 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 public class GatewayResponse {
-    private UUID requestId;
+    private final UUID requestId;
 }
