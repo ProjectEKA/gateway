@@ -17,7 +17,6 @@ import java.util.Optional;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @AllArgsConstructor
 public class Validator {
@@ -27,24 +26,30 @@ public class Validator {
     CacheAdapter<String, String> requestIdMappings;
 
 
-    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity) {
-        List<String> xHipIds = requestEntity.getHeaders().get(X_HIP_ID);
-        if (xHipIds == null || xHipIds.isEmpty()) {
-            return Mono.error(ClientError.hipIdMissing());
+    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String id) {
+        List<String> ids = requestEntity.getHeaders().get(id);
+        if (ids == null || ids.isEmpty()) {
+            return Mono.error(ClientError.idMissingInHeader(id));
         }
-        String xHipId = xHipIds.get(0);
-        Optional<YamlRegistryMapping> hipConfig = bridgeRegistry.getConfigFor(xHipId, ServiceType.HIP);
-        if (hipConfig.isEmpty()) {
-            return Mono.error(ClientError.mappingNotFoundForHipId());
+        String xid = ids.get(0);
+        Optional<YamlRegistryMapping> config = bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
+        if(id.equals(X_CM_ID)){
+            config = cmRegistry.getConfigFor(xid);
         }
+        if (config.isEmpty()) {
+            logger.error("No mapping found for {} : {}", id, xid);
+            return Mono.error(ClientError.mappingNotFoundForId(id));
+
+        }
+        YamlRegistryMapping mapping = config.get();
         return Utils.deserializeRequest(requestEntity)
                 .flatMap(deserializedRequest -> {
-                    String cmRequestId = (String) deserializedRequest.get(REQUEST_ID);
-                    if (cmRequestId == null || cmRequestId.isEmpty()) {
+                    String requesterRequestId = (String) deserializedRequest.get(REQUEST_ID);
+                    if (requesterRequestId == null || requesterRequestId.isEmpty()) {
                         logger.error("No {} found on the payload", REQUEST_ID);
                         return Mono.empty();
                     }
-                    return Mono.just(new ValidatedRequest(hipConfig.get(), cmRequestId, deserializedRequest));
+                    return Mono.just(new ValidatedRequest(mapping, requesterRequestId, deserializedRequest));
                 });
     }
 

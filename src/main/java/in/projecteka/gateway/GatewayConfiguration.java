@@ -5,6 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
@@ -94,8 +95,9 @@ public class GatewayConfiguration {
 
     @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
-                                                         WebClient.Builder builder) {
-        return new DiscoveryServiceClient(serviceOptions,builder);
+                                                         WebClient.Builder builder,
+                                                         CMRegistry cmRegistry) {
+        return new DiscoveryServiceClient(serviceOptions, builder, cmRegistry);
     }
 
     @Bean("discoveryRequestOrchestrator")
@@ -127,8 +129,9 @@ public class GatewayConfiguration {
 
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
-                                                       WebClient.Builder builder) {
-        return new LinkInitServiceClient(builder,serviceOptions);
+                                                       WebClient.Builder builder,
+                                                       CMRegistry cmRegistry) {
+        return new LinkInitServiceClient(builder, serviceOptions, cmRegistry);
     }
 
     @Bean("linkInitRequestOrchestrator")
@@ -153,8 +156,9 @@ public class GatewayConfiguration {
 
     @Bean
     public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
-                                                                        WebClient.Builder builder) {
-        return new LinkConfirmServiceClient(builder,serviceOptions);
+                                                             WebClient.Builder builder,
+                                                             CMRegistry cmRegistry) {
+        return new LinkConfirmServiceClient(builder,serviceOptions, cmRegistry);
     }
 
     @Bean("linkConfirmRequestOrchestrator")
@@ -196,6 +200,21 @@ public class GatewayConfiguration {
     public ResponseOrchestrator linkConfirmResponseOrchestrator(Validator validator,
                                                          RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkConfirmResponseAction) {
         return new ResponseOrchestrator(validator, retryableLinkConfirmResponseAction);
+    }
+
+    @Bean
+    public ConsentRequestServiceClient consentRequestServiceClient(ServiceOptions serviceOptions,
+                                                                WebClient.Builder builder,
+                                                                BridgeRegistry bridgeRegistry) {
+        return new ConsentRequestServiceClient(serviceOptions, builder, bridgeRegistry);
+    }
+
+    @Bean("consentRequestOrchestrator")
+    public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                       Validator validator,
+                                                                       ConsentRequestServiceClient consentRequestServiceClient,
+                                                                       CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient, cmRegistry);
     }
 
 }

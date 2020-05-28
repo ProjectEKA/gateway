@@ -18,6 +18,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static org.mockito.ArgumentMatchers.eq;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class LinkControllerTest {
@@ -35,7 +38,7 @@ public class LinkControllerTest {
 
     @Test
     public void shouldFireAndForgetForLinkInit() {
-        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -63,7 +66,7 @@ public class LinkControllerTest {
 
     @Test
     public void shouldFireAndForgetForLinkConfirm() {
-        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

@@ -25,14 +25,14 @@ public class ClientError extends Throwable {
                 new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, CANNOT_PROCESS_REQUEST_TRY_LATER)));
     }
 
-    public static ClientError hipIdMissing() {
+    public static ClientError idMissingInHeader(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "X-HIP-ID missing on headers")));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "Id missing in headers : " + id)));
     }
 
-    public static ClientError mappingNotFoundForHipId() {
+    public static ClientError mappingNotFoundForId(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "No mapping found for X-HIP-ID")));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "No mapping found for " + id)));
     }
 
 }

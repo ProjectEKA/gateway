@@ -4,18 +4,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.Utils;
 import in.projecteka.gateway.common.model.ErrorResult;
+import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
+
+import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 
 @AllArgsConstructor
 public class LinkInitServiceClient implements ServiceClient{
+    private static final Logger logger = LoggerFactory.getLogger(LinkInitServiceClient.class);
     private WebClient.Builder webClientBuilder;
     private ServiceOptions serviceOptions;
+    private CMRegistry cmRegistry;
 
     @Override
     public Mono<Void> routeRequest(Map<String, Object> request, String url) {
@@ -34,10 +43,16 @@ public class LinkInitServiceClient implements ServiceClient{
     }
 
     @Override
-    public Mono<Void> notifyError(ErrorResult request, String cmUrl) {
+    public Mono<Void> notifyError(ErrorResult request) {
+        //TODO check backwhen cm id is dynamic
+        Optional<YamlRegistryMapping> config = cmRegistry.getConfigFor(TEMP_CM_ID);
+        if (config.isEmpty()) {
+            logger.error("No mapping found for " + TEMP_CM_ID);
+            return Mono.error(ClientError.mappingNotFoundForId(TEMP_CM_ID));
+        }
         return webClientBuilder.build()
                 .post()
-                .uri(cmUrl + "/v1/links/link/on-init")
+                .uri( config.get().getHost() + "/v1/links/link/on-init")
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),

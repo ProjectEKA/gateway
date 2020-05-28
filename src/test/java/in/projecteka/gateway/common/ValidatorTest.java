@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -53,23 +54,23 @@ class ValidatorTest {
     @Test
     public void shouldThrowErrorWhenHIPHeaderIsNotPresent() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        when(httpHeaders.get("X-HIP-ID")).thenReturn(Collections.emptyList());
+        when(httpHeaders.get(X_HIP_ID)).thenReturn(Collections.emptyList());
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity))
+        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
                 .verifyErrorSatisfies(throwable -> assertThat(throwable)
-                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class)).isEqualToComparingFieldByField(ClientError.hipIdMissing()));
+                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class)).isEqualToComparingFieldByField(ClientError.idMissingInHeader(X_HIP_ID)));
     }
 
     @Test
     public void shouldThrowErrorWhenNoMappingIsFoundForHIPId() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         String testHipId = "testHipId";
-        when(httpHeaders.get("X-HIP-ID")).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.empty());
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity))
+        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
                 .verifyErrorSatisfies(throwable -> assertThat(throwable)
-                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class)).isEqualToComparingFieldByField(ClientError.mappingNotFoundForHipId()));
+                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class)).isEqualToComparingFieldByField(ClientError.mappingNotFoundForId(X_HIP_ID)));
 
     }
 
@@ -79,11 +80,11 @@ class ValidatorTest {
         Map<String,Object> requestBody = new HashMap<>();
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
         String testHipId = "testHipId";
-        when(httpHeaders.get("X-HIP-ID")).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
         YamlRegistryMapping hipConfig = new YamlRegistryMapping();
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity))
+        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
                 .verifyComplete();
     }
 
@@ -95,15 +96,15 @@ class ValidatorTest {
         requestBody.put("requestId", cmRequestId);
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
         String testHipId = "testHipId";
-        when(httpHeaders.get("X-HIP-ID")).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
         YamlRegistryMapping hipConfig = new YamlRegistryMapping();
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity))
+        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
                 .assertNext(validatedDiscoverRequest -> {
-                    assertThat(hipConfig).isEqualTo(validatedDiscoverRequest.getHipConfig());
+                    assertThat(hipConfig).isEqualTo(validatedDiscoverRequest.getConfig());
                     assertThat(requestBody).isEqualTo(validatedDiscoverRequest.getDeserializedRequest());
-                    assertThat(cmRequestId).isEqualTo(validatedDiscoverRequest.getCmRequestId());
+                    assertThat(cmRequestId).isEqualTo(validatedDiscoverRequest.getRequesterRequestId());
                 }) .verifyComplete();
     }
 
