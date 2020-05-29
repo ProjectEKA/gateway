@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import reactor.core.publisher.Mono;

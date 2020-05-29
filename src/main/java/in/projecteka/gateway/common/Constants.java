@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 public class Constants {
     public static final String X_HIP_ID = "X-HIP-ID";

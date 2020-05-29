@@ -1,7 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.link.common.model.ErrorResult;
+import in.projecteka.gateway.common.model.ErrorResult;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;

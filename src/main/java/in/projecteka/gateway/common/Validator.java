@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.cache.CacheAdapter;
@@ -15,9 +15,9 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Optional;
 
-import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
-import static in.projecteka.gateway.link.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.link.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @AllArgsConstructor
 public class Validator {

@@ -3,8 +3,8 @@ package in.projecteka.gateway.clients;
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.common.Utils;
-import in.projecteka.gateway.link.common.model.ErrorResult;
+import in.projecteka.gateway.common.Utils;
+import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -63,6 +63,7 @@ public class LinkConfirmServiceClient implements ServiceClient{
                                         .post()
                                         .uri(cmUrl + "/v1/links/link/on-confirm")
                                         .contentType(MediaType.APPLICATION_JSON)
+                                        .header(HttpHeaders.AUTHORIZATION, token)
                                         .bodyValue(serializedRequest)
                                         .retrieve()
                                         .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),

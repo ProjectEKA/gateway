@@ -2,8 +2,8 @@ package in.projecteka.gateway.link.discovery;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.link.common.RequestOrchestrator;
-import in.projecteka.gateway.link.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;

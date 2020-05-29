@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,7 +6,7 @@ import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.link.common.model.ErrorResult;
+import in.projecteka.gateway.common.model.ErrorResult;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.Assertions;
@@ -27,7 +27,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
-import static in.projecteka.gateway.link.common.Constants.TEMP_CM_ID;
+import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
