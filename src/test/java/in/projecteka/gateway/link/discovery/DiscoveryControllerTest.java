@@ -18,6 +18,9 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static org.mockito.ArgumentMatchers.eq;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class DiscoveryControllerTest {
@@ -36,7 +39,7 @@ class DiscoveryControllerTest {
 
     @Test
     public void shouldFireAndForgetForDiscover() {
-        Mockito.when(requestOrchestrator.processRequest(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(requestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
