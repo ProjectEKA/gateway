@@ -19,9 +19,9 @@ public class ConsentRequestController {
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consent-requests/init")
-    public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID);
-        tobeFiredAndForgotten.subscribe();
+    public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
+        Mono<Void> toBeFiredAndForgotten = consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID);
+        toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
 

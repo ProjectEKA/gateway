@@ -65,7 +65,7 @@ class ValidatorTest {
     public void shouldThrowErrorWhenNoMappingIsFoundForHIPId() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         String testHipId = "testHipId";
-        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.empty());
 
         StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
@@ -80,7 +80,7 @@ class ValidatorTest {
         Map<String,Object> requestBody = new HashMap<>();
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
         String testHipId = "testHipId";
-        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
         YamlRegistryMapping hipConfig = new YamlRegistryMapping();
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 
@@ -96,7 +96,7 @@ class ValidatorTest {
         requestBody.put("requestId", cmRequestId);
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
         String testHipId = "testHipId";
-        when(httpHeaders.get(X_HIP_ID)).thenReturn(Arrays.asList(testHipId));
+        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
         YamlRegistryMapping hipConfig = new YamlRegistryMapping();
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -27,11 +28,10 @@ public class Validator {
 
 
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String id) {
-        List<String> ids = requestEntity.getHeaders().get(id);
-        if (ids == null || ids.isEmpty()) {
+        String xid = requestEntity.getHeaders().getFirst(id);
+        if (!StringUtils.hasText(xid)) {
             return Mono.error(ClientError.idMissingInHeader(id));
         }
-        String xid = ids.get(0);
         Optional<YamlRegistryMapping> config = bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
         if(id.equals(X_CM_ID)){
             config = cmRegistry.getConfigFor(xid);
@@ -39,17 +39,16 @@ public class Validator {
         if (config.isEmpty()) {
             logger.error("No mapping found for {} : {}", id, xid);
             return Mono.error(ClientError.mappingNotFoundForId(id));
-
         }
         YamlRegistryMapping mapping = config.get();
         return Utils.deserializeRequest(requestEntity)
                 .flatMap(deserializedRequest -> {
-                    String requesterRequestId = (String) deserializedRequest.get(REQUEST_ID);
-                    if (requesterRequestId == null || requesterRequestId.isEmpty()) {
+                    String requestId = (String) deserializedRequest.get(REQUEST_ID);
+                    if (!StringUtils.hasText(requestId)) {
                         logger.error("No {} found on the payload", REQUEST_ID);
                         return Mono.empty();
                     }
-                    return Mono.just(new ValidatedRequest(mapping, requesterRequestId, deserializedRequest));
+                    return Mono.just(new ValidatedRequest(mapping, requestId, deserializedRequest));
                 });
     }
 
