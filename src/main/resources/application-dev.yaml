@@ -1,5 +1,5 @@
 server:
-  port: 8000
+  port: 8004
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
@@ -10,15 +10,15 @@ gateway:
     password: ${REDIS_PASSWORD}
   # timeout in seconds
   serviceoptions:
-    timeout: ${SERVICE_TIMEOUT:5}
+    timeout: 50
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
 spring:
   rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT}
+    host: localhost
+    port: 5672
 clientregistry:
-  clientId: ${GATEWAY_CLIENT_ID}
-  clientSecret: ${GATEWAY_CLIENT_SECRET}
-  url: ${CENTRAL_REGISTRY_URL}
-  jwkUrl: ${CENTRAL_REGISTRY_JWK_URL}
+  clientId: gateway
+  clientSecret: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
+  url: http://localhost:8080
+  jwkUrl: http://localhost:8080/certs

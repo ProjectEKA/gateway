@@ -8,6 +8,9 @@ import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ClientRegistryProperties;
+import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
@@ -94,8 +97,9 @@ public class GatewayConfiguration {
 
     @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
-                                                         WebClient.Builder builder) {
-        return new DiscoveryServiceClient(serviceOptions,builder);
+                                                         WebClient.Builder builder,
+                                                        CentralRegistry centralRegistry) {
+        return new DiscoveryServiceClient(serviceOptions,builder,centralRegistry);
     }
 
     @Bean("discoveryRequestOrchestrator")
@@ -127,8 +131,9 @@ public class GatewayConfiguration {
 
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
-                                                       WebClient.Builder builder) {
-        return new LinkInitServiceClient(builder,serviceOptions);
+                                                       WebClient.Builder builder,
+                                                       CentralRegistry centralRegistry) {
+        return new LinkInitServiceClient(builder,serviceOptions,centralRegistry);
     }
 
     @Bean("linkInitRequestOrchestrator")
@@ -153,8 +158,9 @@ public class GatewayConfiguration {
 
     @Bean
     public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
-                                                                        WebClient.Builder builder) {
-        return new LinkConfirmServiceClient(builder,serviceOptions);
+                                                                        WebClient.Builder builder,
+                                                             CentralRegistry centralRegistry) {
+        return new LinkConfirmServiceClient(builder,serviceOptions,centralRegistry);
     }
 
     @Bean("linkConfirmRequestOrchestrator")
@@ -198,4 +204,15 @@ public class GatewayConfiguration {
         return new ResponseOrchestrator(validator, retryableLinkConfirmResponseAction);
     }
 
+    @Bean
+    public ClientRegistryClient clientRegistryClient(WebClient.Builder builder,
+                                                     ClientRegistryProperties clientRegistryProperties) {
+        return new ClientRegistryClient(builder, clientRegistryProperties.getUrl());
+    }
+
+    @Bean
+    public CentralRegistry centralRegistry(ClientRegistryProperties clientRegistryProperties,
+                                           ClientRegistryClient clientRegistryClient) {
+        return new CentralRegistry(clientRegistryClient, clientRegistryProperties);
+    }
 }

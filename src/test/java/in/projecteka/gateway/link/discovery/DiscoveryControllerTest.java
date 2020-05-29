@@ -1,5 +1,6 @@
 package in.projecteka.gateway.link.discovery;
 
+import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -29,6 +30,9 @@ class DiscoveryControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @MockBean(name = "centralRegistryJWKSet")
+    private JWKSet centralRegistryJWKSet;
 
     @Test
     public void shouldFireAndForgetForDiscover() {

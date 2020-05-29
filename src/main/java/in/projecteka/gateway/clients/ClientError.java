@@ -5,8 +5,10 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Getter
 public class ClientError extends Throwable {
@@ -35,4 +37,9 @@ public class ClientError extends Throwable {
                 new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "No mapping found for X-HIP-ID")));
     }
 
+
+    public static ClientError unAuthorized() {
+        return new ClientError(UNAUTHORIZED,
+                new ErrorRepresentation(new Error(INVALID_TOKEN, "Token verification failed")));
+    }
 }
