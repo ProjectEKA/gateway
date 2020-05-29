@@ -9,6 +9,9 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ClientRegistryProperties;
+import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
@@ -96,8 +99,9 @@ public class GatewayConfiguration {
     @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
                                                          WebClient.Builder builder,
-                                                         CMRegistry cmRegistry) {
-        return new DiscoveryServiceClient(serviceOptions, builder, cmRegistry);
+                                                         CMRegistry cmRegistry,
+                                                         CentralRegistry centralRegistry) {
+        return new DiscoveryServiceClient(serviceOptions, builder, cmRegistry, centralRegistry);
     }
 
     @Bean("discoveryRequestOrchestrator")
@@ -130,8 +134,9 @@ public class GatewayConfiguration {
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
                                                        WebClient.Builder builder,
-                                                       CMRegistry cmRegistry) {
-        return new LinkInitServiceClient(builder, serviceOptions, cmRegistry);
+                                                       CMRegistry cmRegistry,
+                                                       CentralRegistry centralRegistry) {
+        return new LinkInitServiceClient(builder, serviceOptions, cmRegistry, centralRegistry);
     }
 
     @Bean("linkInitRequestOrchestrator")
@@ -157,8 +162,9 @@ public class GatewayConfiguration {
     @Bean
     public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
                                                              WebClient.Builder builder,
-                                                             CMRegistry cmRegistry) {
-        return new LinkConfirmServiceClient(builder,serviceOptions, cmRegistry);
+                                                             CMRegistry cmRegistry,
+                                                             CentralRegistry centralRegistry) {
+        return new LinkConfirmServiceClient(builder,serviceOptions, cmRegistry, centralRegistry);
     }
 
     @Bean("linkConfirmRequestOrchestrator")
@@ -204,9 +210,10 @@ public class GatewayConfiguration {
 
     @Bean
     public ConsentRequestServiceClient consentRequestServiceClient(ServiceOptions serviceOptions,
-                                                                WebClient.Builder builder,
-                                                                BridgeRegistry bridgeRegistry) {
-        return new ConsentRequestServiceClient(serviceOptions, builder, bridgeRegistry);
+                                                                   WebClient.Builder builder,
+                                                                   BridgeRegistry bridgeRegistry,
+                                                                   CentralRegistry centralRegistry) {
+        return new ConsentRequestServiceClient(serviceOptions, builder, bridgeRegistry, centralRegistry);
     }
 
     @Bean("consentRequestOrchestrator")
@@ -217,4 +224,15 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient, cmRegistry);
     }
 
+    @Bean
+    public ClientRegistryClient clientRegistryClient(WebClient.Builder builder,
+                                                     ClientRegistryProperties clientRegistryProperties) {
+        return new ClientRegistryClient(builder, clientRegistryProperties.getUrl());
+    }
+
+    @Bean
+    public CentralRegistry centralRegistry(ClientRegistryProperties clientRegistryProperties,
+                                           ClientRegistryClient clientRegistryClient) {
+        return new CentralRegistry(clientRegistryClient, clientRegistryProperties);
+    }
 }

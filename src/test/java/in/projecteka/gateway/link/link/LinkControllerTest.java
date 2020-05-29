@@ -1,5 +1,6 @@
 package in.projecteka.gateway.link.link;
 
+import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -35,6 +36,9 @@ public class LinkControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @MockBean(name = "centralRegistryJWKSet")
+    private JWKSet centralRegistryJWKSet;
 
     @Test
     public void shouldFireAndForgetForLinkInit() {

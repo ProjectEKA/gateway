@@ -1,5 +1,6 @@
 package in.projecteka.gateway.consent;
 
+import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ public class ConsentRequestControllerTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    @MockBean(name = "centralRegistryJWKSet")
+    private JWKSet centralRegistryJWKSet;
 
     @Test
     public void shouldFireAndForgetForConsentRequestInit() {

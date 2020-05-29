@@ -5,8 +5,10 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Getter
 public class ClientError extends Throwable {
@@ -27,12 +29,17 @@ public class ClientError extends Throwable {
 
     public static ClientError idMissingInHeader(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "Id missing in headers : " + id)));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, String.format("%s missing in headers", id))));
     }
 
     public static ClientError mappingNotFoundForId(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, "No mapping found for " + id)));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, String.format("No mapping found for %s", id))));
     }
 
+
+    public static ClientError unAuthorized() {
+        return new ClientError(UNAUTHORIZED,
+                new ErrorRepresentation(new Error(INVALID_TOKEN, "Token verification failed")));
+    }
 }

@@ -18,6 +18,7 @@ import java.util.Optional;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @AllArgsConstructor
 public class Validator {
@@ -32,10 +33,9 @@ public class Validator {
         if (!StringUtils.hasText(xid)) {
             return Mono.error(ClientError.idMissingInHeader(id));
         }
-        Optional<YamlRegistryMapping> config = bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
-        if(id.equals(X_CM_ID)){
-            config = cmRegistry.getConfigFor(xid);
-        }
+        Optional<YamlRegistryMapping> config = id.equals(X_HIP_ID)
+                ? bridgeRegistry.getConfigFor(xid, ServiceType.HIP)
+                : cmRegistry.getConfigFor(xid);
         if (config.isEmpty()) {
             logger.error("No mapping found for {} : {}", id, xid);
             return Mono.error(ClientError.mappingNotFoundForId(id));
