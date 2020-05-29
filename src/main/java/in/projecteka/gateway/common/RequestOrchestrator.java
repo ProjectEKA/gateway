@@ -7,7 +7,6 @@ import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.model.ErrorResult;
 import in.projecteka.gateway.common.model.GatewayResponse;
-import in.projecteka.gateway.registry.CMRegistry;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,6 @@ public class RequestOrchestrator<T extends ServiceClient> {
     CacheAdapter<String, String> requestIdMappings;
     Validator validator;
     T serviceClient;
-    CMRegistry cmRegistry;
 
     public Mono<Void> processRequest(HttpEntity<String> requestEntity, String id) {
         UUID gatewayRequestId = UUID.randomUUID();
