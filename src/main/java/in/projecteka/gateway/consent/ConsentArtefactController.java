@@ -16,12 +16,12 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 @RestController
 @AllArgsConstructor
 public class ConsentArtefactController {
-    RequestOrchestrator<ConsentArtefactServiceClient> consentArtefactHipNotifyOrchestrator;
+    RequestOrchestrator<ConsentArtefactServiceClient> hipConsentNotifyRequestOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/hip/notify")
-    public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = consentArtefactHipNotifyOrchestrator.processRequest(requestEntity, X_HIP_ID);
+    public Mono<Void> consentNotifyToHIP(HttpEntity<String> requestEntity) {
+        Mono<Void> toBeFiredAndForgotten = hipConsentNotifyRequestOrchestrator.processRequest(requestEntity, X_HIP_ID);
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }

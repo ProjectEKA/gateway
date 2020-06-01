@@ -32,7 +32,7 @@ public class ConsentArtefactControllerTest {
     private JWKSet centralRegistryJWKSet;
 
     @Test
-    public void shouldFireAndForgetForConsentNotification() {
+    public void shouldFireAndForgetHIPConsentNotification() {
         Mockito.when(consentArtefactHipNotifyOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID)))
                 .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 

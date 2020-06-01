@@ -235,9 +235,10 @@ public class GatewayConfiguration {
 
     @Bean
     public ConsentArtefactServiceClient consentArtefactServiceClient(ServiceOptions serviceOptions,
-                                                                    WebClient.Builder builder,
-                                                                    CentralRegistry centralRegistry) {
-        return new ConsentArtefactServiceClient(serviceOptions, builder, centralRegistry);
+                                                                     WebClient.Builder builder,
+                                                                     CentralRegistry centralRegistry,
+                                                                     CMRegistry cmRegistry) {
+        return new ConsentArtefactServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
     }
 
     @Bean("consentArtefactHipNotifyOrchestrator")
