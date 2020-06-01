@@ -11,6 +11,7 @@ import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
+import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
@@ -216,12 +217,28 @@ public class GatewayConfiguration {
         return new ConsentRequestServiceClient(serviceOptions, builder, bridgeRegistry, centralRegistry);
     }
 
+    @Bean
+    public ConsentFetchServiceClient consentFetchServiceClient(ServiceOptions serviceOptions,
+                                                                   WebClient.Builder builder,
+                                                                   BridgeRegistry bridgeRegistry,
+                                                                   CentralRegistry centralRegistry) {
+        return new ConsentFetchServiceClient(serviceOptions, builder, bridgeRegistry, centralRegistry);
+    }
+
     @Bean("consentRequestOrchestrator")
     public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                        Validator validator,
                                                                        ConsentRequestServiceClient consentRequestServiceClient,
                                                                        CMRegistry cmRegistry) {
         return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient, cmRegistry);
+    }
+
+    @Bean("consentFetchOrchestrator")
+    public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                                   Validator validator,
+                                                                                   ConsentFetchServiceClient consentFetchServiceClient,
+                                                                                   CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient, cmRegistry);
     }
 
     @Bean
