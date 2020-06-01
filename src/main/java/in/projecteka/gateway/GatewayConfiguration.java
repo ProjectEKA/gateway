@@ -5,9 +5,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import in.projecteka.gateway.clients.ConsentArtefactServiceClient;
+import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.ClientRegistryClient;
@@ -234,18 +235,34 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public ConsentArtefactServiceClient consentArtefactServiceClient(ServiceOptions serviceOptions,
-                                                                     WebClient.Builder builder,
-                                                                     CentralRegistry centralRegistry,
-                                                                     CMRegistry cmRegistry) {
-        return new ConsentArtefactServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    public HipConsentNotifyServiceClient hipConsentNotifyServiceClient(ServiceOptions serviceOptions,
+                                                                      WebClient.Builder builder,
+                                                                      CentralRegistry centralRegistry,
+                                                                      CMRegistry cmRegistry) {
+        return new HipConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
     }
 
-    @Bean("consentArtefactHipNotifyOrchestrator")
-    public RequestOrchestrator<ConsentArtefactServiceClient> consentArtefactHipNotifyOrchestrator(
+    @Bean("hipConsentNotifyRequestOrchestrator")
+    public RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            ConsentArtefactServiceClient consentArtefactServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentArtefactServiceClient);
+            HipConsentNotifyServiceClient hipConsentNotifyServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hipConsentNotifyServiceClient);
+    }
+
+    @Bean
+    public HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient(ServiceOptions serviceOptions,
+                                                                       WebClient.Builder builder,
+                                                                       CentralRegistry centralRegistry,
+                                                                       CMRegistry cmRegistry) {
+        return new HiuConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    }
+
+    @Bean("hiuConsentNotifyRequestOrchestrator")
+    public RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hiuConsentNotifyServiceClient);
     }
 }

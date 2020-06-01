@@ -19,6 +19,7 @@ import java.util.Optional;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
 @AllArgsConstructor
 public class Validator {
@@ -33,9 +34,7 @@ public class Validator {
         if (!StringUtils.hasText(xid)) {
             return Mono.error(ClientError.idMissingInHeader(id));
         }
-        Optional<YamlRegistryMapping> config = id.equals(X_HIP_ID)
-                ? bridgeRegistry.getConfigFor(xid, ServiceType.HIP)
-                : cmRegistry.getConfigFor(xid);
+        Optional<YamlRegistryMapping> config = getRegistryMapping(bridgeRegistry, cmRegistry, id, xid);
         if (config.isEmpty()) {
             logger.error("No mapping found for {} : {}", id, xid);
             return Mono.error(ClientError.mappingNotFoundForId(id));
@@ -50,6 +49,18 @@ public class Validator {
                     }
                     return Mono.just(new ValidatedRequest(mapping, requestId, deserializedRequest));
                 });
+    }
+
+    private Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry, CMRegistry cmRegistry, String id, String xid) {
+        if(id.equals(X_HIP_ID)) {
+            return bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
+        }
+        else if(id.equals(X_HIU_ID)) {
+            return bridgeRegistry.getConfigFor(xid, ServiceType.HIU);
+        }
+        else {
+            return cmRegistry.getConfigFor(xid);
+        }
     }
 
     public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity) {

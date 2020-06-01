@@ -22,8 +22,8 @@ import java.util.Optional;
 import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 
 @AllArgsConstructor
-public class ConsentArtefactServiceClient implements ServiceClient {
-    private static final Logger logger = LoggerFactory.getLogger(ConsentArtefactServiceClient.class);
+public class HiuConsentNotifyServiceClient implements ServiceClient{
+    private static final Logger logger = LoggerFactory.getLogger(HipConsentNotifyServiceClient.class);
     private ServiceOptions serviceOptions;
     private WebClient.Builder webClientBuilder;
     private CentralRegistry centralRegistry;
@@ -36,7 +36,7 @@ public class ConsentArtefactServiceClient implements ServiceClient {
                         .flatMap(serializedRequest ->
                                 webClientBuilder.build()
                                         .post()
-                                        .uri(url + "/v1/consents/hip/notify")
+                                        .uri(url + "/v1/consents/hiu/notify")
                                         .contentType(MediaType.APPLICATION_JSON)
                                         .header(HttpHeaders.AUTHORIZATION, token)
                                         .bodyValue(serializedRequest)
@@ -49,7 +49,7 @@ public class ConsentArtefactServiceClient implements ServiceClient {
 
     @Override
     public Mono<Void> notifyError(ErrorResult request) {
-        //TODO check backwhen cm id is dynamic
+        //TODO check back when cm id is dynamic
         Optional<YamlRegistryMapping> config = cmRegistry.getConfigFor(TEMP_CM_ID);
         if (config.isEmpty()) {
             logger.error("No mapping found for " + TEMP_CM_ID);
@@ -58,7 +58,7 @@ public class ConsentArtefactServiceClient implements ServiceClient {
         return centralRegistry.authenticate()
                 .flatMap(token -> webClientBuilder.build()
                         .post()
-                        .uri(config.get().getHost() + "/v1/consents/hip/on-notify")
+                        .uri(config.get().getHost() + "/v1/consents/hiu/on-notify")
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .bodyValue(request)
                         .retrieve()
@@ -69,6 +69,6 @@ public class ConsentArtefactServiceClient implements ServiceClient {
 
     @Override
     public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-        return Mono.empty();
+        return null;
     }
 }
