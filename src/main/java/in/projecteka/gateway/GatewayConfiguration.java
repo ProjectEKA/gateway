@@ -234,9 +234,8 @@ public class GatewayConfiguration {
     @Bean("consentFetchOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                                    Validator validator,
-                                                                                   ConsentFetchServiceClient consentFetchServiceClient,
-                                                                                   CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient, cmRegistry);
+                                                                                   ConsentFetchServiceClient consentFetchServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient);
     }
 
     @Bean
