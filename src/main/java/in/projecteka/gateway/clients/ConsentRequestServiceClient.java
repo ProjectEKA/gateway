@@ -1,19 +1,19 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.Utils;
-import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
+import lombok.AllArgsConstructor;
+import org.springframework.web.reactive.function.client.WebClient;
 import in.projecteka.gateway.registry.ServiceType;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
@@ -70,7 +70,20 @@ public class ConsentRequestServiceClient implements ServiceClient {
     }
 
     @Override
-    public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-        return null;
+    public Mono<Void> routeResponse(JsonNode request, String url) {
+        return centralRegistry.authenticate()
+                .flatMap(token -> Utils.serializeRequest(request)
+                        .flatMap(serializedRequest ->
+                                webClientBuilder.build()
+                                        .post()
+                                        .uri(url + "/v1/consent-requests/on-init")
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .header(HttpHeaders.AUTHORIZATION, token)
+                                        .bodyValue(serializedRequest)
+                                        .retrieve()
+                                        .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
+                                                clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
+                                        .bodyToMono(Void.class)
+                                        .timeout(Duration.ofSeconds(serviceOptions.getTimeout()))));
     }
 }

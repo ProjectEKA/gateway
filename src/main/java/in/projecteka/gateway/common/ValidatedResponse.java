@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ValidatedResponse {
-    String xCmId;
+    String id;
     String callerRequestId;
     JsonNode deserializedJsonNode;
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @RestController
@@ -30,7 +31,7 @@ public class DiscoveryController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/care-contexts/on-discover")
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = discoveryResponseOrchestrator.processResponse(requestEntity);
+        Mono<Void> tobeFiredAndForgotten = discoveryResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
         tobeFiredAndForgotten.subscribe();
         return Mono.empty();
     }

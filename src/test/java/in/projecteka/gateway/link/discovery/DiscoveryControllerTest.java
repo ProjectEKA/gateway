@@ -15,11 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.Duration;
 
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
-import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -53,7 +54,7 @@ class DiscoveryControllerTest {
 
     @Test
     public void shouldFireAndForgetForOnDiscover() {
-        Mockito.when(discoveryResponseOrchestrator.processResponse(Mockito.any())).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(discoveryResponseOrchestrator.processResponse(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

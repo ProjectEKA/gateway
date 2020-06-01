@@ -4,10 +4,12 @@ import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -18,6 +20,7 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
@@ -28,6 +31,10 @@ class ConsentControllerTest {
 
     @MockBean
     RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
+
+    @Qualifier("consentResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator consentResponseOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
@@ -43,6 +50,20 @@ class ConsentControllerTest {
         mutatedWebTestClient
                 .post()
                 .uri("/v1/consent-requests/init")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForConsentRequestOnInit() {
+        Mockito.when(consentResponseOrchestrator.processResponse(Mockito.any(), eq(X_HIU_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+
+        WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
+        mutatedWebTestClient
+                .post()
+                .uri("/v1/consent-requests/on-init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()

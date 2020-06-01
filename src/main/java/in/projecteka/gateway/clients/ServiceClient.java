@@ -11,5 +11,5 @@ public interface ServiceClient {
 
     Mono<Void> notifyError(ErrorResult request);
 
-    Mono<Void> routeResponse(JsonNode request, String cmUrl);
+    Mono<Void> routeResponse(JsonNode request, String url);
 }

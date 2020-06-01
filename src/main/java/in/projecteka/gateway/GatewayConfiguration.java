@@ -115,8 +115,9 @@ public class GatewayConfiguration {
 
     @Bean("discoveryResponseAction")
     public DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction(DiscoveryServiceClient discoveryServiceClient,
-                                                                                          CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry);
+                                                                                          CMRegistry cmRegistry,
+                                                                                          BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean("discoveryResponseOrchestrator")
@@ -150,8 +151,9 @@ public class GatewayConfiguration {
 
     @Bean("linkInitResponseAction")
     public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(LinkInitServiceClient linkInitServiceClient,
-                                                                                        CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry);
+                                                                                        CMRegistry cmRegistry,
+                                                                                        BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean("linkInitResponseOrchestrator")
@@ -178,8 +180,9 @@ public class GatewayConfiguration {
 
     @Bean("linkConfirmResponseAction")
     public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(LinkConfirmServiceClient linkConfirmServiceClient,
-                                                                                              CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry);
+                                                                                              CMRegistry cmRegistry,
+                                                                                              BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean
@@ -252,4 +255,18 @@ public class GatewayConfiguration {
                                            ClientRegistryClient clientRegistryClient) {
         return new CentralRegistry(clientRegistryClient, clientRegistryProperties);
     }
+
+    @Bean("consentResponseAction")
+    public DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction(ConsentRequestServiceClient consentRequestServiceClient,
+                                                                                             CMRegistry cmRegistry,
+                                                                                             BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(consentRequestServiceClient, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("consentResponseOrchestrator")
+    public ResponseOrchestrator consentResponseOrchestrator(Validator validator,
+                                                              DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction) {
+        return new ResponseOrchestrator(validator, consentResponseAction);
+    }
+
 }

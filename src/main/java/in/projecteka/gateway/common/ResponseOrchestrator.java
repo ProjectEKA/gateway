@@ -10,16 +10,15 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class ResponseOrchestrator {
     Validator validator;
-
     ValidatedResponseAction validatedResponseAction;
 
     private static final Logger logger = LoggerFactory.getLogger(ResponseOrchestrator.class);
-    public Mono<Void> processResponse(HttpEntity<String> requestEntity) {
-        return validator.validateResponse(requestEntity)
+    public Mono<Void> processResponse(HttpEntity<String> requestEntity, String id) {
+        return validator.validateResponse(requestEntity, id)
                 .flatMap(validRequest -> {
                     JsonNode updatedJsonNode = Utils.updateRequestId(validRequest.getDeserializedJsonNode(),
                             validRequest.getCallerRequestId());
-                    return validatedResponseAction.execute(validRequest.getXCmId(),updatedJsonNode);
+                    return validatedResponseAction.execute(validRequest.getId(),updatedJsonNode);
                 });
     }
 }

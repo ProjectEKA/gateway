@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -111,9 +112,9 @@ class ValidatorTest {
     @Test
     public void shouldReturnEmptyWhenCMHeaderIsNotPresent() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        when(httpHeaders.get("X-CM-ID")).thenReturn(Collections.emptyList());
+        when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.emptyList());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
+        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
 
@@ -121,10 +122,10 @@ class ValidatorTest {
     public void shouldReturnEmptyWhenNoMappingIsFoundForCMId() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         String testCmId = "testCMId";
-        when(httpHeaders.get("X-CM-ID")).thenReturn(Arrays.asList(testCmId));
+        when(httpHeaders.get(X_CM_ID)).thenReturn(Arrays.asList(testCmId));
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.empty());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
+        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
 
@@ -134,10 +135,10 @@ class ValidatorTest {
         Map<String, Object> body = new HashMap<>();
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(body));
         String testCmId = "testCMId";
-        when(httpHeaders.get("X-CM-ID")).thenReturn(Arrays.asList(testCmId));
+        when(httpHeaders.get(X_CM_ID)).thenReturn(Arrays.asList(testCmId));
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
+        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
 
@@ -151,11 +152,11 @@ class ValidatorTest {
         body.put("resp",respNode);
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(body));
         String testCmId = "testCMId";
-        when(httpHeaders.get("X-CM-ID")).thenReturn(Arrays.asList(testCmId));
+        when(httpHeaders.get(X_CM_ID)).thenReturn(Arrays.asList(testCmId));
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
+        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
     @Test
@@ -169,14 +170,14 @@ class ValidatorTest {
         respNode.put("requestId", testRequestId);
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(objectNode));
         String testCmId = "testCMId";
-        when(httpHeaders.get("X-CM-ID")).thenReturn(Arrays.asList(testCmId));
+        when(httpHeaders.getFirst(X_CM_ID)).thenReturn(testCmId);
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
         String cachedRequestId = "cachedRequestId";
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.just(cachedRequestId));
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity))
+        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .assertNext(validatedDiscoverResponse -> {
-                    Assertions.assertEquals(testCmId,validatedDiscoverResponse.getXCmId());
+                    Assertions.assertEquals(testCmId,validatedDiscoverResponse.getId());
                     Assertions.assertEquals(cachedRequestId,validatedDiscoverResponse.getCallerRequestId());
                     Assertions.assertEquals(objectNode,validatedDiscoverResponse.getDeserializedJsonNode());
                 })
