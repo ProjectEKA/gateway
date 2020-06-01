@@ -1,6 +1,7 @@
 package in.projecteka.gateway.consent;
 
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -21,9 +22,12 @@ import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ConsentRequestControllerTest {
+class ConsentControllerTest {
     @MockBean
     RequestOrchestrator<ConsentRequestServiceClient> requestOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
@@ -32,13 +36,27 @@ public class ConsentRequestControllerTest {
     private JWKSet centralRegistryJWKSet;
 
     @Test
-    public void shouldFireAndForgetForConsentRequestInit() {
+    void shouldFireAndForgetForConsentRequestInit() {
         Mockito.when(requestOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
                 .uri("/v1/consent-requests/init")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForConsentFetch() {
+        Mockito.when(consentFetchOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+
+        WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
+        mutatedWebTestClient
+                .post()
+                .uri("/v1/consents/fetch")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()

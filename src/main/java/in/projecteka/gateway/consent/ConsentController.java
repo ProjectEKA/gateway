@@ -1,5 +1,6 @@
 package in.projecteka.gateway.consent;
 
+import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import lombok.AllArgsConstructor;
@@ -14,13 +15,22 @@ import static in.projecteka.gateway.common.Constants.X_CM_ID;
 
 @RestController
 @AllArgsConstructor
-public class ConsentRequestController {
+public class ConsentController {
     RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator;
+    RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consent-requests/init")
     public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
         Mono<Void> toBeFiredAndForgotten = consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID);
+        toBeFiredAndForgotten.subscribe();
+        return Mono.empty();
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping("/v1/consents/fetch")
+    public Mono<Void> fetchConsent(HttpEntity<String> requestEntity) {
+        Mono<Void> toBeFiredAndForgotten = consentFetchOrchestrator.processRequest(requestEntity, X_CM_ID);
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
