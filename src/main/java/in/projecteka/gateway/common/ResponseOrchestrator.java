@@ -14,12 +14,12 @@ public class ResponseOrchestrator {
 
     private static final Logger logger = LoggerFactory.getLogger(ResponseOrchestrator.class);
     public Mono<Void> processResponse(HttpEntity<String> requestEntity, String id) {
-        return validator.validateResponse(requestEntity, id)
+        validator.validateResponse(requestEntity, id)
                 .flatMap(validRequest -> {
                     JsonNode updatedJsonNode = Utils.updateRequestId(validRequest.getDeserializedJsonNode(),
                             validRequest.getCallerRequestId());
-                    validatedResponseAction.execute(validRequest.getId(), updatedJsonNode).subscribe();
-                    return Mono.empty();
-                });
+                    return validatedResponseAction.execute(validRequest.getId(), updatedJsonNode);
+                }).subscribe();
+        return Mono.empty();
     }
 }
