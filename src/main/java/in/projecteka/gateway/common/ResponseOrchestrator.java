@@ -18,7 +18,8 @@ public class ResponseOrchestrator {
                 .flatMap(validRequest -> {
                     JsonNode updatedJsonNode = Utils.updateRequestId(validRequest.getDeserializedJsonNode(),
                             validRequest.getCallerRequestId());
-                    return validatedResponseAction.execute(validRequest.getId(),updatedJsonNode);
+                    validatedResponseAction.execute(validRequest.getId(), updatedJsonNode).subscribe();
+                    return Mono.empty();
                 });
     }
 }

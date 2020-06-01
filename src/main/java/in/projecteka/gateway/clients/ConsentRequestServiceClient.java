@@ -83,7 +83,8 @@ public class ConsentRequestServiceClient implements ServiceClient {
                                         .retrieve()
                                         .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                                                 clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
-                                        .bodyToMono(Void.class)
-                                        .timeout(Duration.ofSeconds(serviceOptions.getTimeout()))));
+                                        .toBodilessEntity()
+                                        .timeout(Duration.ofSeconds(serviceOptions.getTimeout()))))
+                                        .then();
     }
 }

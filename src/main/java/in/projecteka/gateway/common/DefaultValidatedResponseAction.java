@@ -28,7 +28,7 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
                 ? bridgeRegistry.getConfigFor(id, ServiceType.HIU)
                 : cmRegistry.getConfigFor(id);
         if (configFor.isEmpty()) {
-            logger.error("No mapping found for {}",id);
+            logger.error("No mapping found for {}", id);
             return Mono.empty();
         }
         return serviceClient.routeResponse(updatedRequest,configFor.get().getHost());

@@ -31,8 +31,6 @@ public class DiscoveryController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/care-contexts/on-discover")
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = discoveryResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
-        tobeFiredAndForgotten.subscribe();
-        return Mono.empty();
+        return discoveryResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
     }
 }
