@@ -8,7 +8,12 @@ bridges:
     id: 10000005
     servesAs:
       - HIP
+  - host: http://172.16.2.27:8001
+    id: 10000004
+    servesAs:
+      - HIP
   - host: http://localhost:8003
     id: 10000005
     servesAs:
       - HIU
+

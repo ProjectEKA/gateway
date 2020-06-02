@@ -20,6 +20,8 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,9 +45,9 @@ class ResponseOrchestratorTest {
     @Test
     public void shouldNotCallCMonValidationErrors() {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
-        when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.empty());
+        when(discoveryValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.empty());
 
-        StepVerifier.create(responseOrchestrator.processResponse(requestEntity))
+        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
     @Test
@@ -59,16 +61,15 @@ class ResponseOrchestratorTest {
         objectNode.set("resp",respNode);
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
 
-        String testhost = "testhost";
         String testCmId = "testCmId";
-        when(discoveryValidator.validateResponse(requestEntity)).thenReturn(Mono.just(new ValidatedResponse(testCmId,cmRequestId, objectNode)));
+        when(discoveryValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testCmId,cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(Mono.just(cmRequestId));
-        when(validatedResponseAction.execute(eq(testCmId),jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testCmId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
-        StepVerifier.create(responseOrchestrator.processResponse(requestEntity))
+        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
 
-        verify(discoveryValidator).validateResponse(requestEntity);
+        verify(discoveryValidator).validateResponse(requestEntity, X_CM_ID);
         Assertions.assertEquals(cmRequestId,jsonNodeArgumentCaptor.getValue().path("resp").path("requestId").asText());
     }
 
