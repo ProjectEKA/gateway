@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.UUID;
 
-import static in.projecteka.gateway.link.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 
 public class Utils {
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);

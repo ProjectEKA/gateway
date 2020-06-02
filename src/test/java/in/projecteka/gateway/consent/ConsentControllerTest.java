@@ -1,12 +1,12 @@
-package in.projecteka.gateway.link.link;
+package in.projecteka.gateway.consent;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.LinkConfirmServiceClient;
-import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.ConsentFetchServiceClient;
+import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -26,26 +26,27 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.Duration;
 import java.util.UUID;
 
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class LinkControllerTest {
+class ConsentControllerTest {
     @MockBean
-    RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
+    RequestOrchestrator<ConsentRequestServiceClient> requestOrchestrator;
 
-    @Qualifier("linkInitResponseOrchestrator")
     @MockBean
-    ResponseOrchestrator linkInitResponseOrchestrator;
+    RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
+
+    @Qualifier("consentResponseOrchestrator")
     @MockBean
-    RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
+    ResponseOrchestrator consentResponseOrchestrator;
 
     @Autowired
     private WebTestClient webTestClient;
@@ -54,23 +55,23 @@ public class LinkControllerTest {
     private JWKSet centralRegistryJWKSet;
 
     @MockBean
-    Validator linkValidator;
+    Validator consentRequestValidator;
 
     @MockBean
-    @Qualifier("linkInitResponseAction")
+    @Qualifier("consentResponseAction")
     ValidatedResponseAction validatedResponseAction;
 
     private @Captor
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
     @Test
-    public void shouldFireAndForgetForLinkInit() {
-        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+    void shouldFireAndForgetForConsentRequestInit() {
+        Mockito.when(requestOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/v1/links/link/init")
+                .uri("/v1/consent-requests/init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
@@ -78,7 +79,8 @@ public class LinkControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForLinkOnInit() throws JsonProcessingException {
+    void shouldFireAndForgetForConsentRequestOnInit() throws JsonProcessingException {
+
         String requestId = UUID.randomUUID().toString();
         String callerRequestId = UUID.randomUUID().toString();
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
@@ -89,13 +91,13 @@ public class LinkControllerTest {
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
 
         String testId = "testId";
-        when(linkValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/v1/links/link/on-init")
+                .uri("/v1/consent-requests/on-init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
@@ -103,13 +105,13 @@ public class LinkControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForLinkConfirm() {
-        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+    void shouldFireAndForgetForConsentFetch() {
+        Mockito.when(consentFetchOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
                 .post()
-                .uri("/v1/links/link/confirm")
+                .uri("/v1/consents/fetch")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()

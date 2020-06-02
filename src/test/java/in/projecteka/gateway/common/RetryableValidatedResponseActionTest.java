@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ServiceClient;
@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doNothing;
@@ -64,11 +65,11 @@ class RetryableValidatedResponseActionTest {
         props.setHeader("X-CM-ID", testCmId);
         when(converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class))).thenReturn(jsonNode);
         when(message.getMessageProperties().getHeader("X-CM-ID")).thenReturn(testCmId);
-        doReturn(Mono.empty()).when(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        doReturn(Mono.empty()).when(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
 
         retryableValidatedResponseAction.onMessage(message);
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        verify(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
     }
 
     @Test
@@ -79,11 +80,11 @@ class RetryableValidatedResponseActionTest {
         when(converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class))).thenReturn(jsonNode);
         when(message.getMessageProperties().getHeader("X-CM-ID")).thenReturn(testCmId);
         doReturn(false).when(retryableValidatedResponseAction).hasExceededRetryCount(message);
-        doReturn(Mono.error(new RuntimeException())).when(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        doReturn(Mono.error(new RuntimeException())).when(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
 
         Assertions.assertThrows(AmqpRejectAndDontRequeueException.class,() -> retryableValidatedResponseAction.onMessage(message));
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        verify(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
         verify(retryableValidatedResponseAction).hasExceededRetryCount(message);
     }
 
@@ -98,11 +99,11 @@ class RetryableValidatedResponseActionTest {
         when(message.getMessageProperties().getReceivedRoutingKey()).thenReturn(testRoutingKey);
         doNothing().when(amqpTemplate).convertAndSend("gw.parking.exchange",testRoutingKey,message);
         doReturn(true).when(retryableValidatedResponseAction).hasExceededRetryCount(message);
-        doReturn(Mono.error(new RuntimeException())).when(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        doReturn(Mono.error(new RuntimeException())).when(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
 
         retryableValidatedResponseAction.onMessage(message);
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        verify(retryableValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
         verify(retryableValidatedResponseAction).hasExceededRetryCount(message);
         verify(amqpTemplate).convertAndSend("gw.parking.exchange",testRoutingKey,message);
     }
@@ -134,11 +135,11 @@ class RetryableValidatedResponseActionTest {
     @Test
     void shouldRouteResponse() {
         String testCmId = "testCmId";
-        when(defaultValidatedResponseAction.routeResponse(testCmId,jsonNode)).thenReturn(Mono.empty());
+        when(defaultValidatedResponseAction.routeResponse(X_CM_ID, testCmId,jsonNode)).thenReturn(Mono.empty());
 
-        StepVerifier.create(retryableValidatedResponseAction.routeResponse(testCmId,jsonNode)).verifyComplete();
+        StepVerifier.create(retryableValidatedResponseAction.routeResponse(X_CM_ID, testCmId,jsonNode)).verifyComplete();
 
-        verify(defaultValidatedResponseAction).routeResponse(testCmId,jsonNode);
+        verify(defaultValidatedResponseAction).routeResponse(X_CM_ID, testCmId,jsonNode);
     }
 
     @Test

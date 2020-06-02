@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.common;
+package in.projecteka.gateway.common;
 
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
@@ -9,7 +9,7 @@ import java.util.Map;
 @AllArgsConstructor
 @Getter
 public class ValidatedRequest {
-    private final YamlRegistryMapping hipConfig;
-    private final String cmRequestId;
+    private final YamlRegistryMapping config;
+    private final String requesterRequestId;
     private final Map<String, Object> deserializedRequest;
 }

@@ -1,7 +1,7 @@
 consentManagers:
-  - host: http://localhost:8000
+  - host: http://localhost:8002
     id: ncg
-  - host: http://localhost:8000
+  - host: http://localhost:8002
     id: nhs
 bridges:
   - host: http://localhost:8000
@@ -12,3 +12,8 @@ bridges:
     id: 10000004
     servesAs:
       - HIP
+  - host: http://localhost:8003
+    id: 10000005
+    servesAs:
+      - HIU
+

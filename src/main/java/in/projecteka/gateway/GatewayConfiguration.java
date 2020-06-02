@@ -5,19 +5,24 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ClientRegistryProperties;
+import in.projecteka.gateway.clients.ConsentFetchServiceClient;
+import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.link.common.DefaultValidatedResponseAction;
-import in.projecteka.gateway.link.common.RequestOrchestrator;
-import in.projecteka.gateway.link.common.ResponseOrchestrator;
-import in.projecteka.gateway.link.common.RetryableValidatedResponseAction;
-import in.projecteka.gateway.link.common.Validator;
+import in.projecteka.gateway.common.DefaultValidatedResponseAction;
+import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.RetryableValidatedResponseAction;
+import in.projecteka.gateway.common.Validator;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -36,7 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static in.projecteka.gateway.link.common.Constants.GW_LINK_QUEUE;
+import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
 
 @Configuration
 public class GatewayConfiguration {
@@ -94,8 +99,10 @@ public class GatewayConfiguration {
 
     @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
-                                                         WebClient.Builder builder) {
-        return new DiscoveryServiceClient(serviceOptions,builder);
+                                                         WebClient.Builder builder,
+                                                         CMRegistry cmRegistry,
+                                                         CentralRegistry centralRegistry) {
+        return new DiscoveryServiceClient(serviceOptions, builder, cmRegistry, centralRegistry);
     }
 
     @Bean("discoveryRequestOrchestrator")
@@ -108,8 +115,9 @@ public class GatewayConfiguration {
 
     @Bean("discoveryResponseAction")
     public DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction(DiscoveryServiceClient discoveryServiceClient,
-                                                                                          CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry);
+                                                                                          CMRegistry cmRegistry,
+                                                                                          BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean("discoveryResponseOrchestrator")
@@ -127,8 +135,10 @@ public class GatewayConfiguration {
 
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
-                                                       WebClient.Builder builder) {
-        return new LinkInitServiceClient(builder,serviceOptions);
+                                                       WebClient.Builder builder,
+                                                       CMRegistry cmRegistry,
+                                                       CentralRegistry centralRegistry) {
+        return new LinkInitServiceClient(builder, serviceOptions, cmRegistry, centralRegistry);
     }
 
     @Bean("linkInitRequestOrchestrator")
@@ -141,8 +151,9 @@ public class GatewayConfiguration {
 
     @Bean("linkInitResponseAction")
     public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(LinkInitServiceClient linkInitServiceClient,
-                                                                                        CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry);
+                                                                                        CMRegistry cmRegistry,
+                                                                                        BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean("linkInitResponseOrchestrator")
@@ -153,8 +164,10 @@ public class GatewayConfiguration {
 
     @Bean
     public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
-                                                                        WebClient.Builder builder) {
-        return new LinkConfirmServiceClient(builder,serviceOptions);
+                                                             WebClient.Builder builder,
+                                                             CMRegistry cmRegistry,
+                                                             CentralRegistry centralRegistry) {
+        return new LinkConfirmServiceClient(builder,serviceOptions, cmRegistry, centralRegistry);
     }
 
     @Bean("linkConfirmRequestOrchestrator")
@@ -167,8 +180,9 @@ public class GatewayConfiguration {
 
     @Bean("linkConfirmResponseAction")
     public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(LinkConfirmServiceClient linkConfirmServiceClient,
-                                                                                              CMRegistry cmRegistry) {
-        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry);
+                                                                                              CMRegistry cmRegistry,
+                                                                                              BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry, bridgeRegistry);
     }
 
     @Bean
@@ -196,6 +210,63 @@ public class GatewayConfiguration {
     public ResponseOrchestrator linkConfirmResponseOrchestrator(Validator validator,
                                                          RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkConfirmResponseAction) {
         return new ResponseOrchestrator(validator, retryableLinkConfirmResponseAction);
+    }
+
+    @Bean
+    public ConsentRequestServiceClient consentRequestServiceClient(ServiceOptions serviceOptions,
+                                                                   WebClient.Builder builder,
+                                                                   BridgeRegistry bridgeRegistry,
+                                                                   CentralRegistry centralRegistry) {
+        return new ConsentRequestServiceClient(serviceOptions, builder, bridgeRegistry, centralRegistry);
+    }
+
+    @Bean
+    public ConsentFetchServiceClient consentFetchServiceClient(ServiceOptions serviceOptions,
+                                                                   WebClient.Builder builder,
+                                                                   BridgeRegistry bridgeRegistry,
+                                                                   CentralRegistry centralRegistry) {
+        return new ConsentFetchServiceClient(serviceOptions, builder, bridgeRegistry, centralRegistry);
+    }
+
+    @Bean("consentRequestOrchestrator")
+    public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                       Validator validator,
+                                                                       ConsentRequestServiceClient consentRequestServiceClient,
+                                                                       CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient, cmRegistry);
+    }
+
+    @Bean("consentFetchOrchestrator")
+    public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                                   Validator validator,
+                                                                                   ConsentFetchServiceClient consentFetchServiceClient,
+                                                                                   CMRegistry cmRegistry) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient, cmRegistry);
+    }
+
+    @Bean
+    public ClientRegistryClient clientRegistryClient(WebClient.Builder builder,
+                                                     ClientRegistryProperties clientRegistryProperties) {
+        return new ClientRegistryClient(builder, clientRegistryProperties.getUrl());
+    }
+
+    @Bean
+    public CentralRegistry centralRegistry(ClientRegistryProperties clientRegistryProperties,
+                                           ClientRegistryClient clientRegistryClient) {
+        return new CentralRegistry(clientRegistryClient, clientRegistryProperties);
+    }
+
+    @Bean("consentResponseAction")
+    public DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction(ConsentRequestServiceClient consentRequestServiceClient,
+                                                                                             CMRegistry cmRegistry,
+                                                                                             BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(consentRequestServiceClient, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("consentResponseOrchestrator")
+    public ResponseOrchestrator consentResponseOrchestrator(Validator validator,
+                                                              DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction) {
+        return new ResponseOrchestrator(validator, consentResponseAction);
     }
 
 }
