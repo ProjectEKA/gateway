@@ -64,7 +64,7 @@ class ResponseOrchestratorTest {
         String testCmId = "testCmId";
         when(discoveryValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testCmId,cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(Mono.just(cmRequestId));
-        when(validatedResponseAction.execute(eq(testCmId),jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testCmId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
         StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
                 .verifyComplete();

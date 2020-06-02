@@ -15,6 +15,7 @@ import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -38,7 +39,7 @@ class DefaultValidatedResponseActionTest {
         String cmId  = "testCMId";
         when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.empty());
 
-        StepVerifier.create(defaultValidatedResponseAction.routeResponse(cmId,null))
+        StepVerifier.create(defaultValidatedResponseAction.routeResponse(X_CM_ID, cmId,null))
                 .verifyComplete();
     }
 
@@ -51,7 +52,7 @@ class DefaultValidatedResponseActionTest {
         JsonNode mockRequest = Mockito.mock(JsonNode.class);
         when(serviceClient.routeResponse(mockRequest,testHost)).thenReturn(Mono.empty());
 
-        StepVerifier.create(defaultValidatedResponseAction.routeResponse(cmId,mockRequest))
+        StepVerifier.create(defaultValidatedResponseAction.routeResponse(X_CM_ID, cmId, mockRequest))
                 .verifyComplete();
         verify(serviceClient).routeResponse(mockRequest,testHost);
     }

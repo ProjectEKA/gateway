@@ -23,8 +23,8 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
     BridgeRegistry bridgeRegistry;
 
     @Override
-    public Mono<Void> routeResponse(String id, JsonNode updatedRequest) {
-        Optional<YamlRegistryMapping> configFor = id.equals(X_HIU_ID)
+    public Mono<Void> routeResponse(String x_id, String id, JsonNode updatedRequest) {
+        Optional<YamlRegistryMapping> configFor = x_id.equals(X_HIU_ID)
                 ? bridgeRegistry.getConfigFor(id, ServiceType.HIU)
                 : cmRegistry.getConfigFor(id);
         if (configFor.isEmpty()) {

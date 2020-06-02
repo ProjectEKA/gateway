@@ -92,7 +92,7 @@ class ConsentControllerTest {
 
         String testId = "testId";
         when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
