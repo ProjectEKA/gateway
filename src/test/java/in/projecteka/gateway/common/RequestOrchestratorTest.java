@@ -55,7 +55,7 @@ class RequestOrchestratorTest {
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        requestOrchestrator = Mockito.spy(new RequestOrchestrator(requestIdMappings,discoveryValidator,discoveryServiceClient,cmRegistry));
+        requestOrchestrator = Mockito.spy(new RequestOrchestrator(requestIdMappings,discoveryValidator,discoveryServiceClient));
     }
 
     @Test
