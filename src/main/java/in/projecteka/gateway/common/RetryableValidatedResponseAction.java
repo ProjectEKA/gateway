@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 
 public class RetryableValidatedResponseAction<T extends ServiceClient> implements MessageListener,ValidatedResponseAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
@@ -40,7 +41,7 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
         JsonNode jsonNode = (JsonNode) converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class));
         String xCmId = message.getMessageProperties().getHeader("X-CM-ID");
         try {
-            routeResponse(xCmId, jsonNode).block();
+            routeResponse(X_CM_ID, xCmId, jsonNode).block();
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
                 logger.error("Exceeded retry attempts; parking the message");
@@ -64,8 +65,8 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
     }
 
     @Override
-    public Mono<Void> routeResponse(String xCmId, JsonNode updatedRequest) {
-        return defaultValidatedResponseAction.routeResponse(xCmId,updatedRequest);
+    public Mono<Void> routeResponse(String x_id, String xCmId, JsonNode updatedRequest) {
+        return defaultValidatedResponseAction.routeResponse(x_id, xCmId,updatedRequest);
     }
 
     @Override

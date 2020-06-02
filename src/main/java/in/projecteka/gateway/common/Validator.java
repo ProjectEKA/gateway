@@ -13,12 +13,12 @@ import org.springframework.http.HttpEntity;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Optional;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+
 
 @AllArgsConstructor
 public class Validator {
@@ -52,16 +52,17 @@ public class Validator {
                 });
     }
 
-    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity) {
-        List<String> xCmIds = requestEntity.getHeaders().get(X_CM_ID);
-        if (xCmIds == null || xCmIds.isEmpty()) {
-            logger.error("No X-CM-ID found on Headers");
+    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity, String id) {
+        String xid = requestEntity.getHeaders().getFirst(id);
+        if (!StringUtils.hasText(xid)) {
+            logger.error("No {} found on Headers", id);
             return Mono.empty();
         }
-        String xCmId = xCmIds.get(0);
-        Optional<YamlRegistryMapping> cmConfig = cmRegistry.getConfigFor(xCmId);
-        if (cmConfig.isEmpty()) {
-            logger.error("No mapping found for X-CM-ID : {}", xCmId);
+        Optional<YamlRegistryMapping> config = id.equals(X_HIU_ID)
+                ? bridgeRegistry.getConfigFor(xid, ServiceType.HIU)
+                : cmRegistry.getConfigFor(xid);
+        if (config.isEmpty()) {
+            logger.error("No mapping found for {} : {}", id, xid);
             return Mono.empty();
         }
         return Utils.deserializeRequestAsJsonNode(requestEntity)
@@ -73,11 +74,11 @@ public class Validator {
                     }
                     return requestIdMappings.get(respRequestId)
                             .doOnSuccess(callerRequestId -> {
-                                if (callerRequestId == null || callerRequestId.isEmpty()) {
+                                if (!StringUtils.hasText(callerRequestId)) {
                                     logger.error("No mapping found for resp.requestId on cache");
                                 }
                             })
-                            .map(callerRequestId -> new ValidatedResponse(xCmId, callerRequestId,
+                            .map(callerRequestId -> new ValidatedResponse(xid, callerRequestId,
                                     jsonNode));
                 });
     }
