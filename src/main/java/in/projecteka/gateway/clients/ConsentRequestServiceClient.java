@@ -3,19 +3,15 @@ package in.projecteka.gateway.clients;
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.common.Utils;
 import in.projecteka.gateway.common.model.ErrorResult;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.ServiceType;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.http.MediaType;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 

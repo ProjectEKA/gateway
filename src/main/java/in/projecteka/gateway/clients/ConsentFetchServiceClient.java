@@ -9,7 +9,6 @@ import in.projecteka.gateway.registry.ServiceType;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -47,7 +46,7 @@ public class ConsentFetchServiceClient extends ServiceClient {
     }
 
     @Override
-    public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-        return null;
+    public Mono<Void> routeResponse(JsonNode request, String url) {
+        return super.routeResponse(request,url + RESPONSE_ROUTE);
     }
 }
