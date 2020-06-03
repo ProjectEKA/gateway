@@ -5,8 +5,10 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.ClientRegistryClient;
@@ -108,9 +110,8 @@ public class GatewayConfiguration {
     @Bean("discoveryRequestOrchestrator")
     public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(CacheAdapter<String, String> requestIdMappings,
                                                                        Validator validator,
-                                                                       DiscoveryServiceClient discoveryServiceClient,
-                                                                       CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient, cmRegistry);
+                                                                       DiscoveryServiceClient discoveryServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient);
     }
 
     @Bean("discoveryResponseAction")
@@ -144,9 +145,8 @@ public class GatewayConfiguration {
     @Bean("linkInitRequestOrchestrator")
     public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                               Validator validator,
-                                                                              LinkInitServiceClient linkInitServiceClient,
-                                                                              CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, cmRegistry);
+                                                                              LinkInitServiceClient linkInitServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient);
     }
 
     @Bean("linkInitResponseAction")
@@ -173,9 +173,8 @@ public class GatewayConfiguration {
     @Bean("linkConfirmRequestOrchestrator")
     public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                               Validator validator,
-                                                                              LinkConfirmServiceClient linkConfirmServiceClient,
-                                                                              CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, cmRegistry);
+                                                                              LinkConfirmServiceClient linkConfirmServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient);
     }
 
     @Bean("linkConfirmResponseAction")
@@ -231,17 +230,15 @@ public class GatewayConfiguration {
     @Bean("consentRequestOrchestrator")
     public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                        Validator validator,
-                                                                       ConsentRequestServiceClient consentRequestServiceClient,
-                                                                       CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient, cmRegistry);
+                                                                       ConsentRequestServiceClient consentRequestServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient);
     }
 
     @Bean("consentFetchOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                                    Validator validator,
-                                                                                   ConsentFetchServiceClient consentFetchServiceClient,
-                                                                                   CMRegistry cmRegistry) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient, cmRegistry);
+                                                                                   ConsentFetchServiceClient consentFetchServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient);
     }
 
     @Bean
@@ -256,6 +253,38 @@ public class GatewayConfiguration {
         return new CentralRegistry(clientRegistryClient, clientRegistryProperties);
     }
 
+    @Bean
+    public HipConsentNotifyServiceClient hipConsentNotifyServiceClient(ServiceOptions serviceOptions,
+                                                                      WebClient.Builder builder,
+                                                                      CentralRegistry centralRegistry,
+                                                                      CMRegistry cmRegistry) {
+        return new HipConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    }
+
+    @Bean("hipConsentNotifyRequestOrchestrator")
+    public RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HipConsentNotifyServiceClient hipConsentNotifyServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hipConsentNotifyServiceClient);
+    }
+
+    @Bean
+    public HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient(ServiceOptions serviceOptions,
+                                                                       WebClient.Builder builder,
+                                                                       CentralRegistry centralRegistry,
+                                                                       CMRegistry cmRegistry) {
+        return new HiuConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    }
+
+    @Bean("hiuConsentNotifyRequestOrchestrator")
+    public RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hiuConsentNotifyServiceClient);
+    }
+
     @Bean("consentResponseAction")
     public DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction(ConsentRequestServiceClient consentRequestServiceClient,
                                                                                              CMRegistry cmRegistry,
@@ -268,5 +297,4 @@ public class GatewayConfiguration {
                                                               DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction) {
         return new ResponseOrchestrator(validator, consentResponseAction);
     }
-
 }
