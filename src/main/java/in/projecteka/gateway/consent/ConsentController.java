@@ -43,4 +43,10 @@ public class ConsentController {
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping("/v1/consents/on-fetch")
+    public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
+        return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+    }
 }

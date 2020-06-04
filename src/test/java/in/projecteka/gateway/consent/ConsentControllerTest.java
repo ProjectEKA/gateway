@@ -117,4 +117,30 @@ class ConsentControllerTest {
                 .exchange()
                 .expectStatus().isAccepted();
     }
+
+    @Test
+    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException {
+
+        String requestId = UUID.randomUUID().toString();
+        String callerRequestId = UUID.randomUUID().toString();
+        ObjectNode objectNode = new ObjectMapper().createObjectNode();
+        objectNode.put("requestId",requestId);
+        ObjectNode respNode = new ObjectMapper().createObjectNode();
+        respNode.put("requestId",callerRequestId);
+        objectNode.set("resp",respNode);
+        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
+
+        String testId = "testId";
+        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+
+        WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
+        mutatedWebTestClient
+                .post()
+                .uri("/v1/consents/on-fetch")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus().isAccepted();
+    }
 }
