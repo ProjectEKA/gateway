@@ -57,7 +57,7 @@ class RequestOrchestratorTest {
     RequestOrchestrator requestOrchestrator;
 
     @BeforeEach
-    public void init() {
+    void init() {
         MockitoAnnotations.initMocks(this);
         requestOrchestrator = Mockito.spy(new RequestOrchestrator(requestIdMappings,
                 discoveryValidator,
@@ -69,16 +69,15 @@ class RequestOrchestratorTest {
      error through error notify.
     */
     @Test
-    public void shouldDoNothingWhenRequestIdIsInvalidOrEmpty() {
+    void shouldDoNothingWhenRequestIdIsInvalidOrEmpty() {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
 
         StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
 
-
     @Test
-    public void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
+    void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -96,7 +95,7 @@ class RequestOrchestratorTest {
     }
 
     @Test
-    public void shouldCallBridgeWhenValidRequest() throws JsonProcessingException {
+    void shouldCallBridgeWhenValidRequest() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         Map<String, Object> requestBody = new HashMap<>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -115,7 +114,7 @@ class RequestOrchestratorTest {
     }
 
     @Test
-    public void shouldNotifyCMOnBridgeTimeout() throws JsonProcessingException {
+    void shouldNotifyCMOnBridgeTimeout() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -139,7 +138,7 @@ class RequestOrchestratorTest {
     }
 
     @Test
-    public void shouldNotifyCMOnBridgeError() throws JsonProcessingException {
+    void shouldNotifyCMOnBridgeError() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
