@@ -53,7 +53,7 @@ public abstract class ServiceClient {
                         .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                                 clientResponse -> Mono.error(ClientError.unableToConnect()))//TODO Error handling
                         .bodyToMono(Void.class));
-    };
+    }
 
     public Mono<Void> routeResponse(JsonNode request, String url){
         return centralRegistry.authenticate()

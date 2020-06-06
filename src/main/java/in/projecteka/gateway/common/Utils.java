@@ -18,33 +18,38 @@ import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 
 public class Utils {
     private static final Logger logger = LoggerFactory.getLogger(Utils.class);
-    static ObjectMapper objectMapper = new ObjectMapper();//TODO
+    public static final String ERROR_IN_DE_SERIALISE = "Error while de-serialise";
+    public static final String ERROR_IN_SERIALIZING_REQUEST_BODY = "Error while serializing request body";
+    static ObjectMapper objectMapper = new ObjectMapper(); //TODO
 
-    private Utils() {}
+    private Utils() {
+    }
 
     public static Mono<Map<String, Object>> deserializeRequest(HttpEntity<String> requestEntity) {
         try {
-            return Mono.just(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() { }));
+            return Mono.just(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() {
+            }));
         } catch (JsonProcessingException e) {
-            logger.error("Error in deserializing", e);
+            logger.error(ERROR_IN_DE_SERIALISE, e);
             return Mono.empty();
         }
     }
 
     public static Optional<Map<String, Object>> from(HttpEntity<String> requestEntity) {
         try {
-            return Optional.of(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() { }));
+            return Optional.of(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() {
+            }));
         } catch (Exception e) {
-            logger.error("Error in deserializing", e);
+            logger.error(ERROR_IN_DE_SERIALISE, e);
             return Optional.empty();
         }
     }
 
     public static Mono<JsonNode> deserializeRequestAsJsonNode(HttpEntity<String> requestEntity) {
         try {
-            return Mono.just(objectMapper.readValue(requestEntity.getBody(),JsonNode.class));
+            return Mono.just(objectMapper.readValue(requestEntity.getBody(), JsonNode.class));
         } catch (JsonProcessingException e) {
-            logger.error("Error in deserializing", e);
+            logger.error(ERROR_IN_DE_SERIALISE, e);
             return Mono.empty();
         }
     }
@@ -53,7 +58,7 @@ public class Utils {
         try {
             return Mono.just(objectMapper.writeValueAsString(jsonNode));
         } catch (JsonProcessingException e) {
-            logger.error("Error in serializing request body", e);
+            logger.error(ERROR_IN_SERIALIZING_REQUEST_BODY, e);
             return Mono.empty();
         }
     }
@@ -62,7 +67,7 @@ public class Utils {
         try {
             return Mono.just(objectMapper.writeValueAsString(request));
         } catch (JsonProcessingException e) {
-            logger.error("Error in serializing request body", e);
+            logger.error(ERROR_IN_SERIALIZING_REQUEST_BODY, e);
             return Mono.empty();
         }
     }
