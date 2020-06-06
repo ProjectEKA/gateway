@@ -14,6 +14,10 @@ import lombok.NoArgsConstructor;
 public class Error {
     private ErrorCode code;
     private String message;
+
+    public static Error unKnownError(String message) {
+        return new Error(ErrorCode.UNKNOWN_ERROR_OCCURRED, message);
+    }
 }
 
 

@@ -26,7 +26,6 @@ public class Validator {
     CMRegistry cmRegistry;
     CacheAdapter<String, String> requestIdMappings;
 
-
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String id) {
         String xid = requestEntity.getHeaders().getFirst(id);
         if (!StringUtils.hasText(xid)) {
@@ -43,6 +42,7 @@ public class Validator {
                     String requestId = (String) deserializedRequest.get(REQUEST_ID);
                     if (!StringUtils.hasText(requestId)) {
                         logger.error("No {} found on the payload", REQUEST_ID);
+                        // TODO: It's very well an error.
                         return Mono.empty();
                     }
                     return Mono.just(new ValidatedRequest(mapping, requestId, deserializedRequest));
@@ -79,6 +79,7 @@ public class Validator {
                     String respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
                     if (respRequestId.isEmpty()) {
                         logger.error("resp.requestId is null or empty");
+                        // TODO: It's very well an error.
                         return Mono.empty();
                     }
                     return requestIdMappings.get(respRequestId)

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Data
 @Builder
-public class ErrorResult {
+public class ErrorResult extends Throwable {
     @NotNull
     private final UUID requestId;
     private final Object link;

@@ -11,6 +11,7 @@ import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
@@ -27,6 +28,15 @@ public class Utils {
         } catch (JsonProcessingException e) {
             logger.error("Error in deserializing", e);
             return Mono.empty();
+        }
+    }
+
+    public static Optional<Map<String, Object>> from(HttpEntity<String> requestEntity) {
+        try {
+            return Optional.of(objectMapper.readValue(requestEntity.getBody(), new TypeReference<>() { }));
+        } catch (Exception e) {
+            logger.error("Error in deserializing", e);
+            return Optional.empty();
         }
     }
 
