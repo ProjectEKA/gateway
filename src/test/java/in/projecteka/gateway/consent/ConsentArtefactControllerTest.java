@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -19,10 +20,12 @@ import java.time.Duration;
 
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 public class ConsentArtefactControllerTest {
     @MockBean
     RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator;
@@ -38,7 +41,7 @@ public class ConsentArtefactControllerTest {
 
     @Test
     public void shouldFireAndForgetHIPConsentNotification() {
-        Mockito.when(hipConsentNotifyRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID)))
+        Mockito.when(hipConsentNotifyRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID), any()))
                 .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
@@ -48,12 +51,13 @@ public class ConsentArtefactControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
-                .expectStatus().isAccepted();
+                .expectStatus()
+                .isAccepted();
     }
 
     @Test
     public void shouldFireAndForgetHIUConsentNotification() {
-        Mockito.when(hiuConsentNotifyRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIU_ID)))
+        Mockito.when(hiuConsentNotifyRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIU_ID), any()))
                 .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
@@ -63,6 +67,7 @@ public class ConsentArtefactControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
-                .expectStatus().isAccepted();
+                .expectStatus()
+                .isAccepted();
     }
 }

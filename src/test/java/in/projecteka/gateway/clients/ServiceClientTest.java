@@ -1,12 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.projecteka.gateway.clients.model.Error;
-import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.common.CentralRegistry;
-import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.common.model.ErrorResult;
-import in.projecteka.gateway.common.model.GatewayResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -18,16 +13,18 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
-import java.util.UUID;
+import java.util.Optional;
 
+import static in.projecteka.gateway.clients.TestBuilders.errorResult;
+import static in.projecteka.gateway.clients.TestBuilders.serviceOptions;
+import static in.projecteka.gateway.clients.TestBuilders.string;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 class ServiceClientTest {
-    @Mock
-    private ServiceOptions serviceOptions;
 
     @Mock
     private WebClient.Builder webClientBuilder;
@@ -53,25 +50,23 @@ class ServiceClientTest {
     private ServiceClient serviceClient;
 
     @BeforeEach
-    void init(){
+    void init() {
         MockitoAnnotations.initMocks(this);
-        when(serviceOptions.getTimeout()).thenReturn(50);
-        serviceClient = new ServiceClient(serviceOptions, webClientBuilder, centralRegistry) {
+        when(webClientBuilder.build()).thenReturn(webClient);
+        serviceClient = new ServiceClient(serviceOptions().build(), webClientBuilder, centralRegistry) {
             @Override
-            public Mono<Void> notifyError(ErrorResult errorResult) {
-                return null;
+            protected Optional<String> getResponseUrl(String clientId) {
+                return Optional.empty();
             }
         };
     }
 
     @Test
     void shouldRouteGivenRequestToURL() {
-        var token = "SAMPLE_TOKEN";
+        var token = string();
         var serializedRequest = "{}";
-        var request = new HashMap<String,Object>();
+        var request = new HashMap<String, Object>();
         var url = "/temp-url";
-
-        when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);
         when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
@@ -79,24 +74,20 @@ class ServiceClientTest {
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        Mono<Void> emptyBodyMono = Mono.empty();
-        when(responseSpec.bodyToMono(eq(Void.class))).thenReturn(emptyBodyMono);
+        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
 
         when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
 
-        StepVerifier.create(serviceClient.routeRequest(request,url))
+        StepVerifier.create(serviceClient.routeRequest(request, url))
                 .verifyComplete();
     }
 
     @Test
-    void shouldRouteGivenResponsetToURL() {
-        var token = "SAMPLE_TOKEN";
+    void shouldRouteGivenResponseToURL() {
+        var token = string();
         var serializedRequest = "{}";
-        var mapper = new ObjectMapper();
-        var request = mapper.createObjectNode();
+        var request = new ObjectMapper().createObjectNode();
         var url = "/temp-url";
-
-        when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);
         when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
@@ -104,39 +95,43 @@ class ServiceClientTest {
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        Mono<Void> emptyBodyMono = Mono.empty();
-        when(responseSpec.bodyToMono(eq(Void.class))).thenReturn(emptyBodyMono);
+        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
 
         when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
 
-        StepVerifier.create(serviceClient.routeResponse(request,url))
+        StepVerifier.create(serviceClient.routeResponse(request, url))
                 .verifyComplete();
     }
 
     @Test
     void shouldNotifyError() {
-
-        var token = "SAMPLE_TOKEN";
+        var token = string();
         var url = "/temp-url";
-        var uuid = UUID.randomUUID();
-        var error = new Error(ErrorCode.INVALID_TOKEN,"invalid token");
-        var link = new Object();
-        var response = new GatewayResponse(uuid);
-        var request = ErrorResult.builder().requestId(uuid).error(error).link(link).resp(response).build();
-
+        var clientId = string();
+        var request = errorResult().build();
         when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
-        when(webClientBuilder.build()).thenReturn(webClient);
         when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);
+        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
+        when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
         when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), eq(token))).thenReturn(requestBodySpec);
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        Mono<Void> emptyBodyMono = Mono.empty();
-        when(responseSpec.bodyToMono(eq(Void.class))).thenReturn(emptyBodyMono);
+        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        serviceClient = new ServiceClient(serviceOptions().build(), webClientBuilder, centralRegistry) {
+            @Override
+            protected Optional<String> getResponseUrl(String clientId) {
+                return Optional.of(url);
+            }
+        };
 
-        StepVerifier.create(serviceClient.notifyError(request,url))
+        StepVerifier.create(serviceClient.notifyError(clientId, request))
                 .verifyComplete();
+    }
 
+    @Test
+    void returnErrorIfUnableToFindAHostForAClient() {
+        StepVerifier.create(serviceClient.notifyError(string(), errorResult().build()))
+                .verifyError(ClientError.class);
     }
 }

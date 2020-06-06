@@ -19,6 +19,7 @@ import org.mockito.Captor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpEntity;
@@ -26,17 +27,20 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static org.mockito.ArgumentMatchers.eq;
 
 import java.time.Duration;
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
 public class LinkControllerTest {
     @MockBean
     RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
@@ -44,6 +48,7 @@ public class LinkControllerTest {
     @Qualifier("linkInitResponseOrchestrator")
     @MockBean
     ResponseOrchestrator linkInitResponseOrchestrator;
+
     @MockBean
     RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
 
@@ -65,7 +70,8 @@ public class LinkControllerTest {
 
     @Test
     public void shouldFireAndForgetForLinkInit() {
-        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkInitRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID), anyString()))
+                .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -82,15 +88,17 @@ public class LinkControllerTest {
         String requestId = UUID.randomUUID().toString();
         String callerRequestId = UUID.randomUUID().toString();
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("requestId",requestId);
+        objectNode.put("requestId", requestId);
         ObjectNode respNode = new ObjectMapper().createObjectNode();
-        respNode.put("requestId",callerRequestId);
-        objectNode.set("resp",respNode);
+        respNode.put("requestId", callerRequestId);
+        objectNode.set("resp", respNode);
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
 
         String testId = "testId";
-        when(linkValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(linkValidator.validateResponse(requestEntity, X_CM_ID))
+                .thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+                .thenReturn(Mono.empty());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -104,7 +112,8 @@ public class LinkControllerTest {
 
     @Test
     public void shouldFireAndForgetForLinkConfirm() {
-        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(linkConfirmRequestOrchestrator.processRequest(Mockito.any(), eq(X_HIP_ID), any()))
+                .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

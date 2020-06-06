@@ -26,9 +26,9 @@ public class RequestOrchestrator<T extends ServiceClient> {
     Validator validator;
     T serviceClient;
 
-    public Mono<Void> processRequest(HttpEntity<String> requestEntity, String id) {
+    public Mono<Void> processRequest(HttpEntity<String> requestEntity, String targetSystemHeaderKey, String clientId) {
         return getRequestId(requestEntity)
-                .map(requestId -> validator.validateRequest(requestEntity, id)
+                .map(requestId -> validator.validateRequest(requestEntity, targetSystemHeaderKey)
                         .flatMap(validatedDiscoverRequest -> {
                             var gatewayRequestId = UUID.randomUUID();
                             var downstreamRequestId = gatewayRequestId.toString();
@@ -61,7 +61,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
                         .doOnError(ErrorResult.class,
                                 errorResult -> {
                                     logger.error("Notifying caller about the failure", errorResult);
-                                    serviceClient.notifyError(errorResult).subscribe();
+                                    serviceClient.notifyError(clientId, errorResult).subscribe();
                                 }))
                 // TODO: Should not occur, if it occurs we should have rejected request immediately.
                 .orElse(Mono.empty());
@@ -78,7 +78,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
 
     private static String extractOrDefault(HttpEntity<String> request) {
         var fallbackRequestId = "";
-        return Utils.from(request)
+        return Serializer.from(request)
                 .map(stringObjectMap -> stringObjectMap
                         .getOrDefault(Constants.REQUEST_ID, fallbackRequestId)
                         .toString())

@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.TEMP_HIU_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
 @RestController
 @AllArgsConstructor
@@ -25,8 +26,7 @@ public class ConsentController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consent-requests/init")
     public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID);
-        toBeFiredAndForgotten.subscribe();
+        consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID, TEMP_HIU_ID).subscribe();
         return Mono.empty();
     }
 
@@ -39,8 +39,7 @@ public class ConsentController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/fetch")
     public Mono<Void> fetchConsent(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = consentFetchOrchestrator.processRequest(requestEntity, X_CM_ID);
-        toBeFiredAndForgotten.subscribe();
+        consentFetchOrchestrator.processRequest(requestEntity, X_CM_ID, TEMP_HIU_ID).subscribe();
         return Mono.empty();
     }
 

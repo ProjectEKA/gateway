@@ -1,6 +1,7 @@
-package in.projecteka.gateway.common;
+package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.model.ErrorResult;
 import org.jeasy.random.EasyRandom;
 
 public class TestBuilders {
@@ -9,6 +10,10 @@ public class TestBuilders {
 
     public static String string() {
         return easyRandom.nextObject(String.class);
+    }
+
+    public static ErrorResult.ErrorResultBuilder errorResult() {
+        return easyRandom.nextObject(ErrorResult.ErrorResultBuilder.class);
     }
 
     public static ServiceOptions.ServiceOptionsBuilder serviceOptions() {

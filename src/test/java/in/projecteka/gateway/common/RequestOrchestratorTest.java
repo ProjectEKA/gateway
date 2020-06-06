@@ -72,12 +72,13 @@ class RequestOrchestratorTest {
     void shouldDoNothingWhenRequestIdIsInvalidOrEmpty() {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, string()))
                 .verifyComplete();
     }
 
     @Test
     void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
+        var clientId = string();
         var requestId = UUID.randomUUID().toString();
         Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -85,9 +86,9 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, X_CM_ID))
                 .thenReturn(Mono.error(clientError));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(errorResult.capture())).thenReturn(Mono.empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
                 .verifyError(ErrorResult.class);
 
         assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("X-CM-ID missing in headers");
@@ -106,7 +107,7 @@ class RequestOrchestratorTest {
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host))).thenReturn(Mono.empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, string()))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
@@ -115,6 +116,7 @@ class RequestOrchestratorTest {
 
     @Test
     void shouldNotifyCMOnBridgeTimeout() throws JsonProcessingException {
+        var clientId = string();
         var requestId = UUID.randomUUID().toString();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -126,9 +128,9 @@ class RequestOrchestratorTest {
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
                 .thenReturn(Mono.error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(errorResult.capture())).thenReturn(Mono.empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
                 .verifyError(ErrorResult.class);
 
         verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
@@ -139,6 +141,7 @@ class RequestOrchestratorTest {
 
     @Test
     void shouldNotifyCMOnBridgeError() throws JsonProcessingException {
+        var clientId = string();
         var requestId = UUID.randomUUID().toString();
         Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -150,9 +153,9 @@ class RequestOrchestratorTest {
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
                 .thenReturn(Mono.error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(errorResult.capture())).thenReturn(Mono.empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
                 .verifyError(ErrorResult.class);
 
         verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);

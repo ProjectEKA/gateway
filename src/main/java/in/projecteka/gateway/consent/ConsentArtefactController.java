@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
@@ -24,16 +25,14 @@ public class ConsentArtefactController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/hip/notify")
     public Mono<Void> consentNotifyToHIP(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = hipConsentNotifyRequestOrchestrator.processRequest(requestEntity, X_HIP_ID);
-        toBeFiredAndForgotten.subscribe();
+        hipConsentNotifyRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, TEMP_CM_ID).subscribe();
         return Mono.empty();
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/hiu/notify")
     public Mono<Void> consentNotifyToHIU(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = hiuConsentNotifyRequestOrchestrator.processRequest(requestEntity, X_HIU_ID);
-        toBeFiredAndForgotten.subscribe();
+        hiuConsentNotifyRequestOrchestrator.processRequest(requestEntity, X_HIU_ID, TEMP_CM_ID).subscribe();
         return Mono.empty();
     }
 }

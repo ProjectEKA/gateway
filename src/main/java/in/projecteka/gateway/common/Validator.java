@@ -26,18 +26,18 @@ public class Validator {
     CMRegistry cmRegistry;
     CacheAdapter<String, String> requestIdMappings;
 
-    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String id) {
-        String xid = requestEntity.getHeaders().getFirst(id);
-        if (!StringUtils.hasText(xid)) {
-            return Mono.error(ClientError.idMissingInHeader(id));
+    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String routingKey) {
+        String clientId = requestEntity.getHeaders().getFirst(routingKey);
+        if (!StringUtils.hasText(clientId)) {
+            return Mono.error(ClientError.idMissingInHeader(routingKey));
         }
-        Optional<YamlRegistryMapping> config = getRegistryMapping(bridgeRegistry, cmRegistry, id, xid);
+        Optional<YamlRegistryMapping> config = getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId);
         if (config.isEmpty()) {
-            logger.error("No mapping found for {} : {}", id, xid);
-            return Mono.error(ClientError.mappingNotFoundForId(id));
+            logger.error("No mapping found for {} : {}", routingKey, clientId);
+            return Mono.error(ClientError.mappingNotFoundForId(routingKey));
         }
         YamlRegistryMapping mapping = config.get();
-        return Utils.deserializeRequest(requestEntity)
+        return Serializer.deserializeRequest(requestEntity)
                 .flatMap(deserializedRequest -> {
                     String requestId = (String) deserializedRequest.get(REQUEST_ID);
                     if (!StringUtils.hasText(requestId)) {
@@ -49,15 +49,18 @@ public class Validator {
                 });
     }
 
-    private Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry, CMRegistry cmRegistry, String id, String xid) {
-        if(id.equals(X_HIP_ID)) {
-            return bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
+    private Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry,
+                                                             CMRegistry cmRegistry,
+                                                             String routingHeaderKey,
+                                                             String clientId) {
+        if(routingHeaderKey.equals(X_HIP_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, ServiceType.HIP);
         }
-        else if(id.equals(X_HIU_ID)) {
-            return bridgeRegistry.getConfigFor(xid, ServiceType.HIU);
+        else if(routingHeaderKey.equals(X_HIU_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, ServiceType.HIU);
         }
         else {
-            return cmRegistry.getConfigFor(xid);
+            return cmRegistry.getConfigFor(clientId);
         }
     }
 
@@ -74,7 +77,7 @@ public class Validator {
             logger.error("No mapping found for {} : {}", id, xid);
             return Mono.empty();
         }
-        return Utils.deserializeRequestAsJsonNode(requestEntity)
+        return Serializer.deserializeRequestAsJsonNode(requestEntity)
                 .flatMap(jsonNode -> {
                     String respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
                     if (respRequestId.isEmpty()) {

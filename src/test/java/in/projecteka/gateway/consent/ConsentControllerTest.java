@@ -32,6 +32,7 @@ import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -66,33 +67,36 @@ class ConsentControllerTest {
 
     @Test
     void shouldFireAndForgetForConsentRequestInit() {
-        Mockito.when(requestOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(requestOrchestrator.processRequest(any(), eq(X_CM_ID), any()))
+                .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
+
         mutatedWebTestClient
                 .post()
                 .uri("/v1/consent-requests/init")
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
-                .expectStatus().isAccepted();
+                .expectStatus()
+                .isAccepted();
     }
 
     @Test
     void shouldFireAndForgetForConsentRequestOnInit() throws JsonProcessingException {
-
         String requestId = UUID.randomUUID().toString();
         String callerRequestId = UUID.randomUUID().toString();
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("requestId",requestId);
+        objectNode.put("requestId", requestId);
         ObjectNode respNode = new ObjectMapper().createObjectNode();
-        respNode.put("requestId",callerRequestId);
-        objectNode.set("resp",respNode);
+        respNode.put("requestId", callerRequestId);
+        objectNode.set("resp", respNode);
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
-
         String testId = "testId";
-        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID))
+                .thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+                .thenReturn(Mono.empty());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -106,7 +110,8 @@ class ConsentControllerTest {
 
     @Test
     void shouldFireAndForgetForConsentFetch() {
-        Mockito.when(consentFetchOrchestrator.processRequest(Mockito.any(), eq(X_CM_ID))).thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
+        Mockito.when(consentFetchOrchestrator.processRequest(any(), eq(X_CM_ID), any()))
+                .thenReturn(Mono.delay(Duration.ofSeconds(10)).then());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient
@@ -120,19 +125,19 @@ class ConsentControllerTest {
 
     @Test
     void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException {
-
         String requestId = UUID.randomUUID().toString();
         String callerRequestId = UUID.randomUUID().toString();
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("requestId",requestId);
+        objectNode.put("requestId", requestId);
         ObjectNode respNode = new ObjectMapper().createObjectNode();
-        respNode.put("requestId",callerRequestId);
-        objectNode.set("resp",respNode);
+        respNode.put("requestId", callerRequestId);
+        objectNode.set("resp", respNode);
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
-
         String testId = "testId";
-        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID)).thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
+        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID))
+                .thenReturn(Mono.just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+                .thenReturn(Mono.empty());
 
         WebTestClient mutatedWebTestClient = webTestClient.mutate().responseTimeout(Duration.ofSeconds(5)).build();
         mutatedWebTestClient

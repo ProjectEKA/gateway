@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
@@ -26,8 +27,7 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/init")
     public Mono<Void> linkInit(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = linkInitRequestOrchestrator.processRequest(requestEntity, X_HIP_ID);
-        tobeFiredAndForgotten.subscribe();
+        linkInitRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, TEMP_CM_ID).subscribe();
         return Mono.empty();
     }
 
@@ -40,8 +40,7 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/confirm")
     public Mono<Void> linkConfirm(HttpEntity<String> requestEntity) {
-        Mono<Void> tobeFiredAndForgotten = linkConfirmRequestOrchestrator.processRequest(requestEntity, X_HIP_ID);
-        tobeFiredAndForgotten.subscribe();
+        linkConfirmRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, TEMP_CM_ID).subscribe();
         return Mono.empty();
     }
 
