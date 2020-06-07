@@ -27,6 +27,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
@@ -99,8 +100,8 @@ class ConsentControllerTest {
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var respNode = OBJECT_MAPPER.createObjectNode();
         var testId = string();
-        objectNode.put("requestId", requestId);
-        respNode.put("requestId", callerRequestId);
+        objectNode.put(REQUEST_ID, requestId);
+        respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));
@@ -145,9 +146,9 @@ class ConsentControllerTest {
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var testId = string();
         var token = string();
-        objectNode.put("requestId", requestId);
+        objectNode.put(REQUEST_ID, requestId);
         ObjectNode respNode = OBJECT_MAPPER.createObjectNode();
-        respNode.put("requestId", callerRequestId);
+        respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));

@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -105,7 +106,7 @@ class ValidatorTest {
         var cmRequestId = UUID.randomUUID();
         var hipConfig = yamlRegistryMapping().build();
         var testHipId = string();
-        var requestBody = Map.of("requestId", cmRequestId.toString());
+        var requestBody = Map.of(REQUEST_ID, cmRequestId.toString());
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
@@ -156,7 +157,7 @@ class ValidatorTest {
     public void shouldReturnEmptyWhenRequestIdMappingIsEmpty() throws JsonProcessingException {
         var testCmId = string();
         var testRequestId = string();
-        var respNode = Map.of("requestId", testRequestId);
+        var respNode = Map.of(REQUEST_ID, testRequestId);
         var body = Map.of("resp", respNode);
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(body));
@@ -175,9 +176,9 @@ class ValidatorTest {
         var respNode = OBJECT_MAPPER.createObjectNode();
         var testCmId = string();
         var cachedRequestId = string();
-        respNode.put("requestId", testRequestId);
+        respNode.put(REQUEST_ID, testRequestId);
         objectNode.set("resp", respNode);
-        respNode.put("requestId", testRequestId);
+        respNode.put(REQUEST_ID, testRequestId);
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(httpHeaders.getFirst(X_CM_ID)).thenReturn(testCmId);

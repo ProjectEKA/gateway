@@ -20,8 +20,8 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,9 +55,9 @@ class ResponseOrchestratorTest {
         String requestId = UUID.randomUUID().toString();
         String cmRequestId = UUID.randomUUID().toString();
         ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("requestId",requestId);
+        objectNode.put(REQUEST_ID,requestId);
         ObjectNode respNode = new ObjectMapper().createObjectNode();
-        respNode.put("requestId",cmRequestId);
+        respNode.put(REQUEST_ID,cmRequestId);
         objectNode.set("resp",respNode);
         HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
 
@@ -70,7 +70,7 @@ class ResponseOrchestratorTest {
                 .verifyComplete();
 
         verify(discoveryValidator).validateResponse(requestEntity, X_CM_ID);
-        Assertions.assertEquals(cmRequestId,jsonNodeArgumentCaptor.getValue().path("resp").path("requestId").asText());
+        Assertions.assertEquals(cmRequestId,jsonNodeArgumentCaptor.getValue().path("resp").path(REQUEST_ID).asText());
     }
 
 }
