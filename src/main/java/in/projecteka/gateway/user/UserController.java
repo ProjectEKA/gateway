@@ -15,12 +15,12 @@ import static in.projecteka.gateway.common.Constants.X_CM_ID;
 @RestController
 @AllArgsConstructor
 public class UserController {
-    RequestOrchestrator<PatientSearchServiceClient> patientSearchServiceClient;
+    RequestOrchestrator<PatientSearchServiceClient> patientSearchRequestOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/patients/find")
     public Mono<Void> findPatient(HttpEntity<String> requestEntity) {
-        Mono<Void> toBeFiredAndForgotten = patientSearchServiceClient.processRequest(requestEntity, X_CM_ID);
+        Mono<Void> toBeFiredAndForgotten = patientSearchRequestOrchestrator.processRequest(requestEntity, X_CM_ID);
         toBeFiredAndForgotten.subscribe();
         return Mono.empty();
     }
