@@ -73,7 +73,7 @@ class DiscoveryControllerTest {
     public void shouldFireAndForgetForDiscover() {
         var token = string();
         var clientId = string();
-        when(requestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(requestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
         webTestClient

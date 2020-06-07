@@ -30,7 +30,7 @@ public class ConsentArtefactController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> hipConsentNotifyRequestOrchestrator
-                        .processRequest(requestEntity, X_HIP_ID, clientId));
+                        .handleThis(requestEntity, X_HIP_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -40,6 +40,6 @@ public class ConsentArtefactController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> hiuConsentNotifyRequestOrchestrator
-                        .processRequest(requestEntity, X_HIU_ID, clientId));
+                        .handleThis(requestEntity, X_HIU_ID, clientId));
     }
 }
