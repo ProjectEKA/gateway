@@ -1,7 +1,6 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -91,7 +90,7 @@ class ValidatorTest {
     public void shouldReturnEmptyWhenNoRequestIdIsFound() throws JsonProcessingException {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         Map<String, Object> requestBody = new HashMap<>();
-        when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         String testHipId = string();
         when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
         var hipConfig = yamlRegistryMapping().build();

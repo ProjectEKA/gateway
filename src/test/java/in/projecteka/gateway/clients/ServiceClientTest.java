@@ -1,6 +1,5 @@
 package in.projecteka.gateway.clients;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.common.CentralRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +16,7 @@ import java.util.Optional;
 import static in.projecteka.gateway.testcommon.TestBuilders.errorResult;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static java.util.Optional.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -87,7 +87,7 @@ class ServiceClientTest {
     void shouldRouteGivenResponseToURL() {
         var token = string();
         var serializedRequest = "{}";
-        var request = new ObjectMapper().createObjectNode();
+        var request = OBJECT_MAPPER.createObjectNode();
         var url = "/temp-url";
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);

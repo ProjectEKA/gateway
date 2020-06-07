@@ -2,7 +2,6 @@ package in.projecteka.gateway.link.discovery;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
@@ -99,7 +98,7 @@ class DiscoveryControllerTest {
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
-        var requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
