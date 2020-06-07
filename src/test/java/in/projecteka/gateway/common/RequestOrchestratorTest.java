@@ -26,8 +26,8 @@ import java.util.concurrent.TimeoutException;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.TestBuilders.string;
-import static in.projecteka.gateway.common.TestEssentials.OBJECT_MAPPER;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -54,87 +54,70 @@ class RequestOrchestratorTest {
     @Captor
     ArgumentCaptor<String> requestIdCaptor;
 
-    RequestOrchestrator requestOrchestrator;
+    RequestOrchestrator<?> requestOrchestrator;
 
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
-        requestOrchestrator = Mockito.spy(new RequestOrchestrator(requestIdMappings,
+        requestOrchestrator = Mockito.spy(new RequestOrchestrator<>(requestIdMappings,
                 discoveryValidator,
                 discoveryServiceClient));
     }
 
-    /*
-     TODO: We should have return failure immediately when there is no CM_ID, instead of planning to send
-     error through error notify.
-    */
     @Test
-    void shouldDoNothingWhenRequestIdIsInvalidOrEmpty() {
-        HttpEntity<String> requestEntity = new HttpEntity<>("");
-
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, string()))
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
+    void returnErrorWhenValidationFails() throws JsonProcessingException {
         var clientId = string();
         var requestId = UUID.randomUUID().toString();
-        Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
-        HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        ClientError clientError = ClientError.idMissingInHeader(X_CM_ID);
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(discoveryValidator.validateRequest(requestEntity, X_CM_ID))
-                .thenReturn(Mono.error(clientError));
-        var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
+                .thenReturn(Mono.error(ClientError.idMissingInHeader(X_CM_ID)));
 
         StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
-                .verifyError(ErrorResult.class);
-
-        assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("X-CM-ID missing in headers");
-        assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(ClientError.idMissingInHeader(X_CM_ID)))
+                .verify();
     }
 
     @Test
     void shouldCallBridgeWhenValidRequest() throws JsonProcessingException {
-        var requestId = UUID.randomUUID().toString();
-        Map<String, Object> requestBody = new HashMap<>(Map.of(REQUEST_ID, requestId));
+        var requestId = UUID.randomUUID();
+        Map<String, Object> requestBody = new HashMap<>(Map.of(REQUEST_ID, requestId.toString()));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         String host = string();
         when(hipConfig.getHost()).thenReturn(host);
         when(discoveryValidator.validateRequest(requestEntity, X_CM_ID))
                 .thenReturn(Mono.just(new ValidatedRequest(hipConfig, requestId, requestBody)));
-        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
+        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(Mono.empty());
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host))).thenReturn(Mono.empty());
 
         StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, string()))
                 .verifyComplete();
 
-        verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
     }
 
     @Test
     void shouldNotifyCMOnBridgeTimeout() throws JsonProcessingException {
         var clientId = string();
-        var requestId = UUID.randomUUID().toString();
+        var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var host = string();
         when(hipConfig.getHost()).thenReturn(host);
         when(discoveryValidator.validateRequest(requestEntity, X_CM_ID))
                 .thenReturn(Mono.just(new ValidatedRequest(hipConfig, requestId, requestBody)));
-        when(requestIdMappings.put(any(), eq(requestId))).thenReturn(Mono.empty());
+        when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(Mono.empty());
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
                 .thenReturn(Mono.error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
 
         StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
-                .verifyError(ErrorResult.class);
+                .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
-        assertThat(errorResult.getValue().getResp().getRequestId().toString()).isEqualTo(requestId);
+        assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
         assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Timed out When calling target system");
         assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }
@@ -142,24 +125,24 @@ class RequestOrchestratorTest {
     @Test
     void shouldNotifyCMOnBridgeError() throws JsonProcessingException {
         var clientId = string();
-        var requestId = UUID.randomUUID().toString();
-        Map<String, Object> requestBody = Map.of(REQUEST_ID, requestId);
+        var requestId = UUID.randomUUID();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         String host = string();
         when(hipConfig.getHost()).thenReturn(host);
         when(discoveryValidator.validateRequest(requestEntity, X_CM_ID))
                 .thenReturn(Mono.just(new ValidatedRequest(hipConfig, requestId, requestBody)));
-        when(requestIdMappings.put(any(), eq(requestId))).thenReturn(Mono.empty());
+        when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(Mono.empty());
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
                 .thenReturn(Mono.error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(Mono.empty());
 
         StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId))
-                .verifyError(ErrorResult.class);
+                .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
-        assertThat(errorResult.getValue().getResp().getRequestId().toString()).isEqualTo(requestId);
+        assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
         assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Error in making call to target system");
         assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }

@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.TestBuilders.serviceOptions;
-import static in.projecteka.gateway.common.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doNothing;

@@ -9,20 +9,22 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.Optional;
 
-import static in.projecteka.gateway.clients.TestBuilders.errorResult;
-import static in.projecteka.gateway.clients.TestBuilders.serviceOptions;
-import static in.projecteka.gateway.clients.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestBuilders.errorResult;
+import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static java.util.Optional.of;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
+import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.just;
 
 class ServiceClientTest {
 
@@ -74,12 +76,11 @@ class ServiceClientTest {
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        when(responseSpec.toBodilessEntity()).thenReturn(empty());
 
-        when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
+        when(centralRegistry.authenticate()).thenReturn(just(token));
 
-        StepVerifier.create(serviceClient.routeRequest(request, url))
-                .verifyComplete();
+        StepVerifier.create(serviceClient.routeRequest(request, url)).verifyComplete();
     }
 
     @Test
@@ -95,12 +96,11 @@ class ServiceClientTest {
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        when(responseSpec.toBodilessEntity()).thenReturn(empty());
 
-        when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
+        when(centralRegistry.authenticate()).thenReturn(just(token));
 
-        StepVerifier.create(serviceClient.routeResponse(request, url))
-                .verifyComplete();
+        StepVerifier.create(serviceClient.routeResponse(request, url)).verifyComplete();
     }
 
     @Test
@@ -109,7 +109,7 @@ class ServiceClientTest {
         var url = "/temp-url";
         var clientId = string();
         var request = errorResult().build();
-        when(centralRegistry.authenticate()).thenReturn(Mono.just(token));
+        when(centralRegistry.authenticate()).thenReturn(just(token));
         when(webClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
         when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
@@ -117,21 +117,19 @@ class ServiceClientTest {
         doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(Mono.empty());
+        when(responseSpec.toBodilessEntity()).thenReturn(empty());
         serviceClient = new ServiceClient(serviceOptions().build(), webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
-                return Optional.of(url);
+                return of(url);
             }
         };
 
-        StepVerifier.create(serviceClient.notifyError(clientId, request))
-                .verifyComplete();
+        StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyComplete();
     }
 
     @Test
     void returnErrorIfUnableToFindAHostForAClient() {
-        StepVerifier.create(serviceClient.notifyError(string(), errorResult().build()))
-                .verifyError(ClientError.class);
+        StepVerifier.create(serviceClient.notifyError(string(), errorResult().build())).verifyError(ClientError.class);
     }
 }

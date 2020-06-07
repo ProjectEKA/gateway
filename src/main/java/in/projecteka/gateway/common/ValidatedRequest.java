@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Map;
+import java.util.UUID;
 
 @AllArgsConstructor
 @Getter
 public class ValidatedRequest {
     private final YamlRegistryMapping config;
-    private final String requesterRequestId;
-    private final Map<String, Object> deserializedRequest;
+    private final UUID requesterRequestId;
+    private final Map<String, Object> deSerializedRequest;
 }

@@ -26,6 +26,8 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 
+import static org.springframework.util.StringUtils.hasText;
+
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
@@ -35,8 +37,14 @@ public class SecurityConfiguration {
             ServerHttpSecurity httpSecurity,
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
-        httpSecurity.httpBasic().disable().formLogin().disable().csrf().disable().logout().disable();
         return httpSecurity
+                .httpBasic().disable()
+                .formLogin().disable()
+                .csrf().disable()
+                .logout().disable()
+                .authorizeExchange()
+                .pathMatchers("/**")
+                .authenticated().and()
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
                 .build();
@@ -48,12 +56,14 @@ public class SecurityConfiguration {
     }
 
     @Bean("centralRegistryJWKSet")
-    public JWKSet jwkSet(ClientRegistryProperties clientRegistryProperties) throws IOException, ParseException {
+    public JWKSet jwkSet(ClientRegistryProperties clientRegistryProperties)
+            throws IOException, ParseException {
         return JWKSet.load(new URL(clientRegistryProperties.getJwkUrl()));
     }
 
     @Bean
-    public CentralRegistryTokenVerifier centralRegistryTokenVerifier(@Qualifier("centralRegistryJWKSet") JWKSet jwkSet) {
+    public CentralRegistryTokenVerifier centralRegistryTokenVerifier(
+            @Qualifier("centralRegistryJWKSet") JWKSet jwkSet) {
         return new CentralRegistryTokenVerifier(jwkSet);
     }
 
@@ -74,7 +84,7 @@ public class SecurityConfiguration {
         @Override
         public Mono<SecurityContext> load(ServerWebExchange exchange) {
             var token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-            if (isEmpty(token)) {
+            if (!hasText(token)) {
                 return Mono.empty();
             }
             return checkCentralRegistry(token);
@@ -87,10 +97,6 @@ public class SecurityConfiguration {
                             token,
                             new ArrayList<SimpleGrantedAuthority>()))
                     .map(SecurityContextImpl::new);
-        }
-
-        private boolean isEmpty(String authToken) {
-            return authToken == null || authToken.trim().equals("");
         }
     }
 

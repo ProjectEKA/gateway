@@ -1,5 +1,6 @@
 package in.projecteka.gateway.link.link;
 
+import in.projecteka.gateway.clients.Caller;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -7,12 +8,12 @@ import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.TEMP_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
@@ -27,8 +28,10 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/init")
     public Mono<Void> linkInit(HttpEntity<String> requestEntity) {
-        linkInitRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, TEMP_CM_ID).subscribe();
-        return Mono.empty();
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
+                .map(Caller::getUsername)
+                .flatMap(clientId -> linkInitRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -40,8 +43,10 @@ public class LinkController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/links/link/confirm")
     public Mono<Void> linkConfirm(HttpEntity<String> requestEntity) {
-        linkConfirmRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, TEMP_CM_ID).subscribe();
-        return Mono.empty();
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
+                .map(Caller::getUsername)
+                .flatMap(clientId -> linkConfirmRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

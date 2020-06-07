@@ -1,4 +1,4 @@
-package in.projecteka.gateway.common;
+package in.projecteka.gateway.testcommon;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
