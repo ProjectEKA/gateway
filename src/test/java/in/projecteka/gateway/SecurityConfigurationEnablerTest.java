@@ -15,7 +15,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-public class SecurityConfigurationEnablerTest {
+class SecurityConfigurationEnablerTest {
 
     @MockBean(name = "centralRegistryJWKSet")
     JWKSet centralRegistryJWKSet;
@@ -24,7 +24,7 @@ public class SecurityConfigurationEnablerTest {
     WebTestClient webTestClient;
 
     @Test
-    public void shouldFireAndForgetForDiscover() {
+    void shouldFireAndForgetForDiscover() {
         webTestClient
                 .post()
                 .uri("/v1/**")
