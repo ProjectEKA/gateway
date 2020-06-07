@@ -29,7 +29,7 @@ public class ConsentController {
     public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> consentRequestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId));
     }
 
@@ -44,7 +44,7 @@ public class ConsentController {
     public Mono<Void> fetchConsent(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> consentFetchOrchestrator.processRequest(requestEntity, X_CM_ID, clientId));
     }
 

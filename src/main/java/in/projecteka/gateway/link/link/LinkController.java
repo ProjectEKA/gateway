@@ -30,7 +30,7 @@ public class LinkController {
     public Mono<Void> linkInit(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> linkInitRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, clientId));
     }
 
@@ -45,7 +45,7 @@ public class LinkController {
     public Mono<Void> linkConfirm(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> linkConfirmRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, clientId));
     }
 

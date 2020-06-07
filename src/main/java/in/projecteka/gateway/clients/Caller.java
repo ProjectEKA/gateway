@@ -8,6 +8,6 @@ import lombok.Getter;
 @Getter
 @Builder
 public class Caller {
-    private final String username;
+    private final String clientId;
     private final Boolean isServiceAccount;
 }

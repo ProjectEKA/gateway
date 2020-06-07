@@ -21,7 +21,6 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
@@ -32,11 +31,11 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
-import static java.time.Duration.ofSeconds;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
 
@@ -75,13 +74,13 @@ class DiscoveryControllerTest {
         var token = string();
         var clientId = string();
         when(requestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
         webTestClient
                 .post()
                 .uri("/v1/care-contexts/discover")
                 .header(AUTHORIZATION, token)
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
@@ -109,7 +108,7 @@ class DiscoveryControllerTest {
         webTestClient
                 .post()
                 .uri("/v1/care-contexts/on-discover")
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
                 .exchange()

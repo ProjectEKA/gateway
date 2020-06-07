@@ -7,8 +7,6 @@ import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -18,6 +16,10 @@ import java.util.Optional;
 
 import static in.projecteka.gateway.common.Serializer.from;
 import static java.lang.String.format;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
+import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.error;
 
 @AllArgsConstructor
 public abstract class ServiceClient {
@@ -40,7 +42,7 @@ public abstract class ServiceClient {
                 .map(url -> route(request, url))
                 .orElseGet(() -> {
                     logger.error(format("No mapping found for %s", clientId));
-                    return Mono.error(ClientError.mappingNotFoundForId(clientId));
+                    return error(ClientError.mappingNotFoundForId(clientId));
                 });
     }
 
@@ -49,7 +51,7 @@ public abstract class ServiceClient {
     private <T> Mono<Void> routeCommon(T requestBody, String url) {
         return from(requestBody)
                 .map(serialized -> route(serialized, url))
-                .orElse(Mono.empty());
+                .orElse(empty());
     }
 
     private <T> Mono<Void> route(T request, String url) {
@@ -58,12 +60,12 @@ public abstract class ServiceClient {
                         webClientBuilder.build()
                                 .post()
                                 .uri(url)
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .header(HttpHeaders.AUTHORIZATION, token)
+                                .contentType(APPLICATION_JSON)
+                                .header(AUTHORIZATION, token)
                                 .bodyValue(request)
                                 .retrieve()
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
-                                        clientResponse -> Mono.error(ClientError.unableToConnect()))
+                                        clientResponse -> error(ClientError.unableToConnect()))
                                 .toBodilessEntity()
                                 .timeout(Duration.ofSeconds(serviceOptions.getTimeout())))
                 .then();

@@ -51,7 +51,7 @@ public class ConsentArtefactControllerTest {
         var clientId = string();
         when(hipConsentNotifyRequestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId)))
                 .thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
         webTestClient
                 .post()
@@ -68,7 +68,7 @@ public class ConsentArtefactControllerTest {
     public void shouldFireAndForgetHIUConsentNotification() {
         var clientId = string();
         var token = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
         when(hiuConsentNotifyRequestOrchestrator.processRequest(any(), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient

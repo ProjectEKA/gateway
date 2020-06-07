@@ -27,13 +27,13 @@ public class RequestOrchestrator<T extends ServiceClient> {
 
     public Mono<Void> processRequest(HttpEntity<String> requestEntity, String targetSystemHeaderKey, String clientId) {
         return validator.validateRequest(requestEntity, targetSystemHeaderKey)
-                .doOnSuccess(validatedDiscoverRequest -> {
+                .doOnSuccess(validatedDiscoverRequest -> Mono.defer(() -> {
                     var gatewayRequestId = UUID.randomUUID();
                     var downstreamRequestId = gatewayRequestId.toString();
                     var request = validatedDiscoverRequest.getDeSerializedRequest();
                     var upstreamRequestId = validatedDiscoverRequest.getRequesterRequestId();
                     request.put(REQUEST_ID, gatewayRequestId);
-                    requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
+                    return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                             .thenReturn(request)
                             .flatMap(updatedRequest ->
                                     serviceClient.routeRequest(updatedRequest,
@@ -59,8 +59,9 @@ public class RequestOrchestrator<T extends ServiceClient> {
                                     errorResult -> {
                                         logger.error("Notifying caller about the failure", errorResult);
                                         serviceClient.notifyError(clientId, errorResult).subscribe();
-                                    }).subscribe();
-                }).then();
+                                    });
+                }).subscribe())
+                .then();
     }
 
     private ErrorResult toErrorResult(Error error, UUID requestId) {

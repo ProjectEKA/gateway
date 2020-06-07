@@ -29,6 +29,7 @@ import java.util.UUID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestBuilders.yamlRegistryMapping;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -92,7 +93,7 @@ class ValidatorTest {
         when(requestEntity.getBody()).thenReturn(new ObjectMapper().writeValueAsString(requestBody));
         String testHipId = string();
         when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
-        YamlRegistryMapping hipConfig = new YamlRegistryMapping();
+        var hipConfig = yamlRegistryMapping().build();
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 
         StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
@@ -102,7 +103,7 @@ class ValidatorTest {
     @Test
     public void shouldReturnValidatedRequest() throws JsonProcessingException {
         var cmRequestId = UUID.randomUUID();
-        var hipConfig = new YamlRegistryMapping();
+        var hipConfig = yamlRegistryMapping().build();
         var testHipId = string();
         var requestBody = Map.of("requestId", cmRequestId.toString());
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);

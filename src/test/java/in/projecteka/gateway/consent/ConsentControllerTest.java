@@ -77,7 +77,7 @@ class ConsentControllerTest {
     void shouldFireAndForgetForConsentRequestInit() {
         var token = string();
         var clientId = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
         when(requestOrchestrator.processRequest(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
@@ -125,7 +125,7 @@ class ConsentControllerTest {
         var token = string();
         var clientId = string();
         when(consentFetchOrchestrator.processRequest(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
         webTestClient
                 .post()

@@ -76,7 +76,7 @@ public class LinkControllerTest {
     public void shouldFireAndForgetForLinkInit() {
         var token = string();
         var clientId = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
         when(linkInitRequestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
@@ -123,7 +123,7 @@ public class LinkControllerTest {
     public void shouldFireAndForgetForLinkConfirm() {
         var clientId = string();
         var token = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().username(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
         when(linkConfirmRequestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient

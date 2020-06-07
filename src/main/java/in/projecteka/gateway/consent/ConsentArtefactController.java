@@ -28,7 +28,7 @@ public class ConsentArtefactController {
     public Mono<Void> consentNotifyToHIP(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> hipConsentNotifyRequestOrchestrator
                         .processRequest(requestEntity, X_HIP_ID, clientId));
     }
@@ -38,7 +38,7 @@ public class ConsentArtefactController {
     public Mono<Void> consentNotifyToHIU(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> hiuConsentNotifyRequestOrchestrator
                         .processRequest(requestEntity, X_HIU_ID, clientId));
     }

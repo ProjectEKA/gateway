@@ -27,7 +27,7 @@ public class DiscoveryController {
     public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
-                .map(Caller::getUsername)
+                .map(Caller::getClientId)
                 .flatMap(clientId -> discoveryRequestOrchestrator.processRequest(requestEntity, X_HIP_ID, clientId));
     }
 

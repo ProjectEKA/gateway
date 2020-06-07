@@ -3,6 +3,7 @@ package in.projecteka.gateway.testcommon;
 import in.projecteka.gateway.clients.Caller;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
+import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.jeasy.random.EasyRandom;
 
 public class TestBuilders {
@@ -23,5 +24,9 @@ public class TestBuilders {
 
     public static ErrorResult.ErrorResultBuilder errorResult() {
         return easyRandom.nextObject(ErrorResult.ErrorResultBuilder.class);
+    }
+
+    public static YamlRegistryMapping.YamlRegistryMappingBuilder yamlRegistryMapping() {
+        return easyRandom.nextObject(YamlRegistryMapping.YamlRegistryMappingBuilder.class);
     }
 }
