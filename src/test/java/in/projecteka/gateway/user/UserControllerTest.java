@@ -50,7 +50,7 @@ class UserControllerTest {
     RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator;
 
     @Autowired
-    private WebTestClient webTestClient;
+    WebTestClient webTestClient;
 
     @MockBean(name = "centralRegistryJWKSet")
     JWKSet centralRegistryJWKSet;
@@ -72,12 +72,11 @@ class UserControllerTest {
     @MockBean
     Validator patientSearchValidator;
 
-
     @Test
     void shouldFireAndForgetForPatientsFindInUserController() {
         var token = string();
         var clientId = string();
-        when(patientSearchOrchestrator.processRequest(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
         webTestClient
@@ -119,5 +118,4 @@ class UserControllerTest {
                 .expectStatus()
                 .isAccepted();
     }
-
 }

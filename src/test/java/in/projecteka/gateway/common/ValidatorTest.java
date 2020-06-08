@@ -56,13 +56,13 @@ class ValidatorTest {
     YamlRegistryMapping cmConfig;
 
     @BeforeEach
-    public void init() {
+    void init() {
         MockitoAnnotations.initMocks(this);
         discoveryValidator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings));
     }
 
     @Test
-    public void shouldThrowErrorWhenHIPHeaderIsNotPresent() {
+    void shouldThrowErrorWhenHIPHeaderIsNotPresent() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(httpHeaders.get(X_HIP_ID)).thenReturn(Collections.emptyList());
 
@@ -73,7 +73,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldThrowErrorWhenNoMappingIsFoundForHIPId() {
+    void shouldThrowErrorWhenNoMappingIsFoundForHIPId() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         String testHipId = string();
         when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
@@ -87,7 +87,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnEmptyWhenNoRequestIdIsFound() throws JsonProcessingException {
+    void returnErrorWhenNoRequestIdIsFound() throws JsonProcessingException {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         Map<String, Object> requestBody = new HashMap<>();
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -97,11 +97,35 @@ class ValidatorTest {
         when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
 
         StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
-                .verifyError(ClientError.class);
+                .expectErrorSatisfies(throwable ->
+                {
+                    var error = ClientError.invalidRequest("Empty/Invalid requestId found on the payload");
+                    assertThat(throwable).isEqualToComparingFieldByField(error);
+                })
+                .verify();
     }
 
     @Test
-    public void shouldReturnValidatedRequest() throws JsonProcessingException {
+    void returnErrorWhenNoRequestIdIsInvalidUUID() throws JsonProcessingException {
+        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
+        var requestBody = Map.of(REQUEST_ID, string());
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
+        String testHipId = string();
+        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
+        var hipConfig = yamlRegistryMapping().build();
+        when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
+
+        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
+                .expectErrorSatisfies(throwable ->
+                {
+                    var error = ClientError.invalidRequest("Empty/Invalid requestId found on the payload");
+                    assertThat(throwable).isEqualToComparingFieldByField(error);
+                })
+                .verify();
+    }
+
+    @Test
+    void shouldReturnValidatedRequest() throws JsonProcessingException {
         var cmRequestId = UUID.randomUUID();
         var hipConfig = yamlRegistryMapping().build();
         var testHipId = string();
@@ -120,7 +144,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnEmptyWhenCMHeaderIsNotPresent() {
+    void shouldReturnEmptyWhenCMHeaderIsNotPresent() {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.emptyList());
 
@@ -129,7 +153,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnEmptyWhenNoMappingIsFoundForCMId() {
+    void shouldReturnEmptyWhenNoMappingIsFoundForCMId() {
         var testCmId = string();
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
@@ -140,7 +164,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnEmptyWhenRequestIdIsEmpty() throws JsonProcessingException {
+    void shouldReturnEmptyWhenRequestIdIsEmpty() throws JsonProcessingException {
         var testCmId = string();
         Map<String, Object> body = Map.of();
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
@@ -153,7 +177,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnEmptyWhenRequestIdMappingIsEmpty() throws JsonProcessingException {
+    void shouldReturnEmptyWhenRequestIdMappingIsEmpty() throws JsonProcessingException {
         var testCmId = string();
         var testRequestId = string();
         var respNode = Map.of(REQUEST_ID, testRequestId);
@@ -169,7 +193,7 @@ class ValidatorTest {
     }
 
     @Test
-    public void shouldReturnValidatedResponse() throws JsonProcessingException {
+    void shouldReturnValidatedResponse() throws JsonProcessingException {
         var testRequestId = string();
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var respNode = OBJECT_MAPPER.createObjectNode();

@@ -12,12 +12,15 @@ import java.util.Optional;
 
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
-public class PatientSearchServiceClient extends ServiceClient{
+public class PatientSearchServiceClient extends ServiceClient {
     private final BridgeRegistry bridgeRegistry;
     private static final String REQUEST_ROUTE = "/v1/patients/find";
     private static final String RESPONSE_ROUTE = "/v1/patients/on-find";
 
-    public PatientSearchServiceClient(ServiceOptions serviceOptions, WebClient.Builder webClientBuilder, CentralRegistry centralRegistry,BridgeRegistry bridgeRegistry) {
+    public PatientSearchServiceClient(ServiceOptions serviceOptions,
+                                      WebClient.Builder webClientBuilder,
+                                      CentralRegistry centralRegistry,
+                                      BridgeRegistry bridgeRegistry) {
         super(serviceOptions, webClientBuilder, centralRegistry);
         this.bridgeRegistry = bridgeRegistry;
     }
