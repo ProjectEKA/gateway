@@ -313,4 +313,17 @@ public class GatewayConfiguration {
                                                                  BridgeRegistry bridgeRegistry) {
         return new PatientSearchServiceClient(serviceOptions, builder,  centralRegistry, bridgeRegistry);
     }
+
+    @Bean("patientSearchResponseAction")
+    public DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction(PatientSearchServiceClient patientSearchServiceClient,
+                                                                                             CMRegistry cmRegistry,
+                                                                                             BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(patientSearchServiceClient, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("patientSearchResponseOrchestrator")
+    public ResponseOrchestrator patientSearchResponseOrchestrator(Validator validator,
+                                                            DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction) {
+        return new ResponseOrchestrator(validator, patientSearchResponseAction);
+    }
 }

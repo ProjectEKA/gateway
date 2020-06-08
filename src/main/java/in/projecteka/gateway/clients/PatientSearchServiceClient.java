@@ -1,5 +1,6 @@
 package in.projecteka.gateway.clients;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -26,9 +27,13 @@ public class PatientSearchServiceClient extends ServiceClient{
         return super.routeRequest(request, url + REQUEST_ROUTE);
     }
 
-
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
         return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+    }
+
+    @Override
+    public Mono<Void> routeResponse(JsonNode request, String url) {
+        return super.routeResponse(request, url + RESPONSE_ROUTE);
     }
 }
