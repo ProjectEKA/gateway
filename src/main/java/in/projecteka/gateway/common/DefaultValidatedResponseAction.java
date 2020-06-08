@@ -23,12 +23,12 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
     BridgeRegistry bridgeRegistry;
 
     @Override
-    public Mono<Void> routeResponse(String x_id, String id, JsonNode updatedRequest) {
-        Optional<YamlRegistryMapping> configFor = x_id.equals(X_HIU_ID)
-                ? bridgeRegistry.getConfigFor(id, ServiceType.HIU)
-                : cmRegistry.getConfigFor(id);
+    public Mono<Void> routeResponse(String routingKey, String clientId, JsonNode updatedRequest) {
+        Optional<YamlRegistryMapping> configFor = routingKey.equals(X_HIU_ID)
+                ? bridgeRegistry.getConfigFor(clientId, ServiceType.HIU)
+                : cmRegistry.getConfigFor(clientId);
         if (configFor.isEmpty()) {
-            logger.error("No mapping found for {}", id);
+            logger.error("No mapping found for {}", clientId);
             return Mono.empty();
         }
         return serviceClient.routeResponse(updatedRequest,configFor.get().getHost());

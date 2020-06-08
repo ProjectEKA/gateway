@@ -29,6 +29,7 @@ class DefaultValidatedResponseActionTest {
     YamlRegistryMapping cmConfig;
     @InjectMocks
     DefaultValidatedResponseAction<ServiceClient> defaultValidatedResponseAction;
+
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
@@ -36,25 +37,25 @@ class DefaultValidatedResponseActionTest {
 
     @Test
     void shouldNotRouteResponseWhenCMIdIsNotPresent() {
-        String cmId  = "testCMId";
+        String cmId = "testCMId";
         when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.empty());
 
-        StepVerifier.create(defaultValidatedResponseAction.routeResponse(X_CM_ID, cmId,null))
+        StepVerifier.create(defaultValidatedResponseAction.routeResponse(X_CM_ID, cmId, null))
                 .verifyComplete();
     }
 
     @Test
     void shouldRouteResponseWhenCmIdIsPresent() {
-        String cmId  = "testCMId";
+        String cmId = "testCMId";
         when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.of(cmConfig));
         String testHost = "testHost";
         when(cmConfig.getHost()).thenReturn(testHost);
         JsonNode mockRequest = Mockito.mock(JsonNode.class);
-        when(serviceClient.routeResponse(mockRequest,testHost)).thenReturn(Mono.empty());
+        when(serviceClient.routeResponse(mockRequest, testHost)).thenReturn(Mono.empty());
 
         StepVerifier.create(defaultValidatedResponseAction.routeResponse(X_CM_ID, cmId, mockRequest))
                 .verifyComplete();
-        verify(serviceClient).routeResponse(mockRequest,testHost);
+        verify(serviceClient).routeResponse(mockRequest, testHost);
     }
 
 }

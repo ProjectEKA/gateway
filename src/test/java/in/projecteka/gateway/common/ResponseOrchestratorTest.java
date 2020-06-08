@@ -2,8 +2,6 @@ package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.Assertions;
@@ -20,8 +18,10 @@ import reactor.test.StepVerifier;
 
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,16 +32,19 @@ class ResponseOrchestratorTest {
     @Mock
     YamlRegistryMapping cmConfig;
     @Mock
-    CacheAdapter<String,String> requestIdMappings;
+    CacheAdapter<String, String> requestIdMappings;
     @Mock
     ValidatedResponseAction validatedResponseAction;
-    private @Captor ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
+    private @Captor
+    ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
     ResponseOrchestrator responseOrchestrator;
+
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        responseOrchestrator = Mockito.spy(new ResponseOrchestrator(discoveryValidator,validatedResponseAction));
+        responseOrchestrator = Mockito.spy(new ResponseOrchestrator(discoveryValidator, validatedResponseAction));
     }
+
     @Test
     public void shouldNotCallCMonValidationErrors() {
         HttpEntity<String> requestEntity = new HttpEntity<>("");
@@ -50,19 +53,19 @@ class ResponseOrchestratorTest {
         StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
                 .verifyComplete();
     }
+
     @Test
     public void shouldCallCMWhenValidRequest() throws JsonProcessingException {
-        String requestId = UUID.randomUUID().toString();
-        String cmRequestId = UUID.randomUUID().toString();
-        ObjectNode objectNode = new ObjectMapper().createObjectNode();
-        objectNode.put("requestId",requestId);
-        ObjectNode respNode = new ObjectMapper().createObjectNode();
-        respNode.put("requestId",cmRequestId);
-        objectNode.set("resp",respNode);
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(objectNode));
-
-        String testCmId = "testCmId";
-        when(discoveryValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testCmId,cmRequestId, objectNode)));
+        var requestId = UUID.randomUUID().toString();
+        var cmRequestId = UUID.randomUUID().toString();
+        var objectNode = OBJECT_MAPPER.createObjectNode();
+        var respNode = OBJECT_MAPPER.createObjectNode();
+        var testCmId = string();
+        objectNode.put(REQUEST_ID, requestId);
+        respNode.put(REQUEST_ID, cmRequestId);
+        objectNode.set("resp", respNode);
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
+        when(discoveryValidator.validateResponse(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedResponse(testCmId, cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(Mono.just(cmRequestId));
         when(validatedResponseAction.execute(eq(X_CM_ID), eq(testCmId), jsonNodeArgumentCaptor.capture())).thenReturn(Mono.empty());
 
@@ -70,7 +73,7 @@ class ResponseOrchestratorTest {
                 .verifyComplete();
 
         verify(discoveryValidator).validateResponse(requestEntity, X_CM_ID);
-        Assertions.assertEquals(cmRequestId,jsonNodeArgumentCaptor.getValue().path("resp").path("requestId").asText());
+        Assertions.assertEquals(cmRequestId, jsonNodeArgumentCaptor.getValue().path("resp").path(REQUEST_ID).asText());
     }
 
 }
