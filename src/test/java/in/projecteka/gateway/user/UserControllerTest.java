@@ -44,7 +44,7 @@ class UserControllerTest {
 
 
     @Test
-    void shouldFireAndForgetForPatientsFind() {
+    void shouldFireAndForgetForPatientsFindInUserController() {
         var token = string();
         var clientId = string();
         when(patientSearchOrchestrator.processRequest(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
