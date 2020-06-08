@@ -49,7 +49,7 @@ public class ConsentArtefactControllerTest {
     public void shouldFireAndForgetHIPConsentNotification() {
         var token = string();
         var clientId = string();
-        when(hipConsentNotifyRequestOrchestrator.processRequest(any(), eq(X_HIP_ID), eq(clientId)))
+        when(hipConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId)))
                 .thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
 
@@ -69,7 +69,7 @@ public class ConsentArtefactControllerTest {
         var clientId = string();
         var token = string();
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
-        when(hiuConsentNotifyRequestOrchestrator.processRequest(any(), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
+        when(hiuConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
                 .post()

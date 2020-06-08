@@ -76,7 +76,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(error(ClientError.idMissingInHeader(routingKey)));
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .expectErrorSatisfies(throwable ->
                         assertThat(throwable).isEqualToComparingFieldByField(ClientError.idMissingInHeader(routingKey)))
                 .verify();
@@ -95,7 +95,7 @@ class RequestOrchestratorTest {
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
         when(discoveryServiceClient.routeRequest(captor.capture(), eq(host))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, routingKey, string()))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, string()))
                 .verifyComplete();
 
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
@@ -118,7 +118,7 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -144,7 +144,7 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -170,7 +170,7 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);

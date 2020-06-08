@@ -25,6 +25,6 @@ public class UserController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> patientSearchRequestOrchestrator.processRequest(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId -> patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
     }
 }
