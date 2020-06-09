@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
@@ -81,6 +82,11 @@ class ServiceClientTest {
         when(centralRegistry.authenticate()).thenReturn(just(token));
 
         StepVerifier.create(serviceClient.routeRequest(request, url)).verifyComplete();
+        reset(webClient);
+        reset(requestBodyUriSpec);
+        reset(requestBodySpec);
+        reset(requestHeadersSpec);
+        reset(responseSpec);
     }
 
     @Test
@@ -101,6 +107,11 @@ class ServiceClientTest {
         when(centralRegistry.authenticate()).thenReturn(just(token));
 
         StepVerifier.create(serviceClient.routeResponse(request, url)).verifyComplete();
+        reset(webClient);
+        reset(requestBodyUriSpec);
+        reset(requestBodySpec);
+        reset(requestHeadersSpec);
+        reset(responseSpec);
     }
 
     @Test
@@ -126,6 +137,11 @@ class ServiceClientTest {
         };
 
         StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyComplete();
+        reset(webClient);
+        reset(requestBodyUriSpec);
+        reset(requestBodySpec);
+        reset(requestHeadersSpec);
+        reset(responseSpec);
     }
 
     @Test
