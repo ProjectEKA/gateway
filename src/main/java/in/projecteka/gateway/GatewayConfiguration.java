@@ -235,11 +235,24 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient);
     }
 
-    @Bean("consentFetchOrchestrator")
+    @Bean("consentFetchRequestOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                                    Validator validator,
                                                                                    ConsentFetchServiceClient consentFetchServiceClient) {
         return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient);
+    }
+
+    @Bean("consentFetchResponseAction")
+    public DefaultValidatedResponseAction<ConsentFetchServiceClient> consentFetchResponseAction(ConsentFetchServiceClient consentFetchServiceClient,
+                                                                                             CMRegistry cmRegistry,
+                                                                                             BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(consentFetchServiceClient, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("consentFetchResponseOrchestrator")
+    public ResponseOrchestrator consentFetchResponseOrchestrator(Validator validator,
+                                                            DefaultValidatedResponseAction<ConsentFetchServiceClient> consentFetchResponseAction) {
+        return new ResponseOrchestrator(validator, consentFetchResponseAction);
     }
 
     @Bean("patientSearchOrchestrator")

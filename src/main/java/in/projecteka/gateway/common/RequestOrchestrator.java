@@ -38,6 +38,8 @@ public class RequestOrchestrator<T extends ServiceClient> {
             var request = validatedRequest.getDeSerializedRequest();
             var upstreamRequestId = validatedRequest.getRequesterRequestId();
             request.put(REQUEST_ID, gatewayRequestId);
+            logger.info("gateway requestID ========== {}",gatewayRequestId);
+            logger.info("hiu requestID ========== {}",upstreamRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
                     .flatMap(updatedRequest ->

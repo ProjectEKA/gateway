@@ -6,6 +6,8 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -20,9 +22,11 @@ import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 @RestController
 @AllArgsConstructor
 public class ConsentController {
+    public static final Logger logger = LoggerFactory.getLogger(ConsentController.class);
     RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator;
     ResponseOrchestrator consentResponseOrchestrator;
-    RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
+    RequestOrchestrator<ConsentFetchServiceClient> consentFetchRequestOrchestrator;
+    ResponseOrchestrator consentFetchResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consent-requests/init")
@@ -45,12 +49,13 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentFetchOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId -> consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/on-fetch")
     public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
-        return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+        logger.info(requestEntity.getBody());
+        return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }
 }
