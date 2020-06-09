@@ -82,11 +82,6 @@ class ServiceClientTest {
         when(centralRegistry.authenticate()).thenReturn(just(token));
 
         StepVerifier.create(serviceClient.routeRequest(request, url)).verifyComplete();
-        reset(webClient);
-        reset(requestBodyUriSpec);
-        reset(requestBodySpec);
-        reset(requestHeadersSpec);
-        reset(responseSpec);
     }
 
     @Test
@@ -107,11 +102,6 @@ class ServiceClientTest {
         when(centralRegistry.authenticate()).thenReturn(just(token));
 
         StepVerifier.create(serviceClient.routeResponse(request, url)).verifyComplete();
-        reset(webClient);
-        reset(requestBodyUriSpec);
-        reset(requestBodySpec);
-        reset(requestHeadersSpec);
-        reset(responseSpec);
     }
 
     @Test
@@ -137,11 +127,6 @@ class ServiceClientTest {
         };
 
         StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyComplete();
-        reset(webClient);
-        reset(requestBodyUriSpec);
-        reset(requestBodySpec);
-        reset(requestHeadersSpec);
-        reset(responseSpec);
     }
 
     @Test
