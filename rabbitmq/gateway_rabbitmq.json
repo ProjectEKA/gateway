@@ -1,0 +1,51 @@
+{
+  "exchanges" : [
+    {
+      "name": "exchange",
+      "type": "direct",
+      "arguments": {}
+    },
+    {
+      "name": "cm-dead-letter-exchange",
+      "type": "direct",
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "consent-request-queue",
+      "routing_key": "consent-request-queue",
+      "exchange":"exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "cm-dead-letter-exchange",
+        "x-dead-letter-routing-key": "cm-dead-letter"
+      }
+    },
+
+    {
+      "name": "gw.dlq",
+      "routing_key": "#",
+      "exchange":"gw.dead-letter-exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "gw.exchange",
+        "x-message-ttl": 10000,
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.parkinglot",
+      "routing_key": "#",
+      "exchange":"gw.parking.exchange",
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "",
+      "routing_key": "",
+      "exchange":"",
+      "arguments": {
+      }
+    }
+  ]
+}
