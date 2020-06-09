@@ -12,3 +12,7 @@ bridges:
     id: 10000004
     servesAs:
       - HIP
+  - host: http://ncg.tmc.gov.in/hip-service
+    id: 10000002
+    servesAs:
+      - HIP
