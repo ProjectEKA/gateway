@@ -1,168 +1,182 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.model.ErrorResult;
-import in.projecteka.gateway.registry.CMRegistry;
-import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpEntity;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
+import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestBuilders.yamlRegistryMapping;
+import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.just;
 
 class RequestOrchestratorTest {
+
     @Mock
     Validator discoveryValidator;
+
     @Mock
-    YamlRegistryMapping hipConfig;
-    @Mock
-    YamlRegistryMapping cmConfig;
-    @Mock
-    CacheAdapter<String,String> requestIdMappings;
+    CacheAdapter<String, String> requestIdMappings;
+
     @Mock
     DiscoveryServiceClient discoveryServiceClient;
-    private @Captor ArgumentCaptor<Map<String,Object>> captor;
-    private @Captor ArgumentCaptor<String> requestIdCaptor;
-    private @Captor ArgumentCaptor<Error> errorArgumentCaptor;
-    RequestOrchestrator requestOrchestrator;
-    @Mock
-    CMRegistry cmRegistry;
+
     @Captor
-    ArgumentCaptor<ErrorResult> discoveryResultArgumentCaptor;
+    ArgumentCaptor<Map<String, Object>> captor;
+
+    @Captor
+    ArgumentCaptor<String> requestIdCaptor;
+
+    RequestOrchestrator<?> requestOrchestrator;
+
     @BeforeEach
-    public void init() {
+    void init() {
         MockitoAnnotations.initMocks(this);
-        requestOrchestrator = Mockito.spy(new RequestOrchestrator(requestIdMappings,discoveryValidator,discoveryServiceClient));
+        requestOrchestrator = Mockito.spy(new RequestOrchestrator<>(requestIdMappings,
+                discoveryValidator,
+                discoveryServiceClient));
     }
 
-    @Test
-    public void shouldNotCallBridgeWhenRequestIdIsNotPresent() {
-        HttpEntity<String> requestEntity = new HttpEntity<>("");
-        when(discoveryValidator.validateRequest(requestEntity, X_CM_ID)).thenReturn(Mono.empty());
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
+    void returnErrorWhenValidationFails(String routingKey) throws JsonProcessingException {
+        var clientId = string();
+        var requestId = UUID.randomUUID().toString();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+                .thenReturn(error(ClientError.idMissingInHeader(routingKey)));
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
-                .verifyComplete();
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(ClientError.idMissingInHeader(routingKey)))
+                .verify();
     }
 
-    @Test
-    public void shouldNotifyErrorWhenValidationFails() throws JsonProcessingException {
-        HttpEntity<String> requestEntity = new HttpEntity<>("");
-        ClientError clientError = ClientError.idMissingInHeader(X_CM_ID);
-        doReturn(Mono.empty()).when(requestOrchestrator).errorNotify(requestEntity, clientError.getError().getError());
-        when(discoveryValidator.validateRequest(requestEntity, X_CM_ID)).thenReturn(Mono.error(clientError));
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
+    void callDownStreamSystemForAValidRequest(String routingKey) throws JsonProcessingException {
+        var requestId = UUID.randomUUID();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId.toString()));
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        var host = string();
+        var registryMapping = yamlRegistryMapping().host(host).build();
+        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, string()))
                 .verifyComplete();
-        verify(requestOrchestrator).errorNotify(requestEntity, clientError.getError().getError());
+
+        Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
     }
 
-    @Test
-    public void shouldCallBridgeWhenValidRequest() throws JsonProcessingException {
-        Map<String,Object> requestBody = new HashMap<>();
-        String requestId = UUID.randomUUID().toString();
-        requestBody.put("requestId", requestId);
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
+    void notifyCallerAboutTimeoutException(String routingKey) throws JsonProcessingException {
+        var clientId = string();
+        var requestId = UUID.randomUUID();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        var host = string();
+        var registryMapping = yamlRegistryMapping().host(host).build();
+        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+        when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+                .thenReturn(error(new TimeoutException()));
+        var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        String testhost = "testhost";
-        when(hipConfig.getHost()).thenReturn(testhost);
-        when(discoveryValidator.validateRequest(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
-        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.empty());
-
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
-        verify(hipConfig).getHost();
-        verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
-        Assertions.assertEquals(requestIdCaptor.getValue(),((UUID)captor.getValue().get("requestId")).toString());
+        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
+        assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Timed out When calling target system");
+        assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }
 
-    @Test
-    public void shouldNotifyCMOnBridgeTimeout() throws JsonProcessingException {
-        Map<String,Object> requestBody = new HashMap<>();
-        String requestId = UUID.randomUUID().toString();
-        requestBody.put("requestId", requestId);
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
+    void notifyCallerAboutUnknownFailure(String routingKey) throws JsonProcessingException {
+        var clientId = string();
+        var requestId = UUID.randomUUID();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        var host = string();
+        var registryMapping = yamlRegistryMapping().host(host).build();
+        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+        when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+                .thenReturn(error(new RuntimeException()));
+        var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        String testhost = "testhost";
-        when(hipConfig.getHost()).thenReturn(testhost);
-        when(discoveryValidator.validateRequest(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
-        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.error(new TimeoutException()));
-        doReturn(Mono.empty()).when(requestOrchestrator).errorNotify(eq(requestEntity), errorArgumentCaptor.capture());
-
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
-        verify(hipConfig).getHost();
-        verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
-        Assertions.assertEquals(requestIdCaptor.getValue(),((UUID)captor.getValue().get("requestId")).toString());
-        Assertions.assertEquals("Timedout When calling bridge",errorArgumentCaptor.getValue().getMessage());
+        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
+        assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Error in making call to target system");
+        assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }
 
-    @Test
-    public void shouldNotifyCMOnBridgeError() throws JsonProcessingException {
-        Map<String,Object> requestBody = new HashMap<>();
-        String requestId = UUID.randomUUID().toString();
-        requestBody.put("requestId", requestId);
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
+    void notifyCallerAboutClientError(String routingKey) throws JsonProcessingException {
+        var clientId = string();
+        var requestId = UUID.randomUUID();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        var host = string();
+        var registryMapping = yamlRegistryMapping().host(host).build();
+        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+        when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+                .thenReturn(error(ClientError.unableToConnect()));
+        var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
+        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
-        String testhost = "testhost";
-        when(hipConfig.getHost()).thenReturn(testhost);
-        when(discoveryValidator.validateRequest(requestEntity, X_CM_ID)).thenReturn(Mono.just(new ValidatedRequest(hipConfig,requestId,requestBody)));
-        when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId))).thenReturn(Mono.empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(),eq(testhost))).thenReturn(Mono.error(new RuntimeException()));
-
-        doReturn(Mono.empty()).when(requestOrchestrator).errorNotify(eq(requestEntity), errorArgumentCaptor.capture());
-        StepVerifier.create(requestOrchestrator.processRequest(requestEntity, X_CM_ID))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .verifyComplete();
 
-        verify(hipConfig).getHost();
-        verify(discoveryValidator).validateRequest(requestEntity, X_CM_ID);
-        Assertions.assertEquals(requestIdCaptor.getValue(),((UUID)captor.getValue().get("requestId")).toString());
-        Assertions.assertEquals("Error in making call to Bridge",errorArgumentCaptor.getValue().getMessage());
-    }
-
-    @Test
-    public void shouldNotifyError() throws JsonProcessingException {
-        Map<String,Object> requestBody = new HashMap<>();
-        requestBody.put("requestId", UUID.randomUUID());
-        requestBody.put("transactionId", UUID.randomUUID());
-        HttpEntity<String> requestEntity = new HttpEntity<>(new ObjectMapper().writeValueAsString(requestBody));
-        String cmId = "testCmId";
-        when(cmRegistry.getConfigFor(cmId)).thenReturn(Optional.of(cmConfig));
-        String testCmHost = "testCmHost";
-        when(cmConfig.getHost()).thenReturn(testCmHost);
-        when(discoveryServiceClient.notifyError(discoveryResultArgumentCaptor.capture())).thenReturn(Mono.empty());
-
-        Error error = new Error();
-        StepVerifier.create(requestOrchestrator.errorNotify(requestEntity, error))
-                .verifyComplete();
-
-        Assertions.assertEquals(error,discoveryResultArgumentCaptor.getValue().getError());
-
+        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
+        assertThat(errorResult.getValue().getError().getMessage())
+                .isEqualTo("Cannot process the request at the moment, please try later.");
+        assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }
 }

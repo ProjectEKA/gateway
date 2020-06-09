@@ -1,10 +1,10 @@
-package in.projecteka.gateway.link.link;
+package in.projecteka.gateway.user;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.LinkConfirmServiceClient;
-import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -26,9 +26,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.UUID;
 
-import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
@@ -40,19 +40,14 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
 
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-public class LinkControllerTest {
-    @MockBean
-    RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator;
-
-    @Qualifier("linkInitResponseOrchestrator")
-    @MockBean
-    ResponseOrchestrator linkInitResponseOrchestrator;
+class UserControllerTest {
 
     @MockBean
-    RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
+    RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -61,30 +56,34 @@ public class LinkControllerTest {
     JWKSet centralRegistryJWKSet;
 
     @MockBean
-    Validator linkValidator;
+    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
 
     @MockBean
-    @Qualifier("linkInitResponseAction")
+    @Qualifier("patientSearchResponseAction")
     ValidatedResponseAction validatedResponseAction;
 
     @Captor
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
+    @Qualifier("patientSearchResponseOrchestrator")
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    ResponseOrchestrator patientSearchResponseOrchestrator;
+
+    @MockBean
+    Validator patientSearchValidator;
 
     @Test
-    public void shouldFireAndForgetForLinkInit() {
+    void shouldFireAndForgetForPatientsFindInUserController() {
         var token = string();
         var clientId = string();
+        when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
-        when(linkInitRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
                 .post()
-                .uri("/v1/links/link/init")
-                .contentType(APPLICATION_JSON)
+                .uri("/v1/patients/find")
                 .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
@@ -92,44 +91,26 @@ public class LinkControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForLinkOnInit() throws JsonProcessingException {
+    void shouldFireAndForgetForPatientOnFind() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         var callerRequestId = UUID.randomUUID().toString();
-        var token = string();
-        var testId = string();
         var objectNode = OBJECT_MAPPER.createObjectNode();
-        var respNode = OBJECT_MAPPER.createObjectNode();
+        var testId = string();
+        var token = string();
         objectNode.put(REQUEST_ID, requestId);
+        ObjectNode respNode = OBJECT_MAPPER.createObjectNode();
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
-        when(linkValidator.validateResponse(requestEntity, X_CM_ID))
-                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
-                .thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));
+        when(patientSearchValidator.validateResponse(requestEntity, X_HIU_ID))
+                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+                .thenReturn(empty());
 
         webTestClient
                 .post()
-                .uri("/v1/links/link/on-init")
-                .contentType(APPLICATION_JSON)
-                .header(AUTHORIZATION, token)
-                .bodyValue("{}")
-                .exchange()
-                .expectStatus()
-                .isAccepted();
-    }
-
-    @Test
-    public void shouldFireAndForgetForLinkConfirm() {
-        var clientId = string();
-        var token = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
-        when(linkConfirmRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
-
-        webTestClient
-                .post()
-                .uri("/v1/links/link/confirm")
+                .uri("/v1/patients/on-find")
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

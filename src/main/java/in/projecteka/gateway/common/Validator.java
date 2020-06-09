@@ -14,10 +14,16 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.UUID;
 
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static java.lang.String.format;
+import static java.util.Optional.of;
+import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.just;
 
 @AllArgsConstructor
 public class Validator {
@@ -26,59 +32,73 @@ public class Validator {
     CMRegistry cmRegistry;
     CacheAdapter<String, String> requestIdMappings;
 
-
-    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> requestEntity, String id) {
-        String xid = requestEntity.getHeaders().getFirst(id);
-        if (!StringUtils.hasText(xid)) {
-            return Mono.error(ClientError.idMissingInHeader(id));
+    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
+        String clientId = maybeRequest.getHeaders().getFirst(routingKey);
+        if (!StringUtils.hasText(clientId)) {
+            return error(ClientError.idMissingInHeader(routingKey));
         }
-        Optional<YamlRegistryMapping> config = getRegistryMapping(bridgeRegistry, cmRegistry, id, xid);
-        if (config.isEmpty()) {
-            logger.error("No mapping found for {} : {}", id, xid);
-            return Mono.error(ClientError.mappingNotFoundForId(id));
-        }
-        YamlRegistryMapping mapping = config.get();
-        return Utils.deserializeRequest(requestEntity)
-                .flatMap(deserializedRequest -> {
-                    String requestId = (String) deserializedRequest.get(REQUEST_ID);
-                    if (!StringUtils.hasText(requestId)) {
-                        logger.error("No {} found on the payload", REQUEST_ID);
-                        return Mono.empty();
-                    }
-                    return Mono.just(new ValidatedRequest(mapping, requestId, deserializedRequest));
+        return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
+                .map(registry -> toRequest(maybeRequest, registry))
+                .orElseGet(() -> {
+                    logger.error("No mapping found for {} : {}", routingKey, clientId);
+                    return error(ClientError.mappingNotFoundForId(routingKey));
                 });
     }
 
-    private Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry, CMRegistry cmRegistry, String id, String xid) {
-        if(id.equals(X_HIP_ID)) {
-            return bridgeRegistry.getConfigFor(xid, ServiceType.HIP);
+    private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, YamlRegistryMapping mapping) {
+        return Serializer.from(maybeRequest)
+                .filter(request -> StringUtils.hasText((String) request.get(REQUEST_ID)))
+                .flatMap(request ->
+                        from((String) request.get(REQUEST_ID))
+                                .map(requestUUID -> just(new ValidatedRequest(mapping, requestUUID, request))))
+                .orElseGet(() -> {
+                    var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
+                    logger.error(errorMessage);
+                    return error(invalidRequest(errorMessage));
+                });
+    }
+
+    private static Optional<UUID> from(String requestId) {
+        try {
+            return of(UUID.fromString(requestId));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         }
-        else if(id.equals(X_HIU_ID)) {
-            return bridgeRegistry.getConfigFor(xid, ServiceType.HIU);
-        }
-        else {
-            return cmRegistry.getConfigFor(xid);
+        return Optional.empty();
+    }
+
+    private static Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry,
+                                                                    CMRegistry cmRegistry,
+                                                                    String routingHeaderKey,
+                                                                    String clientId) {
+        if (routingHeaderKey.equals(X_HIP_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, ServiceType.HIP);
+        } else if (routingHeaderKey.equals(X_HIU_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, ServiceType.HIU);
+        } else {
+            return cmRegistry.getConfigFor(clientId);
         }
     }
 
-    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> requestEntity, String id) {
-        String xid = requestEntity.getHeaders().getFirst(id);
+    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String id) {
+        String xid = maybeResponse.getHeaders().getFirst(id);
         if (!StringUtils.hasText(xid)) {
             logger.error("No {} found on Headers", id);
             return Mono.empty();
         }
         Optional<YamlRegistryMapping> config = id.equals(X_HIU_ID)
-                ? bridgeRegistry.getConfigFor(xid, ServiceType.HIU)
-                : cmRegistry.getConfigFor(xid);
+                                               ? bridgeRegistry.getConfigFor(xid, ServiceType.HIU)
+                                               : cmRegistry.getConfigFor(xid);
         if (config.isEmpty()) {
             logger.error("No mapping found for {} : {}", id, xid);
             return Mono.empty();
         }
-        return Utils.deserializeRequestAsJsonNode(requestEntity)
+        return Serializer.deserializeRequestAsJsonNode(maybeResponse)
                 .flatMap(jsonNode -> {
                     String respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
                     if (respRequestId.isEmpty()) {
                         logger.error("resp.requestId is null or empty");
+                        // TODO: It's very well an error.
                         return Mono.empty();
                     }
                     return requestIdMappings.get(respRequestId)

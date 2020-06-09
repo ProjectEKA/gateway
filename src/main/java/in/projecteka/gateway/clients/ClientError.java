@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
+import static java.lang.String.format;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
@@ -29,14 +31,17 @@ public class ClientError extends Throwable {
 
     public static ClientError idMissingInHeader(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, String.format("%s missing in headers", id))));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, format("%s missing in headers", id))));
     }
 
     public static ClientError mappingNotFoundForId(String id) {
         return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, String.format("No mapping found for %s", id))));
+                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, format("No mapping found for %s", id))));
     }
 
+    public static ClientError invalidRequest(String message) {
+        return new ClientError(BAD_REQUEST, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+    }
 
     public static ClientError unAuthorized() {
         return new ClientError(UNAUTHORIZED,

@@ -12,15 +12,15 @@ import java.util.Optional;
 
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
-public class ConsentRequestServiceClient extends ServiceClient {
+public class PatientSearchServiceClient extends ServiceClient {
     private final BridgeRegistry bridgeRegistry;
-    private static final String REQUEST_ROUTE = "/v1/consent-requests/init";
-    private static final String RESPONSE_ROUTE = "/v1/consent-requests/on-init";
+    private static final String REQUEST_ROUTE = "/v1/patients/find";
+    private static final String RESPONSE_ROUTE = "/v1/patients/on-find";
 
-    public ConsentRequestServiceClient(ServiceOptions serviceOptions,
-                                       WebClient.Builder webClientBuilder,
-                                       BridgeRegistry bridgeRegistry,
-                                       CentralRegistry centralRegistry) {
+    public PatientSearchServiceClient(ServiceOptions serviceOptions,
+                                      WebClient.Builder webClientBuilder,
+                                      CentralRegistry centralRegistry,
+                                      BridgeRegistry bridgeRegistry) {
         super(serviceOptions, webClientBuilder, centralRegistry);
         this.bridgeRegistry = bridgeRegistry;
     }
@@ -31,12 +31,12 @@ public class ConsentRequestServiceClient extends ServiceClient {
     }
 
     @Override
-    public Mono<Void> routeResponse(JsonNode request, String url) {
-        return super.routeResponse(request, url + RESPONSE_ROUTE);
+    protected Optional<String> getResponseUrl(String clientId) {
+        return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
     }
 
     @Override
-    protected Optional<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+    public Mono<Void> routeResponse(JsonNode request, String url) {
+        return super.routeResponse(request, url + RESPONSE_ROUTE);
     }
 }

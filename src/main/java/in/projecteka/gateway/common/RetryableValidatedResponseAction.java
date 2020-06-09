@@ -3,6 +3,7 @@ package in.projecteka.gateway.common;
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
@@ -20,32 +21,29 @@ import java.util.Map;
 import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 
-public class RetryableValidatedResponseAction<T extends ServiceClient> implements MessageListener,ValidatedResponseAction {
+@AllArgsConstructor
+public class RetryableValidatedResponseAction<T extends ServiceClient>
+        implements MessageListener, ValidatedResponseAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
     private final AmqpTemplate amqpTemplate;
     private final Jackson2JsonMessageConverter converter;
     private final DefaultValidatedResponseAction<T> defaultValidatedResponseAction;
     private final ServiceOptions serviceOptions;
-    private String deadLetterRoutingKey;
-
-    public RetryableValidatedResponseAction(AmqpTemplate amqpTemplate, Jackson2JsonMessageConverter converter, DefaultValidatedResponseAction<T> defaultValidatedResponseAction, ServiceOptions serviceOptions, String deadLetterRoutingKey) {
-        this.amqpTemplate = amqpTemplate;
-        this.converter = converter;
-        this.defaultValidatedResponseAction = defaultValidatedResponseAction;
-        this.serviceOptions = serviceOptions;
-        this.deadLetterRoutingKey = deadLetterRoutingKey;
-    }
+    private final String deadLetterRoutingKey;
 
     @Override
     public void onMessage(Message message) {
-        JsonNode jsonNode = (JsonNode) converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class));
+        var jsonNode = (JsonNode) converter.fromMessage(message,
+                ParameterizedTypeReference.forType(JsonNode.class));
         String xCmId = message.getMessageProperties().getHeader("X-CM-ID");
         try {
             routeResponse(X_CM_ID, xCmId, jsonNode).block();
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
                 logger.error("Exceeded retry attempts; parking the message");
-                amqpTemplate.convertAndSend("gw.parking.exchange",message.getMessageProperties().getReceivedRoutingKey(),message);
+                amqpTemplate.convertAndSend("gw.parking.exchange",
+                        message.getMessageProperties().getReceivedRoutingKey(),
+                        message);
             } else {
                 logger.error("Failed to routeResponse; pushing to DLQ");
                 throw new AmqpRejectAndDontRequeueException(e);
@@ -57,7 +55,7 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
         List<Map<String, ?>> xDeathHeader = in.getMessageProperties().getXDeathHeader();
         if (xDeathHeader != null && !xDeathHeader.isEmpty()) {
             Long count = (Long) xDeathHeader.get(0).get("count");
-            logger.info("[GW] Number of attempts {}",count);
+            logger.info("[GW] Number of attempts {}", count);
             return count >= serviceOptions.getResponseMaxRetryAttempts();
         }
         logger.warn("xDeathHeader not found in message");
@@ -65,20 +63,21 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
     }
 
     @Override
-    public Mono<Void> routeResponse(String x_id, String xCmId, JsonNode updatedRequest) {
-        return defaultValidatedResponseAction.routeResponse(x_id, xCmId,updatedRequest);
+    public Mono<Void> routeResponse(String routingKey, String clientId, JsonNode updatedRequest) {
+        return defaultValidatedResponseAction.routeResponse(routingKey, clientId, updatedRequest);
     }
 
     @Override
     public Mono<Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
-        logger.error("Error in notifying CM with result; pushing to DLQ for retry",throwable);
+        logger.error("Error in notifying CM with result; pushing to DLQ for retry", throwable);
         MessagePostProcessor messagePostProcessor = message -> {
             Map<String, Object> headers = message.getMessageProperties().getHeaders();
-            headers.put("X-CM-ID",xCmId);
+            headers.put("X-CM-ID", xCmId);
             return message;
         };
         return Mono.create(monoSink -> {
-            amqpTemplate.convertAndSend(GW_DEAD_LETTER_EXCHANGE, deadLetterRoutingKey, jsonNode, messagePostProcessor);//TODO check queue names
+            // TODO check queue names
+            amqpTemplate.convertAndSend(GW_DEAD_LETTER_EXCHANGE, deadLetterRoutingKey, jsonNode, messagePostProcessor);
             monoSink.success();
         });
     }

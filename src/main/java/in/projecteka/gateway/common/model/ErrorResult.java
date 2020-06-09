@@ -1,15 +1,17 @@
 package in.projecteka.gateway.common.model;
 
 import in.projecteka.gateway.clients.model.Error;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
-@Data
+@AllArgsConstructor
+@Getter
 @Builder
-public class ErrorResult {
+public class ErrorResult extends Throwable {
     @NotNull
     private final UUID requestId;
     private final Object link;

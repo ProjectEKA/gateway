@@ -14,6 +14,7 @@ import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
+import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
@@ -241,6 +242,13 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient);
     }
 
+    @Bean("patientSearchOrchestrator")
+    public RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                                   Validator validator,
+                                                                                   PatientSearchServiceClient patientSearchServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, patientSearchServiceClient);
+    }
+
     @Bean
     public ClientRegistryClient clientRegistryClient(WebClient.Builder builder,
                                                      ClientRegistryProperties clientRegistryProperties) {
@@ -296,5 +304,26 @@ public class GatewayConfiguration {
     public ResponseOrchestrator consentResponseOrchestrator(Validator validator,
                                                               DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction) {
         return new ResponseOrchestrator(validator, consentResponseAction);
+    }
+
+    @Bean
+    public PatientSearchServiceClient patientSearchServiceClient(ServiceOptions serviceOptions,
+                                                                 WebClient.Builder builder,
+                                                                 CentralRegistry centralRegistry,
+                                                                 BridgeRegistry bridgeRegistry) {
+        return new PatientSearchServiceClient(serviceOptions, builder,  centralRegistry, bridgeRegistry);
+    }
+
+    @Bean("patientSearchResponseAction")
+    public DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction(PatientSearchServiceClient patientSearchServiceClient,
+                                                                                             CMRegistry cmRegistry,
+                                                                                             BridgeRegistry bridgeRegistry) {
+        return new DefaultValidatedResponseAction<>(patientSearchServiceClient, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("patientSearchResponseOrchestrator")
+    public ResponseOrchestrator patientSearchResponseOrchestrator(Validator validator,
+                                                            DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction) {
+        return new ResponseOrchestrator(validator, patientSearchResponseAction);
     }
 }
