@@ -22,7 +22,8 @@ import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 public class ConsentController {
     RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator;
     ResponseOrchestrator consentResponseOrchestrator;
-    RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
+    RequestOrchestrator<ConsentFetchServiceClient> consentFetchRequestOrchestrator;
+    ResponseOrchestrator consentFetchResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consent-requests/init")
@@ -45,12 +46,12 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentFetchOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId -> consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/on-fetch")
     public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
-        return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+        return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }
 }
