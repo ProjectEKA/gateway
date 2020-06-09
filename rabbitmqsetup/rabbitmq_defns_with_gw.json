@@ -1,0 +1,126 @@
+{
+  "rabbit_version": "3.8.3",
+  "rabbitmq_version": "3.8.3",
+  "users": [
+    {
+      "name": "guest",
+      "password_hash": "QcZc18JFfcS0BYqwMj4gRtq2ZL7xXHZInB6ildlzseHIM9qx",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [
+    {
+      "name": "/"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "guest",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "topic_permissions": [],
+  "parameters": [],
+  "global_parameters": [
+    {
+      "name": "cluster_name",
+      "value": "rabbit@rabbitmq"
+    },
+    {
+      "name": "internal_cluster_id",
+      "value": "rabbitmq-cluster-id-BHH1BRqpBz2aq6_h6ExDSA"
+    }
+  ],
+  "policies": [],
+  "queues": [
+    {
+      "name": "gw.dlq",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "gw.exchange",
+        "x-message-ttl": 10000,
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.parkinglot",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.link",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "gw.dead-letter-exchange",
+        "x-queue-type": "classic"
+      }
+    }
+  ],
+  "exchanges": [
+    {
+      "name": "gw.exchange",
+      "vhost": "/",
+      "type": "direct",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "gw.dead-letter-exchange",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    },
+    {
+      "name": "gw.parking.exchange",
+      "vhost": "/",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false,
+      "internal": false,
+      "arguments": {}
+    }
+  ],
+  "bindings": [
+    {
+      "source": "gw.dead-letter-exchange",
+      "vhost": "/",
+      "destination": "gw.dlq",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    },
+    {
+      "source": "gw.exchange",
+      "vhost": "/",
+      "destination": "gw.link",
+      "destination_type": "queue",
+      "routing_key": "gw.link",
+      "arguments": {}
+    },
+    {
+      "source": "gw.parking.exchange",
+      "vhost": "/",
+      "destination": "gw.parkinglot",
+      "destination_type": "queue",
+      "routing_key": "#",
+      "arguments": {}
+    }
+  ]
+}
