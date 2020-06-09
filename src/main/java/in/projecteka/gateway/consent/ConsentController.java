@@ -6,8 +6,6 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -22,7 +20,6 @@ import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 @RestController
 @AllArgsConstructor
 public class ConsentController {
-    public static final Logger logger = LoggerFactory.getLogger(ConsentController.class);
     RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator;
     ResponseOrchestrator consentResponseOrchestrator;
     RequestOrchestrator<ConsentFetchServiceClient> consentFetchRequestOrchestrator;
@@ -55,7 +52,6 @@ public class ConsentController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping("/v1/consents/on-fetch")
     public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
-        logger.info(requestEntity.getBody());
         return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }
 }

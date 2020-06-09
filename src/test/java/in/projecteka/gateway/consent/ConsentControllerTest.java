@@ -12,6 +12,7 @@ import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
 import in.projecteka.gateway.common.ValidatedResponseAction;
 import in.projecteka.gateway.common.Validator;
+import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -33,6 +34,7 @@ import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -140,7 +142,7 @@ class ConsentControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException {
+    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException, JSONException {
         var requestId = UUID.randomUUID().toString();
         var callerRequestId = UUID.randomUUID().toString();
         var objectNode = OBJECT_MAPPER.createObjectNode();
@@ -150,9 +152,10 @@ class ConsentControllerTest {
         ObjectNode respNode = OBJECT_MAPPER.createObjectNode();
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
-        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
+        var body = OBJECT_MAPPER.writeValueAsString(objectNode);
+        ArgumentCaptor<HttpEntity<String>> httpEntityArgumentCaptor = ArgumentCaptor.forClass(HttpEntity.class);
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));
-        when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID))
+        when(consentRequestValidator.validateResponse(httpEntityArgumentCaptor.capture(), eq(X_HIU_ID)))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
@@ -162,9 +165,10 @@ class ConsentControllerTest {
                 .uri("/v1/consents/on-fetch")
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
-                .bodyValue("{}")
+                .bodyValue(body)
                 .exchange()
                 .expectStatus()
                 .isAccepted();
+        assertThat(httpEntityArgumentCaptor.getValue().getBody()).isEqualTo(body);
     }
 }
