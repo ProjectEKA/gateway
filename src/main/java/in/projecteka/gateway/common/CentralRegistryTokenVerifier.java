@@ -73,8 +73,8 @@ public class CentralRegistryTokenVerifier {
     }
 
     private List<Role> getRoles(JWTClaimsSet jwtClaimsSet, String clientId) {
-        var resource_access = (JSONObject) jwtClaimsSet.getClaim("resource_access");
-        var clientObject = (JSONObject) resource_access.get(clientId);
+        var resourceAccess = (JSONObject) jwtClaimsSet.getClaim("resource_access");
+        var clientObject = (JSONObject) resourceAccess.get(clientId);
         return ((JSONArray) clientObject.get("roles"))
                 .stream()
                 .map(Object::toString)

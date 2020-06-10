@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static in.projecteka.gateway.common.Role.CM;
-import static in.projecteka.gateway.common.Role.Gateway;
+import static in.projecteka.gateway.common.Role.GATEWAY;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -32,7 +32,7 @@ class CentralRegistryTokenVerifierTest {
     void returnCallerWithSupportedRolesWhenTokenHasRoles() throws JOSEException {
         var clientId = string();
         JSONArray roleValues = new JSONArray();
-        var roles = List.of(HIU, Gateway, HIP, CM);
+        var roles = List.of(HIU, GATEWAY, HIP, CM);
         var randomRole1 = string();
         var randomRole2 = string();
         roleValues.add(randomRole1);
