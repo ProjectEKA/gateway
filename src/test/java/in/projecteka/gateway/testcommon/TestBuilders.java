@@ -1,6 +1,6 @@
 package in.projecteka.gateway.testcommon;
 
-import in.projecteka.gateway.clients.Caller;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
 import in.projecteka.gateway.registry.YamlRegistryMapping;

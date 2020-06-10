@@ -8,5 +8,22 @@ public class Constants {
     public static final String GW_DEAD_LETTER_EXCHANGE = "gw.dead-letter-exchange";
     public static final String GW_LINK_QUEUE = "gw.link";
 
+    // APIs
+    public static final String V_1_CARE_CONTEXTS_ON_DISCOVER = "/v1/care-contexts/on-discover";
+    public static final String V_1_CARE_CONTEXTS_DISCOVER = "/v1/care-contexts/discover";
+    public static final String V_1_LINKS_LINK_INIT = "/v1/links/link/init";
+    public static final String V_1_LINKS_LINK_ON_INIT = "/v1/links/link/on-init";
+    public static final String V_1_LINKS_LINK_CONFIRM = "/v1/links/link/confirm";
+    public static final String V_1_LINKS_LINK_ON_CONFIRM = "/v1/links/link/on-confirm";
+    public static final String V_1_CONSENT_REQUESTS_INIT = "/v1/consent-requests/init";
+    public static final String V_1_CONSENT_REQUESTS_ON_INIT = "/v1/consent-requests/on-init";
+    public static final String V_1_CONSENTS_FETCH = "/v1/consents/fetch";
+    public static final String V_1_CONSENTS_ON_FETCH = "/v1/consents/on-fetch";
+    public static final String V_1_CONSENTS_HIP_NOTIFY = "/v1/consents/hip/notify";
+    public static final String V_1_CONSENTS_HIU_NOTIFY = "/v1/consents/hiu/notify";
+    public static final String V_1_PATIENTS_FIND = "/v1/patients/find";
+    public static final String V_1_PATIENTS_ON_FIND = "/v1/patients/on-find";
+
+
     private Constants() { }
 }
