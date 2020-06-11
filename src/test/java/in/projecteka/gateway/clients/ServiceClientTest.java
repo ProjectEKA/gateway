@@ -1,13 +1,18 @@
 package in.projecteka.gateway.clients;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import in.projecteka.gateway.common.CentralRegistry;
-import in.projecteka.gateway.clients.ClientRegistryClient.ServiceClient;
+import in.projecteka.gateway.common.cache.ServiceOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.ClientRequest;
+import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
@@ -19,44 +24,36 @@ import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static java.util.Optional.of;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
-import static reactor.core.publisher.Mono.empty;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static reactor.core.publisher.Mono.just;
 
+@SuppressWarnings("ConstantConditions")
 class ServiceClientTest {
 
-    @Mock
-    private WebClient.Builder webClientBuilder;
+    @Captor
+    ArgumentCaptor<ClientRequest> captor;
 
     @Mock
-    private CentralRegistry centralRegistry;
+    CentralRegistry centralRegistry;
 
     @Mock
-    private WebClient webClient;
+    ExchangeFunction exchangeFunction;
 
-    @Mock
-    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+    ServiceClient serviceClient;
 
-    @Mock
-    private WebClient.RequestBodySpec requestBodySpec;
+    static final ServiceOptions SERVICE_OPTIONS = serviceOptions().timeout(1000).build();
 
-    @Mock
-    private WebClient.RequestHeadersSpec<WebClient.RequestBodySpec> requestHeadersSpec;
-
-    @Mock
-    private WebClient.ResponseSpec responseSpec;
-
-    private ServiceClient serviceClient;
+    WebClient.Builder webClientBuilder;
 
     @BeforeEach
     void init() {
-        MockitoAnnotations.initMocks(this);
-        when(webClientBuilder.build()).thenReturn(webClient);
-        serviceClient = new ServiceClient(serviceOptions().build(), webClientBuilder, centralRegistry) {
+        initMocks(this);
+        webClientBuilder = WebClient.builder().exchangeFunction(exchangeFunction);
+        serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return Optional.empty();
@@ -67,41 +64,35 @@ class ServiceClientTest {
     @Test
     void shouldRouteGivenRequestToURL() {
         var token = string();
-        var serializedRequest = "{}";
         var request = new HashMap<String, Object>();
         var url = "/temp-url";
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), eq(token))).thenReturn(requestBodySpec);
-        doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(empty());
-
         when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(exchangeFunction.exchange(captor.capture()))
+                .thenReturn(just(ClientResponse.create(HttpStatus.OK)
+                        .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                        .build()));
 
-        StepVerifier.create(serviceClient.routeRequest(request, url)).verifyComplete();
+        StepVerifier.create(serviceClient.routeRequest(request, url))
+                .verifyComplete();
+        assertThat(captor.getValue().url()).hasPath(url);
+        assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
 
     @Test
     void shouldRouteGivenResponseToURL() {
         var token = string();
-        var serializedRequest = "{}";
         var request = OBJECT_MAPPER.createObjectNode();
         var url = "/temp-url";
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(eq(url))).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), eq(token))).thenReturn(requestBodySpec);
-        doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(eq(serializedRequest));
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(empty());
-
         when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(exchangeFunction.exchange(captor.capture()))
+                .thenReturn(just(ClientResponse.create(HttpStatus.OK)
+                        .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                        .build()));
 
         StepVerifier.create(serviceClient.routeResponse(request, url)).verifyComplete();
+
+        assertThat(captor.getValue().url()).hasPath(url);
+        assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
 
     @Test
@@ -111,15 +102,11 @@ class ServiceClientTest {
         var clientId = string();
         var request = errorResult().build();
         when(centralRegistry.authenticate()).thenReturn(just(token));
-        when(webClient.post()).thenReturn(requestBodyUriSpec);
-        when(requestBodyUriSpec.uri(anyString())).thenReturn(requestBodySpec);
-        when(requestBodySpec.contentType(eq(MediaType.APPLICATION_JSON))).thenReturn(requestBodySpec);
-        when(requestBodySpec.header(eq(HttpHeaders.AUTHORIZATION), eq(token))).thenReturn(requestBodySpec);
-        doReturn(requestHeadersSpec).when(requestBodySpec).bodyValue(any());
-        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
-        when(responseSpec.toBodilessEntity()).thenReturn(empty());
-        serviceClient = new ServiceClient(serviceOptions().build(), webClientBuilder, centralRegistry) {
+        when(exchangeFunction.exchange(captor.capture()))
+                .thenReturn(just(ClientResponse.create(HttpStatus.OK)
+                        .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                        .build()));
+        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
@@ -127,6 +114,33 @@ class ServiceClientTest {
         };
 
         StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyComplete();
+        assertThat(captor.getValue().url()).hasPath(url);
+        assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
+    }
+
+    @Test
+    void logErrorReturnClientErrorWhenNot200SeriesResponseCame() throws JsonProcessingException {
+        var token = string();
+        var url = "/temp-url";
+        var clientId = string();
+        var request = errorResult().build();
+        when(centralRegistry.authenticate()).thenReturn(just(token));
+        var error = OBJECT_MAPPER.createObjectNode().put("error", "something went wrong");
+        when(exchangeFunction.exchange(captor.capture()))
+                .thenReturn(just(ClientResponse.create(HttpStatus.GATEWAY_TIMEOUT)
+                        .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
+                        .body(OBJECT_MAPPER.writeValueAsString(error))
+                        .build()));
+        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+            @Override
+            protected Optional<String> getResponseUrl(String clientId) {
+                return of(url);
+            }
+        };
+
+        StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyError(ClientError.class);
+        assertThat(captor.getValue().url()).hasPath(url);
+        assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
 
     @Test

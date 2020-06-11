@@ -1,7 +1,7 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,16 +22,16 @@ import static org.mockito.Mockito.when;
 
 class DefaultValidatedResponseActionTest {
     @Mock
-    ClientRegistryClient.ServiceClient serviceClient;
+    ServiceClient serviceClient;
     @Mock
     CMRegistry cmRegistry;
     @Mock
     YamlRegistryMapping cmConfig;
     @InjectMocks
-    DefaultValidatedResponseAction<ClientRegistryClient.ServiceClient> defaultValidatedResponseAction;
+    DefaultValidatedResponseAction<ServiceClient> defaultValidatedResponseAction;
 
     @BeforeEach
-    public void init() {
+    void init() {
         MockitoAnnotations.initMocks(this);
     }
 

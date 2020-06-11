@@ -1,7 +1,7 @@
 package in.projecteka.gateway.common;
 
 import in.projecteka.gateway.clients.ClientError;
-import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.clients.model.Error;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.common.model.ErrorResult;
@@ -19,7 +19,7 @@ import static in.projecteka.gateway.clients.model.Error.unKnownError;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 
 @AllArgsConstructor
-public class RequestOrchestrator<T extends ClientRegistryClient.ServiceClient> {
+public class RequestOrchestrator<T extends ServiceClient> {
     private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
     CacheAdapter<String, String> requestIdMappings;
     Validator validator;
