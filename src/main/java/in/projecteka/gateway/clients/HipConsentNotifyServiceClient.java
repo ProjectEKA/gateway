@@ -2,6 +2,7 @@ package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.clients.ClientRegistryClient.ServiceClient;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;

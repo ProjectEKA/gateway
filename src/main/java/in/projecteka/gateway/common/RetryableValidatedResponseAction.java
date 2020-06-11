@@ -1,7 +1,7 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.clients.ServiceClient;
+import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -22,7 +22,7 @@ import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 
 @AllArgsConstructor
-public class RetryableValidatedResponseAction<T extends ServiceClient>
+public class RetryableValidatedResponseAction<T extends ClientRegistryClient.ServiceClient>
         implements MessageListener, ValidatedResponseAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
     private final AmqpTemplate amqpTemplate;

@@ -1,6 +1,6 @@
 package in.projecteka.gateway.user;
 
-import in.projecteka.gateway.clients.Caller;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
+import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
@@ -23,7 +25,7 @@ public class UserController {
     ResponseOrchestrator patientSearchResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/patients/find")
+    @PostMapping(V_1_PATIENTS_FIND)
     public Mono<Void> findPatient(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
@@ -32,7 +34,7 @@ public class UserController {
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/patients/on-find")
+    @PostMapping(V_1_PATIENTS_ON_FIND)
     public Mono<Void> onFindPatient(HttpEntity<String> requestEntity) {
         return patientSearchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }

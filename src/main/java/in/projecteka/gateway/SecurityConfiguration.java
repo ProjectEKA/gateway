@@ -26,11 +26,50 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 
+import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_DISCOVER;
+import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_ON_DISCOVER;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_FETCH;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_NOTIFY;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIU_NOTIFY;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_CONFIRM;
+import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
+import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HIP;
+import static in.projecteka.gateway.common.Role.HIU;
+import static java.util.stream.Collectors.toList;
 import static org.springframework.util.StringUtils.hasText;
 
 @Configuration
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
+
+    public static final String[] HIU_AP_IS = new String[]{
+            V_1_CONSENT_REQUESTS_INIT,
+            V_1_CONSENTS_FETCH,
+            V_1_PATIENTS_FIND,
+    };
+    public static final String[] HIP_API_IS = new String[]{
+            V_1_CARE_CONTEXTS_ON_DISCOVER,
+            V_1_LINKS_LINK_ON_INIT,
+            V_1_LINKS_LINK_ON_CONFIRM
+    };
+    public static final String[] CM_API_IS = new String[]{
+            V_1_CARE_CONTEXTS_DISCOVER,
+            V_1_LINKS_LINK_INIT,
+            V_1_LINKS_LINK_CONFIRM,
+            V_1_CONSENTS_ON_FETCH,
+            V_1_CONSENTS_HIP_NOTIFY,
+            V_1_CONSENTS_HIU_NOTIFY,
+            V_1_CONSENT_REQUESTS_ON_INIT,
+            V_1_PATIENTS_ON_FIND
+    };
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
@@ -43,8 +82,10 @@ public class SecurityConfiguration {
                 .csrf().disable()
                 .logout().disable()
                 .authorizeExchange()
-                .pathMatchers("/**")
-                .authenticated().and()
+                .pathMatchers(CM_API_IS).hasAnyRole(CM.name())
+                .pathMatchers(HIP_API_IS).hasAnyRole(HIP.name())
+                .pathMatchers(HIU_AP_IS).hasAnyRole(HIU.name())
+                .and()
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
                 .build();
@@ -92,10 +133,13 @@ public class SecurityConfiguration {
 
         private Mono<SecurityContext> checkCentralRegistry(String token) {
             return centralRegistryTokenVerifier.verify(token)
-                    .map(caller -> new UsernamePasswordAuthenticationToken(
-                            caller,
-                            token,
-                            new ArrayList<SimpleGrantedAuthority>()))
+                    .map(caller -> {
+                        var authorities = caller.getRoles()
+                                .stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name().toUpperCase()))
+                                .collect(toList());
+                        return new UsernamePasswordAuthenticationToken(caller, token, authorities);
+                    })
                     .map(SecurityContextImpl::new);
         }
     }

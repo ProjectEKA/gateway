@@ -1,6 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.clients.ClientRegistryClient.ServiceClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
