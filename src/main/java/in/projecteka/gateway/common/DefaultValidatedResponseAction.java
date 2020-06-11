@@ -1,7 +1,7 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.clients.ServiceClient;
+import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
@@ -16,7 +16,7 @@ import java.util.Optional;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
 @AllArgsConstructor
-public class DefaultValidatedResponseAction<T extends ServiceClient> implements ValidatedResponseAction{
+public class DefaultValidatedResponseAction<T extends ClientRegistryClient.ServiceClient> implements ValidatedResponseAction{
     private static final Logger logger = LoggerFactory.getLogger(DefaultValidatedResponseAction.class);
     T serviceClient;
     CMRegistry cmRegistry;

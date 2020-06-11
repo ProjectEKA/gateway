@@ -26,11 +26,14 @@ import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
+import java.util.List;
 import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
@@ -80,7 +83,8 @@ class ConsentControllerTest {
     void shouldFireAndForgetForConsentRequestInit() {
         var token = string();
         var clientId = string();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
         when(requestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
@@ -106,7 +110,7 @@ class ConsentControllerTest {
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
         when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
@@ -128,7 +132,8 @@ class ConsentControllerTest {
         var token = string();
         var clientId = string();
         when(consentFetchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().clientId(clientId).build()));
+        when(centralRegistryTokenVerifier.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
         webTestClient
                 .post()
@@ -154,7 +159,7 @@ class ConsentControllerTest {
         objectNode.set("resp", respNode);
         var body = OBJECT_MAPPER.writeValueAsString(objectNode);
         ArgumentCaptor<HttpEntity<String>> httpEntityArgumentCaptor = ArgumentCaptor.forClass(HttpEntity.class);
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().build()));
+        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
         when(consentRequestValidator.validateResponse(httpEntityArgumentCaptor.capture(), eq(X_HIU_ID)))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))

@@ -6,20 +6,29 @@ import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
-import com.nimbusds.jose.proc.*;
+import com.nimbusds.jose.proc.BadJOSEException;
+import com.nimbusds.jose.proc.DefaultJOSEObjectTypeVerifier;
+import com.nimbusds.jose.proc.JWSKeySelector;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTClaimsVerifier;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
-import in.projecteka.gateway.clients.Caller;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 import org.apache.log4j.Logger;
 import reactor.core.publisher.Mono;
 
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
+import static reactor.core.publisher.Mono.just;
 
 public class CentralRegistryTokenVerifier {
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
@@ -35,7 +44,7 @@ public class CentralRegistryTokenVerifier {
         jwtProcessor.setJWSKeySelector(keySelector);
         jwtProcessor.setJWTClaimsSetVerifier(new DefaultJWTClaimsVerifier<>(
                 new JWTClaimsSet.Builder().build(),
-                new HashSet<>(Arrays.asList("sub", "iat", "exp", "scope", "clientId"))));
+                new HashSet<>(Arrays.asList("sub", "iat", "exp", "scope", "clientId", "resource_access"))));
     }
 
     public Mono<Caller> verify(String token) {
@@ -46,8 +55,10 @@ public class CentralRegistryTokenVerifier {
                 return Mono.justOrEmpty(jwtProcessor.process(credentials, null))
                         .flatMap(jwtClaimsSet -> {
                             try {
-                                return Mono.just(new Caller(jwtClaimsSet.getStringClaim("clientId"), true));
-                            } catch (ParseException e) {
+                                var clientId = jwtClaimsSet.getStringClaim("clientId");
+                                var caller = new Caller(clientId, true, getRoles(jwtClaimsSet, clientId));
+                                return just(caller);
+                            } catch (Exception e) {
                                 logger.error(e);
                                 return Mono.empty();
                             }
@@ -59,6 +70,17 @@ public class CentralRegistryTokenVerifier {
             logger.error("Unauthorized access", e);
             return Mono.empty();
         }
+    }
+
+    private List<Role> getRoles(JWTClaimsSet jwtClaimsSet, String clientId) {
+        var resourceAccess = (JSONObject) jwtClaimsSet.getClaim("resource_access");
+        var clientObject = (JSONObject) resourceAccess.get(clientId);
+        return ((JSONArray) clientObject.get("roles"))
+                .stream()
+                .map(Object::toString)
+                .map(mayBeRole -> Role.valueOfIgnoreCase(mayBeRole).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(toList());
     }
 }
 

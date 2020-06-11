@@ -1,6 +1,6 @@
 package in.projecteka.gateway.consent;
 
-import in.projecteka.gateway.clients.Caller;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_NOTIFY;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIU_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
@@ -24,7 +26,7 @@ public class ConsentArtefactController {
     RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/consents/hip/notify")
+    @PostMapping(V_1_CONSENTS_HIP_NOTIFY)
     public Mono<Void> consentNotifyToHIP(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
@@ -34,7 +36,7 @@ public class ConsentArtefactController {
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/consents/hiu/notify")
+    @PostMapping(V_1_CONSENTS_HIU_NOTIFY)
     public Mono<Void> consentNotifyToHIU(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())

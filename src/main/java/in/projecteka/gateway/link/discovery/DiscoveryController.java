@@ -1,6 +1,6 @@
 package in.projecteka.gateway.link.discovery;
 
-import in.projecteka.gateway.clients.Caller;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_DISCOVER;
+import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
@@ -23,7 +25,7 @@ public class DiscoveryController {
     ResponseOrchestrator discoveryResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/care-contexts/discover")
+    @PostMapping(V_1_CARE_CONTEXTS_DISCOVER)
     public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
@@ -32,7 +34,7 @@ public class DiscoveryController {
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping("/v1/care-contexts/on-discover")
+    @PostMapping(V_1_CARE_CONTEXTS_ON_DISCOVER)
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
         return discoveryResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
     }
