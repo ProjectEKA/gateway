@@ -77,7 +77,7 @@ class ResponseOrchestratorTest {
         when(validator.validateResponse(requestEntity, X_CM_ID))
                 .thenReturn(just(new ValidatedResponse(testCmId, cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(just(cmRequestId));
-        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testCmId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testCmId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
 
         StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))

@@ -81,6 +81,7 @@ class ServiceClientTest {
     @Test
     void shouldRouteGivenResponseToURL() {
         var token = string();
+        var clientId = string();
         var request = OBJECT_MAPPER.createObjectNode();
         var url = "/temp-url";
         when(centralRegistry.authenticate()).thenReturn(just(token));
@@ -88,8 +89,14 @@ class ServiceClientTest {
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
+        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+            @Override
+            protected Optional<String> getResponseUrl(String clientId) {
+                return of(url);
+            }
+        };
 
-        StepVerifier.create(serviceClient.routeResponse(request, url)).verifyComplete();
+        StepVerifier.create(serviceClient.routeResponse(request, clientId)).verifyComplete();
 
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);

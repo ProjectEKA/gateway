@@ -120,10 +120,8 @@ public class GatewayConfiguration {
 
     @Bean("discoveryResponseAction")
     public DefaultValidatedResponseAction<DiscoveryServiceClient> discoveryResponseAction(
-            DiscoveryServiceClient discoveryServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(discoveryServiceClient, cmRegistry, bridgeRegistry);
+            DiscoveryServiceClient discoveryServiceClient) {
+        return new DefaultValidatedResponseAction<>(discoveryServiceClient);
     }
 
     @Bean("discoveryResponseOrchestrator")
@@ -158,10 +156,8 @@ public class GatewayConfiguration {
 
     @Bean("linkInitResponseAction")
     public DefaultValidatedResponseAction<LinkInitServiceClient> linkInitResponseAction(
-            LinkInitServiceClient linkInitServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(linkInitServiceClient, cmRegistry, bridgeRegistry);
+            LinkInitServiceClient linkInitServiceClient) {
+        return new DefaultValidatedResponseAction<>(linkInitServiceClient);
     }
 
     @Bean("linkInitResponseOrchestrator")
@@ -189,10 +185,8 @@ public class GatewayConfiguration {
 
     @Bean("linkConfirmResponseAction")
     public DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction(
-            LinkConfirmServiceClient linkConfirmServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient, cmRegistry, bridgeRegistry);
+            LinkConfirmServiceClient linkConfirmServiceClient) {
+        return new DefaultValidatedResponseAction<>(linkConfirmServiceClient);
     }
 
     @Bean
@@ -266,10 +260,8 @@ public class GatewayConfiguration {
 
     @Bean("consentFetchResponseAction")
     public DefaultValidatedResponseAction<ConsentFetchServiceClient> consentFetchResponseAction(
-            ConsentFetchServiceClient consentFetchServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(consentFetchServiceClient, cmRegistry, bridgeRegistry);
+            ConsentFetchServiceClient consentFetchServiceClient) {
+        return new DefaultValidatedResponseAction<>(consentFetchServiceClient);
     }
 
     @Bean("consentFetchResponseOrchestrator")
@@ -333,10 +325,8 @@ public class GatewayConfiguration {
 
     @Bean("consentResponseAction")
     public DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction(
-            ConsentRequestServiceClient consentRequestServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(consentRequestServiceClient, cmRegistry, bridgeRegistry);
+            ConsentRequestServiceClient consentRequestServiceClient) {
+        return new DefaultValidatedResponseAction<>(consentRequestServiceClient);
     }
 
     @Bean("consentResponseOrchestrator")
@@ -356,10 +346,8 @@ public class GatewayConfiguration {
 
     @Bean("patientSearchResponseAction")
     public DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction(
-            PatientSearchServiceClient patientSearchServiceClient,
-            CMRegistry cmRegistry,
-            BridgeRegistry bridgeRegistry) {
-        return new DefaultValidatedResponseAction<>(patientSearchServiceClient, cmRegistry, bridgeRegistry);
+            PatientSearchServiceClient patientSearchServiceClient) {
+        return new DefaultValidatedResponseAction<>(patientSearchServiceClient);
     }
 
     @Bean("patientSearchResponseOrchestrator")

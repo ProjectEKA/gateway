@@ -1,6 +1,5 @@
 package in.projecteka.gateway.clients;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -28,11 +27,6 @@ public class ConsentFetchServiceClient extends ServiceClient {
     @Override
     public Mono<Void> routeRequest(Map<String, Object> request, String url) {
         return super.routeRequest(request, url + REQUEST_ROUTE);
-    }
-
-    @Override
-    public Mono<Void> routeResponse(JsonNode request, String url) {
-        return super.routeResponse(request, url + RESPONSE_ROUTE);
     }
 
     @Override

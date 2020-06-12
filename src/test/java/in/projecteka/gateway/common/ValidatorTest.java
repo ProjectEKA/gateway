@@ -236,7 +236,7 @@ class ValidatorTest {
                 .assertNext(validatedDiscoverResponse -> {
                     Assertions.assertEquals(testCmId, validatedDiscoverResponse.getId());
                     Assertions.assertEquals(cachedRequestId, validatedDiscoverResponse.getCallerRequestId());
-                    Assertions.assertEquals(objectNode, validatedDiscoverResponse.getDeserializedJsonNode());
+                    Assertions.assertEquals(objectNode, validatedDiscoverResponse.getDeSerializedJsonNode());
                 })
                 .verifyComplete();
     }

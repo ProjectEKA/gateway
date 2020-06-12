@@ -1,6 +1,5 @@
 package in.projecteka.gateway.clients;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -27,11 +26,6 @@ public class HipConsentNotifyServiceClient extends ServiceClient {
     @Override
     public Mono<Void> routeRequest(Map<String, Object> request, String url) {
         return super.routeRequest(request, url + REQUEST_ROUTE);
-    }
-
-    @Override
-    public Mono<Void> routeResponse(JsonNode request, String cmUrl) {
-        return Mono.empty();
     }
 
     @Override

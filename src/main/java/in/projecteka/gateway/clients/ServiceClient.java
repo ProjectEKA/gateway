@@ -36,8 +36,13 @@ public abstract class ServiceClient {
         return routeCommon(request, url);
     }
 
-    public Mono<Void> routeResponse(JsonNode request, String url) {
-        return routeCommon(request, url);
+    public Mono<Void> routeResponse(JsonNode request, String clientId) {
+        return getResponseUrl(clientId)
+                .map(url -> routeCommon(request, url))
+                .orElseGet(() -> {
+                    logger.error(format("No mapping found for %s", clientId));
+                    return error(mappingNotFoundForId(clientId));
+                });
     }
 
     public Mono<Void> notifyError(String clientId, ErrorResult request) {
