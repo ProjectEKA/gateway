@@ -1,7 +1,7 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.clients.ClientRegistryClient;
+import in.projecteka.gateway.clients.ServiceClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,9 +48,9 @@ class RetryableValidatedResponseActionTest {
     private Message message;
 
     @Mock
-    private DefaultValidatedResponseAction<ClientRegistryClient.ServiceClient> defaultValidatedResponseAction;
+    private DefaultValidatedResponseAction<ServiceClient> defaultValidatedResponseAction;
 
-    private RetryableValidatedResponseAction<ClientRegistryClient.ServiceClient> retryableValidatedResponseAction;
+    private RetryableValidatedResponseAction<ServiceClient> retryableValidatedResponseAction;
     @Captor
     private ArgumentCaptor<MessagePostProcessor> messagePostProcessorArgumentCaptor;
 
