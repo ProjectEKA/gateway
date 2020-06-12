@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
+import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -74,11 +75,11 @@ class RequestOrchestratorTest {
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
-                .thenReturn(error(ClientError.idMissingInHeader(routingKey)));
+                .thenReturn(error(mappingNotFoundForId(routingKey)));
 
         StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
                 .expectErrorSatisfies(throwable ->
-                        assertThat(throwable).isEqualToComparingFieldByField(ClientError.idMissingInHeader(routingKey)))
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(routingKey)))
                 .verify();
     }
 

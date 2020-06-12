@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
+import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.common.Serializer.from;
 import static java.lang.String.format;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -43,7 +45,7 @@ public abstract class ServiceClient {
                 .map(url -> route(request, url))
                 .orElseGet(() -> {
                     logger.error(format("No mapping found for %s", clientId));
-                    return error(ClientError.mappingNotFoundForId(clientId));
+                    return error(mappingNotFoundForId(clientId));
                 });
     }
 
@@ -68,8 +70,9 @@ public abstract class ServiceClient {
                                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                                         clientResponse -> clientResponse
                                                 .bodyToMono(HashMap.class)
-                                                .doOnSuccess(e -> logger.error(e.toString()))
-                                                .then(error(ClientError.unableToConnect())))
+                                                .doOnSuccess(e -> logger.error(clientResponse.statusCode().toString(),
+                                                        e.toString()))
+                                                .then(error(unableToConnect())))
                                 .toBodilessEntity()
                                 .timeout(Duration.ofSeconds(serviceOptions.getTimeout())))
                 .then();
