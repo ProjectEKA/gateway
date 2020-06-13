@@ -14,4 +14,8 @@ public class CMRegistry {
                 .filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id))
                 .findFirst();
     }
+
+    public Optional<String> getHostFor(String id) {
+        return getConfigFor(id).map(YamlRegistryMapping::getHost);
+    }
 }
