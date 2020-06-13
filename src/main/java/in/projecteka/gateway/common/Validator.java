@@ -48,18 +48,18 @@ public class Validator {
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(registry -> toRequest(maybeRequest, registry))
+                .map(registry -> toRequest(maybeRequest, registry.getId()))
                 .orElseGet(() -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
                     return error(mappingNotFoundForId(routingKey));
                 });
     }
 
-    private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, YamlRegistryMapping mapping) {
+    private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, String clientId) {
         return Serializer.from(maybeRequest)
                 .filter(request -> hasText((String) request.get(REQUEST_ID)))
                 .flatMap(request -> from((String) request.get(REQUEST_ID))
-                        .map(requestUUID -> just(new ValidatedRequest(mapping, requestUUID, request))))
+                        .map(requestUUID -> just(new ValidatedRequest(requestUUID, request, clientId))))
                 .orElseGet(() -> {
                     var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
                     logger.error(errorMessage);
@@ -96,7 +96,7 @@ public class Validator {
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(mapping -> toResponse(maybeResponse, clientId))
+                .map(mapping -> toResponse(maybeResponse, mapping.getId()))
                 .orElseGet(() -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
                     return error(mappingNotFoundForId(clientId));
@@ -111,7 +111,7 @@ public class Validator {
                     return error(invalidRequest(RESP_REQUEST_ID_IS_NULL_OR_EMPTY));
                 }))
                 .flatMap(jsonNode -> {
-                    String respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
+                    var respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
                     return requestIdMappings.get(respRequestId)
                             .filter(StringUtils::hasText)
                             .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))

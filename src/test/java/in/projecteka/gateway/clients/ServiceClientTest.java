@@ -23,6 +23,7 @@ import static in.projecteka.gateway.testcommon.TestBuilders.errorResult;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
+import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -43,8 +44,6 @@ class ServiceClientTest {
     @Mock
     ExchangeFunction exchangeFunction;
 
-    ServiceClient serviceClient;
-
     static final ServiceOptions SERVICE_OPTIONS = serviceOptions().timeout(1000).build();
 
     WebClient.Builder webClientBuilder;
@@ -53,27 +52,31 @@ class ServiceClientTest {
     void init() {
         initMocks(this);
         webClientBuilder = WebClient.builder().exchangeFunction(exchangeFunction);
-        serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, centralRegistry) {
-            @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return Optional.empty();
-            }
-        };
     }
 
     @Test
     void shouldRouteGivenRequestToURL() {
         var token = string();
         var request = new HashMap<String, Object>();
-        var url = "/temp-url";
+        var url = string();
         when(centralRegistry.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+            @Override
+            protected Optional<String> getResponseUrl(String clientId) {
+                return empty();
+            }
 
-        StepVerifier.create(serviceClient.routeRequest(request, url))
-                .verifyComplete();
+            @Override
+            protected Optional<String> getRequestUrl(String clientId) {
+                return of(url);
+            }
+        };
+
+        StepVerifier.create(serviceClient.routeRequest(request, string())).verifyComplete();
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
@@ -89,10 +92,15 @@ class ServiceClientTest {
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
-        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
+            }
+
+            @Override
+            protected Optional<String> getRequestUrl(String clientId) {
+                return empty();
             }
         };
 
@@ -113,10 +121,15 @@ class ServiceClientTest {
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
-        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
+            }
+
+            @Override
+            protected Optional<String> getRequestUrl(String clientId) {
+                return empty();
             }
         };
 
@@ -138,10 +151,15 @@ class ServiceClientTest {
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .body(OBJECT_MAPPER.writeValueAsString(error))
                         .build()));
-        serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
+            }
+
+            @Override
+            protected Optional<String> getRequestUrl(String clientId) {
+                return empty();
             }
         };
 
@@ -152,6 +170,17 @@ class ServiceClientTest {
 
     @Test
     void returnErrorIfUnableToFindAHostForAClient() {
+        var serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, centralRegistry) {
+            @Override
+            protected Optional<String> getResponseUrl(String clientId) {
+                return empty();
+            }
+
+            @Override
+            protected Optional<String> getRequestUrl(String clientId) {
+                return empty();
+            }
+        };
         StepVerifier.create(serviceClient.notifyError(string(), errorResult().build())).verifyError(ClientError.class);
     }
 }

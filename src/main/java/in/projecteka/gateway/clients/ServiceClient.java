@@ -26,21 +26,27 @@ import static reactor.core.publisher.Mono.error;
 
 @AllArgsConstructor
 public abstract class ServiceClient {
+    public static final String NO_MAPPING_FOUND_FOR_CLIENT = "No mapping found for %s";
     private static final Logger logger = LoggerFactory.getLogger(ServiceClient.class);
 
     protected final ServiceOptions serviceOptions;
     protected final WebClient.Builder webClientBuilder;
     protected final CentralRegistry centralRegistry;
 
-    public Mono<Void> routeRequest(Map<String, Object> request, String url) {
-        return routeCommon(request, url);
+    public Mono<Void> routeRequest(Map<String, Object> request, String clientId) {
+        return getRequestUrl(clientId)
+                .map(url -> routeCommon(request, url))
+                .orElseGet(() -> {
+                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
+                    return error(mappingNotFoundForId(clientId));
+                });
     }
 
     public Mono<Void> routeResponse(JsonNode request, String clientId) {
         return getResponseUrl(clientId)
                 .map(url -> routeCommon(request, url))
                 .orElseGet(() -> {
-                    logger.error(format("No mapping found for %s", clientId));
+                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
                     return error(mappingNotFoundForId(clientId));
                 });
     }
@@ -49,12 +55,14 @@ public abstract class ServiceClient {
         return getResponseUrl(clientId)
                 .map(url -> route(request, url))
                 .orElseGet(() -> {
-                    logger.error(format("No mapping found for %s", clientId));
+                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
                     return error(mappingNotFoundForId(clientId));
                 });
     }
 
     protected abstract Optional<String> getResponseUrl(String clientId);
+
+    protected abstract Optional<String> getRequestUrl(String clientId);
 
     private <T> Mono<Void> routeCommon(T requestBody, String url) {
         return from(requestBody)

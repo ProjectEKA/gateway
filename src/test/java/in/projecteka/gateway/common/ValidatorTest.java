@@ -141,8 +141,8 @@ class ValidatorTest {
     @MethodSource("bridgeConfigs")
     void returnValidatedRequest(String routingKey, ServiceType serviceType) throws JsonProcessingException {
         var requestId = UUID.randomUUID();
-        var bridgeConfig = yamlRegistryMapping().build();
         var bridgeId = string();
+        var bridgeConfig = yamlRegistryMapping().id(bridgeId).build();
         var requestBody = Map.of(REQUEST_ID, requestId.toString());
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
@@ -151,9 +151,9 @@ class ValidatorTest {
 
         StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
                 .assertNext(validatedDiscoverRequest -> {
-                    assertThat(bridgeConfig).isEqualTo(validatedDiscoverRequest.getConfig());
                     assertThat(requestBody).isEqualTo(validatedDiscoverRequest.getDeSerializedRequest());
                     assertThat(requestId).isEqualTo(validatedDiscoverRequest.getRequesterRequestId());
+                    assertThat(bridgeId).isEqualTo(validatedDiscoverRequest.getClientId());
                 })
                 .verifyComplete();
     }
@@ -230,6 +230,7 @@ class ValidatorTest {
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(httpHeaders.getFirst(X_CM_ID)).thenReturn(testCmId);
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(of(cmConfig));
+        when(cmConfig.getId()).thenReturn(testCmId);
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.just(cachedRequestId));
 
         StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))

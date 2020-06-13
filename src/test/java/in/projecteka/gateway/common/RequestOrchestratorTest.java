@@ -29,7 +29,6 @@ import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
-import static in.projecteka.gateway.testcommon.TestBuilders.yamlRegistryMapping;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,16 +88,14 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId.toString()));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        var host = string();
-        var registryMapping = yamlRegistryMapping().host(host).build();
+        var targetClientId = string();
+        String clientId = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+                .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host))).thenReturn(empty());
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, string()))
-                .verifyComplete();
-
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId)).verifyComplete();
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
     }
 
@@ -109,12 +106,11 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        var host = string();
-        var registryMapping = yamlRegistryMapping().host(host).build();
+        var targetClientId = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+                .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
                 .thenReturn(error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
@@ -135,12 +131,11 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        var host = string();
-        var registryMapping = yamlRegistryMapping().host(host).build();
+        var targetClientId = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+                .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
                 .thenReturn(error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
@@ -161,12 +156,11 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        var host = string();
-        var registryMapping = yamlRegistryMapping().host(host).build();
+        var targetClientId = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedRequest(registryMapping, requestId, requestBody)));
+                .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(host)))
+        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
                 .thenReturn(error(ClientError.unableToConnect()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
