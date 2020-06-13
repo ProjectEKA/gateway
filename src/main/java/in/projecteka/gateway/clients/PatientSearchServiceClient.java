@@ -30,7 +30,9 @@ public class PatientSearchServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+        return bridgeRegistry.getConfigFor(clientId, HIU)
+                .map(YamlRegistryMapping::getHost)
+                .map(host -> host + RESPONSE_ROUTE);
     }
 
     @Override

@@ -34,6 +34,8 @@ public class DiscoveryServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getRequestUrl(String clientId) {
-        return bridgeRegistry.getConfigFor(clientId, HIP).map(host -> host + REQUEST_ROUTE);
+        return bridgeRegistry.getConfigFor(clientId, HIP)
+                .map(YamlRegistryMapping::getHost)
+                .map(host -> host + REQUEST_ROUTE);
     }
 }
