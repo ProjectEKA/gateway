@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
@@ -42,13 +43,22 @@ public class Validator {
     CacheAdapter<String, String> requestIdMappings;
 
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
+        return validate(maybeRequest, routingKey, Validator::toRequest);
+    }
+
+    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
+        return validate(maybeResponse, routingKey, this::toResponse);
+    }
+
+    private <T> Mono<T> validate(HttpEntity<String> maybeRequest, String routingKey,
+                                 BiFunction<HttpEntity<String>, String, Mono<T>> to) {
         String clientId = maybeRequest.getHeaders().getFirst(routingKey);
         if (!hasText(clientId)) {
             logger.error(HEADER_NOT_FOUND, routingKey);
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(registry -> toRequest(maybeRequest, registry.getId()))
+                .map(registry -> to.apply(maybeRequest, registry.getId()))
                 .orElseGet(() -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
                     return error(mappingNotFoundForId(routingKey));
@@ -64,6 +74,22 @@ public class Validator {
                     var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
                     logger.error(errorMessage);
                     return error(invalidRequest(errorMessage));
+                });
+    }
+
+    private Mono<ValidatedResponse> toResponse(HttpEntity<String> maybeResponse, String clientId) {
+        return deserializeRequestAsJsonNode(maybeResponse)
+                .filter(jsonNode -> !jsonNode.path("resp").path(REQUEST_ID).asText().isEmpty())
+                .switchIfEmpty(defer(() -> {
+                    logger.error(RESP_REQUEST_ID_IS_NULL_OR_EMPTY);
+                    return error(invalidRequest(RESP_REQUEST_ID_IS_NULL_OR_EMPTY));
+                }))
+                .flatMap(jsonNode -> {
+                    var respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
+                    return requestIdMappings.get(respRequestId)
+                            .filter(StringUtils::hasText)
+                            .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
+                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
                 });
     }
 
@@ -87,35 +113,5 @@ public class Validator {
             return bridgeRegistry.getConfigFor(clientId, HIU);
         }
         return cmRegistry.getConfigFor(clientId);
-    }
-
-    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
-        var clientId = maybeResponse.getHeaders().getFirst(routingKey);
-        if (!hasText(clientId)) {
-            logger.error(HEADER_NOT_FOUND, routingKey);
-            return error(mappingNotFoundForId(routingKey));
-        }
-        return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(mapping -> toResponse(maybeResponse, mapping.getId()))
-                .orElseGet(() -> {
-                    logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
-                    return error(mappingNotFoundForId(clientId));
-                });
-    }
-
-    private Mono<ValidatedResponse> toResponse(HttpEntity<String> maybeResponse, String clientId) {
-        return deserializeRequestAsJsonNode(maybeResponse)
-                .filter(jsonNode -> !jsonNode.path("resp").path(REQUEST_ID).asText().isEmpty())
-                .switchIfEmpty(defer(() -> {
-                    logger.error(RESP_REQUEST_ID_IS_NULL_OR_EMPTY);
-                    return error(invalidRequest(RESP_REQUEST_ID_IS_NULL_OR_EMPTY));
-                }))
-                .flatMap(jsonNode -> {
-                    var respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
-                    return requestIdMappings.get(respRequestId)
-                            .filter(StringUtils::hasText)
-                            .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
-                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
-                });
     }
 }
