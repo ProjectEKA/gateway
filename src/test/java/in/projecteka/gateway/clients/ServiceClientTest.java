@@ -14,6 +14,7 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.ExchangeFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
@@ -163,7 +164,9 @@ class ServiceClientTest {
             }
         };
 
-        StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyError(ClientError.class);
+        Mono<Void> notifyError = serviceClient.notifyError(clientId, request);
+
+        StepVerifier.create(notifyError).verifyError(ClientError.class);
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }

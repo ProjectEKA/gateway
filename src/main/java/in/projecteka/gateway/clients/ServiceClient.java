@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
@@ -34,40 +35,30 @@ public abstract class ServiceClient {
     protected final CentralRegistry centralRegistry;
 
     public Mono<Void> routeRequest(Map<String, Object> request, String clientId) {
-        return getRequestUrl(clientId)
-                .map(url -> routeCommon(request, url))
-                .orElseGet(() -> {
-                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
-                    return error(mappingNotFoundForId(clientId));
-                });
+        return routeCommon(request, clientId, this::getRequestUrl);
     }
 
     public Mono<Void> routeResponse(JsonNode request, String clientId) {
-        return getResponseUrl(clientId)
-                .map(url -> routeCommon(request, url))
-                .orElseGet(() -> {
-                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
-                    return error(mappingNotFoundForId(clientId));
-                });
+        return routeCommon(request, clientId, this::getResponseUrl);
     }
 
     public Mono<Void> notifyError(String clientId, ErrorResult request) {
-        return getResponseUrl(clientId)
-                .map(url -> route(request, url))
-                .orElseGet(() -> {
-                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
-                    return error(mappingNotFoundForId(clientId));
-                });
+        return routeCommon(request, clientId, this::getResponseUrl);
     }
 
     protected abstract Optional<String> getResponseUrl(String clientId);
 
     protected abstract Optional<String> getRequestUrl(String clientId);
 
-    private <T> Mono<Void> routeCommon(T requestBody, String url) {
-        return from(requestBody)
-                .map(serialized -> route(serialized, url))
-                .orElse(empty());
+    private <T> Mono<Void> routeCommon(T requestBody,
+                                       String clientId,
+                                       Function<String, Optional<String>> urlGetter) {
+        return urlGetter.apply(clientId)
+                .map(url -> from(requestBody).map(serialized -> route(serialized, url)).orElse(empty()))
+                .orElseGet(() -> {
+                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
+                    return error(mappingNotFoundForId(clientId));
+                });
     }
 
     private <T> Mono<Void> route(T request, String url) {
