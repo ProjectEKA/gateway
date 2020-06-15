@@ -9,6 +9,7 @@ import in.projecteka.gateway.clients.ClientRegistryClient;
 import in.projecteka.gateway.clients.ClientRegistryProperties;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
+import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
@@ -367,5 +368,13 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<PatientSearchServiceClient> patientSearchResponseAction) {
         return new ResponseOrchestrator(validator, patientSearchResponseAction);
+    }
+
+    @Bean
+    public DataFlowRequestServiceClient dataFlowRequestServiceClient(ServiceOptions serviceOptions,
+                                                                   WebClient.Builder builder,
+                                                                   CentralRegistry centralRegistry,
+                                                                   BridgeRegistry bridgeRegistry) {
+        return new DataFlowRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry);
     }
 }

@@ -23,6 +23,7 @@ public class Constants {
     public static final String V_1_CONSENTS_HIU_NOTIFY = "/v1/consents/hiu/notify";
     public static final String V_1_PATIENTS_FIND = "/v1/patients/find";
     public static final String V_1_PATIENTS_ON_FIND = "/v1/patients/on-find";
+    public static final String V_1_HEALTH_INFORMATION_CM_REQUEST = "/v1/health-information/cm/request";
 
 
     private Constants() { }
