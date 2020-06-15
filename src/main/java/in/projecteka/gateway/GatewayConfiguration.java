@@ -377,4 +377,12 @@ public class GatewayConfiguration {
                                                                    BridgeRegistry bridgeRegistry) {
         return new DataFlowRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry);
     }
+
+    @Bean("dataFlowRequestOrchestrator")
+    public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            DataFlowRequestServiceClient dataFlowRequestServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
+    }
 }
