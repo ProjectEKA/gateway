@@ -14,7 +14,6 @@ import java.util.UUID;
 public class ErrorResult extends Throwable {
     @NotNull
     private final UUID requestId;
-    private final Object link;
     private final Error error;
     @NotNull
     private final GatewayResponse resp;

@@ -1,16 +1,18 @@
 package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
 import in.projecteka.gateway.registry.YamlRegistryMapping;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -24,13 +26,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
+import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.registry.ServiceType.HIP;
+import static in.projecteka.gateway.registry.ServiceType.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestBuilders.yamlRegistryMapping;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
+import static java.util.Collections.emptyList;
+import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -42,7 +52,8 @@ class ValidatorTest {
     @Mock
     HttpHeaders httpHeaders;
 
-    Validator discoveryValidator;
+    Validator validator;
+
     @Mock
     BridgeRegistry bridgeRegistry;
 
@@ -55,101 +66,108 @@ class ValidatorTest {
     @Mock
     YamlRegistryMapping cmConfig;
 
+    static Stream<Arguments> bridgeConfigs() {
+        return Stream.of(Arguments.of(X_HIP_ID, HIP), Arguments.of(X_HIU_ID, HIU));
+    }
+
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
-        discoveryValidator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings));
+        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings));
     }
 
-    @Test
-    void shouldThrowErrorWhenHIPHeaderIsNotPresent() {
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIP_ID, X_HIU_ID})
+    void returnErrorWhenHeaderIsNotPresent(String routingKey) {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        when(httpHeaders.get(X_HIP_ID)).thenReturn(Collections.emptyList());
+        when(httpHeaders.get(routingKey)).thenReturn(emptyList());
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
-                .verifyErrorSatisfies(throwable -> assertThat(throwable)
-                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class))
-                        .isEqualToComparingFieldByField(ClientError.idMissingInHeader(X_HIP_ID)));
+        StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(routingKey)));
     }
 
-    @Test
-    void shouldThrowErrorWhenNoMappingIsFoundForHIPId() {
+    @ParameterizedTest
+    @ValueSource(strings = {X_HIP_ID, X_HIU_ID})
+    void returnErrorWhenNoMappingIsFoundForBridges(String routingKey) {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        String testHipId = string();
-        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
-        when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.empty());
+        when(httpHeaders.getFirst(routingKey)).thenReturn(string());
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
-                .verifyErrorSatisfies(throwable -> assertThat(throwable)
-                        .asInstanceOf(InstanceOfAssertFactories.type(ClientError.class))
-                        .isEqualToComparingFieldByField(ClientError.mappingNotFoundForId(X_HIP_ID)));
-
+        StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(routingKey)));
     }
 
-    @Test
-    void returnErrorWhenNoRequestIdIsFound() throws JsonProcessingException {
-        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
+    @ParameterizedTest
+    @MethodSource("bridgeConfigs")
+    void returnErrorWhenNoRequestIdIsFound(String routingKey, ServiceType serviceType) throws JsonProcessingException {
+        var bridgeId = string();
+        var bridgeConfig = yamlRegistryMapping().build();
         Map<String, Object> requestBody = new HashMap<>();
+        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
-        String testHipId = string();
-        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
-        var hipConfig = yamlRegistryMapping().build();
-        when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
+        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
+        when(bridgeRegistry.getConfigFor(bridgeId, serviceType)).thenReturn(of(bridgeConfig));
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
-                .expectErrorSatisfies(throwable ->
+        StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
+                .verifyErrorSatisfies(throwable ->
                 {
-                    var error = ClientError.invalidRequest("Empty/Invalid requestId found on the payload");
+                    var error = invalidRequest("Empty/Invalid requestId found on the payload");
                     assertThat(throwable).isEqualToComparingFieldByField(error);
-                })
-                .verify();
+                });
     }
 
-    @Test
-    void returnErrorWhenNoRequestIdIsInvalidUUID() throws JsonProcessingException {
-        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
+    @ParameterizedTest
+    @MethodSource("bridgeConfigs")
+    void returnErrorWhenNoRequestIdIsInvalidUUID(String routingKey, ServiceType serviceType)
+            throws JsonProcessingException {
+        var bridgeConfig = yamlRegistryMapping().build();
         var requestBody = Map.of(REQUEST_ID, string());
+        var bridgeId = string();
+        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
-        String testHipId = string();
-        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
-        var hipConfig = yamlRegistryMapping().build();
-        when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
+        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
+        when(bridgeRegistry.getConfigFor(bridgeId, serviceType)).thenReturn(of(bridgeConfig));
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
-                .expectErrorSatisfies(throwable ->
+        StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
+                .verifyErrorSatisfies(throwable ->
                 {
-                    var error = ClientError.invalidRequest("Empty/Invalid requestId found on the payload");
+                    var error = invalidRequest("Empty/Invalid requestId found on the payload");
                     assertThat(throwable).isEqualToComparingFieldByField(error);
-                })
-                .verify();
+                });
     }
 
-    @Test
-    void shouldReturnValidatedRequest() throws JsonProcessingException {
-        var cmRequestId = UUID.randomUUID();
-        var hipConfig = yamlRegistryMapping().build();
-        var testHipId = string();
-        var requestBody = Map.of(REQUEST_ID, cmRequestId.toString());
+    @ParameterizedTest
+    @MethodSource("bridgeConfigs")
+    void returnValidatedRequest(String routingKey, ServiceType serviceType) throws JsonProcessingException {
+        var requestId = UUID.randomUUID();
+        var bridgeId = string();
+        var bridgeConfig = yamlRegistryMapping().id(bridgeId).build();
+        var requestBody = Map.of(REQUEST_ID, requestId.toString());
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
-        when(httpHeaders.getFirst(X_HIP_ID)).thenReturn(testHipId);
-        when(bridgeRegistry.getConfigFor(testHipId, ServiceType.HIP)).thenReturn(Optional.of(hipConfig));
+        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
+        when(bridgeRegistry.getConfigFor(bridgeId, serviceType)).thenReturn(of(bridgeConfig));
 
-        StepVerifier.create(discoveryValidator.validateRequest(requestEntity, X_HIP_ID))
+        StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
                 .assertNext(validatedDiscoverRequest -> {
-                    assertThat(hipConfig).isEqualTo(validatedDiscoverRequest.getConfig());
                     assertThat(requestBody).isEqualTo(validatedDiscoverRequest.getDeSerializedRequest());
-                    assertThat(cmRequestId).isEqualTo(validatedDiscoverRequest.getRequesterRequestId());
-                }).verifyComplete();
+                    assertThat(requestId).isEqualTo(validatedDiscoverRequest.getRequesterRequestId());
+                    assertThat(bridgeId).isEqualTo(validatedDiscoverRequest.getClientId());
+                })
+                .verifyComplete();
     }
 
-    @Test
-    void shouldReturnEmptyWhenCMHeaderIsNotPresent() {
+    @ParameterizedTest
+    @ValueSource(strings = {X_CM_ID, X_HIP_ID, X_HIU_ID})
+    void shouldReturnEmptyWhenCMHeaderIsNotPresent(String routingKey) {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.emptyList());
+        when(httpHeaders.get(routingKey)).thenReturn(emptyList());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
-                .verifyComplete();
+        StepVerifier.create(validator.validateResponse(requestEntity, routingKey))
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(routingKey)))
+                .verify();
     }
 
     @Test
@@ -159,8 +177,10 @@ class ValidatorTest {
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.empty());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
-                .verifyComplete();
+        StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(X_CM_ID)))
+                .verify();
     }
 
     @Test
@@ -170,10 +190,12 @@ class ValidatorTest {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(body));
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
-        when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
+        when(cmRegistry.getConfigFor(testCmId)).thenReturn(of(cmConfig));
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
-                .verifyComplete();
+        StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(X_CM_ID)))
+                .verify();
     }
 
     @Test
@@ -185,11 +207,13 @@ class ValidatorTest {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(body));
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
-        when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
+        when(cmRegistry.getConfigFor(testCmId)).thenReturn(of(cmConfig));
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.empty());
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
-                .verifyComplete();
+        StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
+                .expectErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(X_CM_ID)))
+                .verify();
     }
 
     @Test
@@ -205,14 +229,15 @@ class ValidatorTest {
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(httpHeaders.getFirst(X_CM_ID)).thenReturn(testCmId);
-        when(cmRegistry.getConfigFor(testCmId)).thenReturn(Optional.of(cmConfig));
+        when(cmRegistry.getConfigFor(testCmId)).thenReturn(of(cmConfig));
+        when(cmConfig.getId()).thenReturn(testCmId);
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.just(cachedRequestId));
 
-        StepVerifier.create(discoveryValidator.validateResponse(requestEntity, X_CM_ID))
+        StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
                 .assertNext(validatedDiscoverResponse -> {
                     Assertions.assertEquals(testCmId, validatedDiscoverResponse.getId());
                     Assertions.assertEquals(cachedRequestId, validatedDiscoverResponse.getCallerRequestId());
-                    Assertions.assertEquals(objectNode, validatedDiscoverResponse.getDeserializedJsonNode());
+                    Assertions.assertEquals(objectNode, validatedDiscoverResponse.getDeSerializedJsonNode());
                 })
                 .verifyComplete();
     }

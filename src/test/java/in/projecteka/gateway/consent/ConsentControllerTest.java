@@ -113,7 +113,7 @@ class ConsentControllerTest {
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
         when(consentRequestValidator.validateResponse(requestEntity, X_HIU_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
 
         webTestClient
@@ -162,7 +162,7 @@ class ConsentControllerTest {
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
         when(consentRequestValidator.validateResponse(httpEntityArgumentCaptor.capture(), eq(X_HIU_ID)))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_HIU_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
 
         webTestClient
