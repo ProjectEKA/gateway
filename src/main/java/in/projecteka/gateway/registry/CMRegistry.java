@@ -9,6 +9,13 @@ public class CMRegistry {
     YamlRegistry yamlRegistry;
 
     public Optional<YamlRegistryMapping> getConfigFor(String id) {
-        return yamlRegistry.getConsentManagers().stream().filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id)).findFirst();
+        return yamlRegistry.getConsentManagers()
+                .stream()
+                .filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id))
+                .findFirst();
+    }
+
+    public Optional<String> getHostFor(String id) {
+        return getConfigFor(id).map(YamlRegistryMapping::getHost);
     }
 }

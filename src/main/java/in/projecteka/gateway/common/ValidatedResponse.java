@@ -9,5 +9,5 @@ import lombok.Getter;
 public class ValidatedResponse {
     String id;
     String callerRequestId;
-    JsonNode deserializedJsonNode;
+    JsonNode deSerializedJsonNode;
 }

@@ -44,28 +44,4 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
                 .then();
     }
 
-    @Override
-    public Mono<String> getIfPresent(String key) {
-        return get(key);
-    }
-
-    @Override
-    public Mono<Void> invalidate(String key) {
-        RedisReactiveCommands<String, String> redisCommands = statefulConnection.reactive();
-        return redisCommands.expire(key, 0L).then();
-    }
-
-    @Override
-    public Mono<Boolean> exists(String key) {
-        RedisReactiveCommands<String, String> redisCommands = statefulConnection.reactive();
-        return redisCommands.exists(key).flatMap(existCount -> Mono.just(existCount > 0));
-    }
-
-    @Override
-    public Mono<Long> increment(String key) {
-        RedisReactiveCommands<String, String> redisCommands = statefulConnection.reactive();
-        return redisCommands.incr(key)
-                .filter(count -> count!=1)
-                .switchIfEmpty(Mono.defer(() -> redisCommands.expire(key,expirationInMinutes * 60L).thenReturn(1L)));
-    }
 }
