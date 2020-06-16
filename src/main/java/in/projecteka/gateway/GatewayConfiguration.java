@@ -368,17 +368,17 @@ public class GatewayConfiguration {
 
     @Bean
     public DataFlowRequestServiceClient dataFlowRequestServiceClient(ServiceOptions serviceOptions,
-                                                                   WebClient.Builder builder,
-                                                                   CentralRegistry centralRegistry,
-                                                                   BridgeRegistry bridgeRegistry) {
-        return new DataFlowRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry);
+                                                                     WebClient.Builder builder,
+                                                                     CentralRegistry centralRegistry,
+                                                                     BridgeRegistry bridgeRegistry,
+                                                                     CMRegistry cmRegistry) {
+        return new DataFlowRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry, cmRegistry);
     }
 
     @Bean("dataFlowRequestOrchestrator")
-    public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            Validator validator,
-            DataFlowRequestServiceClient dataFlowRequestServiceClient) {
+    public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
+                                                                                         Validator validator,
+                                                                                         DataFlowRequestServiceClient dataFlowRequestServiceClient) {
         return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
     }
 }
