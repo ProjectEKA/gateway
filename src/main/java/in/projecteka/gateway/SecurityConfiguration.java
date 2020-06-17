@@ -41,6 +41,7 @@ import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -70,7 +71,8 @@ public class SecurityConfiguration {
             V_1_CONSENTS_HIP_NOTIFY,
             V_1_CONSENTS_HIU_NOTIFY,
             V_1_CONSENT_REQUESTS_ON_INIT,
-            V_1_PATIENTS_ON_FIND
+            V_1_PATIENTS_ON_FIND,
+            V_1_HEALTH_INFORMATION_HIP_REQUEST
     };
 
     @Bean

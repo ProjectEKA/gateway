@@ -12,6 +12,7 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
+import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
@@ -380,5 +381,22 @@ public class GatewayConfiguration {
                                                                                          Validator validator,
                                                                                          DataFlowRequestServiceClient dataFlowRequestServiceClient) {
         return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
+    }
+
+    @Bean
+    public HipDataFlowServiceClient hipDataFlowServiceClient(ServiceOptions serviceOptions,
+                                                             WebClient.Builder builder,
+                                                             CMRegistry cmRegistry,
+                                                             CentralRegistry centralRegistry,
+                                                             BridgeRegistry bridgeRegistry) {
+        return new HipDataFlowServiceClient(serviceOptions, builder, centralRegistry, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hipDataflowRequestOrchestrator")
+    public RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HipDataFlowServiceClient hipDataFlowServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hipDataFlowServiceClient);
     }
 }
