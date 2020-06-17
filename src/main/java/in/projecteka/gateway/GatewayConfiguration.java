@@ -383,6 +383,19 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
     }
 
+    @Bean("dataFlowRequestResponseAction")
+    public DefaultValidatedResponseAction<DataFlowRequestServiceClient> dataFlowRequestResponseAction(
+            DataFlowRequestServiceClient dataFlowRequestServiceClient) {
+        return new DefaultValidatedResponseAction<>(dataFlowRequestServiceClient);
+    }
+
+    @Bean("dataFlowRequestResponseOrchestrator")
+    public ResponseOrchestrator dataFlowRequestResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<DataFlowRequestServiceClient> dataFlowRequestResponseAction) {
+        return new ResponseOrchestrator(validator, dataFlowRequestResponseAction);
+    }
+
     @Bean
     public HipDataFlowServiceClient hipDataFlowServiceClient(ServiceOptions serviceOptions,
                                                              WebClient.Builder builder,
