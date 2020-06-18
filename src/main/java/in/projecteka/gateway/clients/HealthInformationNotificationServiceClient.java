@@ -10,17 +10,17 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.Optional;
 
-public class HealthInformationRequestServiceClient extends ServiceClient{
+public class HealthInformationNotificationServiceClient extends ServiceClient{
 
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
     private static final String REQUEST_ROUTE = "/v1/health-information/notify";
 
-    public HealthInformationRequestServiceClient(ServiceOptions serviceOptions,
-                                        WebClient.Builder webClientBuilder,
-                                        CentralRegistry centralRegistry,
-                                        BridgeRegistry bridgeRegistry,
-                                        CMRegistry cmRegistry) {
+    public HealthInformationNotificationServiceClient(ServiceOptions serviceOptions,
+                                                      WebClient.Builder webClientBuilder,
+                                                      CentralRegistry centralRegistry,
+                                                      BridgeRegistry bridgeRegistry,
+                                                      CMRegistry cmRegistry) {
         super(serviceOptions, webClientBuilder, centralRegistry);
         this.bridgeRegistry = bridgeRegistry;
         this.cmRegistry = cmRegistry;

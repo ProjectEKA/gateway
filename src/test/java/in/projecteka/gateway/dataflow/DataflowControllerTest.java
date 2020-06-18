@@ -2,6 +2,7 @@ package in.projecteka.gateway.dataflow;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
+import in.projecteka.gateway.clients.HealthInformationNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -39,6 +40,9 @@ class DataflowControllerTest {
 
     @MockBean
     RequestOrchestrator<HipDataFlowServiceClient> hipDataFlowRequestOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<HealthInformationNotificationServiceClient> healthInformationRequestServiceClientRequestOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
