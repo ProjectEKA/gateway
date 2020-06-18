@@ -5,18 +5,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import in.projecteka.gateway.clients.ClientRegistryClient;
-import in.projecteka.gateway.clients.ClientRegistryProperties;
-import in.projecteka.gateway.clients.ConsentFetchServiceClient;
-import in.projecteka.gateway.clients.ConsentRequestServiceClient;
-import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.HipDataFlowServiceClient;
-import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.LinkConfirmServiceClient;
-import in.projecteka.gateway.clients.LinkInitServiceClient;
-import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.*;
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -381,6 +370,23 @@ public class GatewayConfiguration {
                                                                                          Validator validator,
                                                                                          DataFlowRequestServiceClient dataFlowRequestServiceClient) {
         return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
+    }
+
+    @Bean
+    public HealthInformationRequestServiceClient healthInformationRequestServiceClient(ServiceOptions serviceOptions,
+                                                                                       WebClient.Builder builder,
+                                                                                       CentralRegistry centralRegistry,
+                                                                                       BridgeRegistry bridgeRegistry,
+                                                                                       CMRegistry cmRegistry) {
+        return new HealthInformationRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("healthInformationRequestServiceClientRequestOrchestrator")
+    public RequestOrchestrator<HealthInformationRequestServiceClient> healthInformationRequestServiceClientRequestOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HealthInformationRequestServiceClient healthInformationRequestServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, healthInformationRequestServiceClient);
     }
 
     @Bean
