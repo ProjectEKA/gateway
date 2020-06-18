@@ -27,11 +27,6 @@ public class HealthInformationNotificationServiceClient extends ServiceClient{
     }
 
     @Override
-    public Mono<Void> routeRequest(Map<String, Object> request, String url) {
-        return super.routeRequest(request, url + REQUEST_ROUTE);
-    }
-
-    @Override
     protected Optional<String> getResponseUrl(String clientId) {
         return Optional.empty();
     }
