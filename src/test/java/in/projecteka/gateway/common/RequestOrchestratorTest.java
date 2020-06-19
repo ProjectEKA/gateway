@@ -58,12 +58,16 @@ class RequestOrchestratorTest {
 
     RequestOrchestrator<?> requestOrchestrator;
 
+    @Mock
+    ValidatedRequestAction validatedRequestAction;
+
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
         requestOrchestrator = Mockito.spy(new RequestOrchestrator<>(requestIdMappings,
                 discoveryValidator,
-                discoveryServiceClient));
+                discoveryServiceClient,
+                validatedRequestAction));
     }
 
     @ParameterizedTest
@@ -93,7 +97,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId))).thenReturn(empty());
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(empty());
 
         StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId)).verifyComplete();
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
@@ -110,8 +114,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
-                .thenReturn(error(new TimeoutException()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
@@ -135,8 +138,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
-                .thenReturn(error(new RuntimeException()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
@@ -160,8 +162,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(discoveryServiceClient.routeRequest(captor.capture(), eq(targetClientId)))
-                .thenReturn(error(ClientError.unableToConnect()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(ClientError.unableToConnect()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
 
