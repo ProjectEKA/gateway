@@ -4,6 +4,7 @@ import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -13,16 +14,19 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 
 @RestController
 @AllArgsConstructor
 public class DataflowController {
     RequestOrchestrator<DataFlowRequestServiceClient> dataflowRequestRequestOrchestrator;
     RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator;
+    ResponseOrchestrator dataFlowRequestResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_HEALTH_INFORMATION_CM_REQUEST)
@@ -31,6 +35,12 @@ public class DataflowController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> dataflowRequestRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(V_1_HEALTH_INFORMATION_CM_ON_REQUEST)
+    public Mono<Void> onInitDataflowRequest(HttpEntity<String> requestEntity) {
+        return dataFlowRequestResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }
     
     @ResponseStatus(HttpStatus.ACCEPTED)
