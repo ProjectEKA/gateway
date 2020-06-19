@@ -1,0 +1,57 @@
+{
+  "exchanges": [
+    {
+      "name": "gw.exchange",
+      "type": "direct",
+      "arguments": {}
+    },
+    {
+      "name": "gw.dead-letter-exchange",
+      "type": "topic",
+      "arguments": {}
+    },
+    {
+      "name": "gw.parking.exchange",
+      "type": "topic",
+      "arguments": {}
+    }
+  ],
+  "queues": [
+    {
+      "name": "gw.dlq",
+      "routing_key": "#",
+      "exchange": "gw.dead-letter-exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "gw.exchange",
+        "x-message-ttl": 10000,
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.parkinglot",
+      "routing_key": "#",
+      "exchange": "gw.parking.exchange",
+      "arguments": {
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.link",
+      "routing_key": "gw.link",
+      "exchange": "gw.exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "gw.dead-letter-exchange",
+        "x-queue-type": "classic"
+      }
+    },
+    {
+      "name": "gw.dataflow",
+      "routing_key": "gw.dataflow",
+      "exchange": "gw.exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "gw.dead-letter-exchange",
+        "x-queue-type": "classic"
+      }
+    }
+  ]
+}
