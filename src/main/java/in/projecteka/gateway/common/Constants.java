@@ -24,9 +24,10 @@ public class Constants {
     public static final String V_1_PATIENTS_FIND = "/v1/patients/find";
     public static final String V_1_PATIENTS_ON_FIND = "/v1/patients/on-find";
     public static final String V_1_HEALTH_INFORMATION_CM_REQUEST = "/v1/health-information/cm/request";
+    public static final String V_1_HEALTH_INFORMATION_CM_ON_REQUEST = "/v1/health-information/cm/on-request";
     public static final String V_1_HEALTH_INFORMATION_HIP_REQUEST ="/v1/health-information/hip/request";
     public static final String V_1_HEALTH_INFORMATION_NOTIFY ="/v1/health-information/notify";
-
+    public static final String V_1_HEALTH_INFORMATION_HIP_ON_REQUEST ="/v1/health-information/hip/on-request";
 
     private Constants() { }
 }

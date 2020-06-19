@@ -384,6 +384,19 @@ public class GatewayConfiguration {
         return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
     }
 
+    @Bean("dataFlowRequestResponseAction")
+    public DefaultValidatedResponseAction<DataFlowRequestServiceClient> dataFlowRequestResponseAction(
+            DataFlowRequestServiceClient dataFlowRequestServiceClient) {
+        return new DefaultValidatedResponseAction<>(dataFlowRequestServiceClient);
+    }
+
+    @Bean("dataFlowRequestResponseOrchestrator")
+    public ResponseOrchestrator dataFlowRequestResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<DataFlowRequestServiceClient> dataFlowRequestResponseAction) {
+        return new ResponseOrchestrator(validator, dataFlowRequestResponseAction);
+    }
+
     @Bean
     public HealthInfoNotificationServiceClient healthInformationRequestServiceClient(ServiceOptions serviceOptions,
                                                                                      WebClient.Builder builder,
@@ -415,5 +428,17 @@ public class GatewayConfiguration {
             Validator validator,
             HipDataFlowServiceClient hipDataFlowServiceClient) {
         return new RequestOrchestrator<>(requestIdMappings, validator, hipDataFlowServiceClient);
+    }
+
+    @Bean("hipDataFlowRequestResponseAction")
+    public DefaultValidatedResponseAction<HipDataFlowServiceClient> hipDataFlowRequestResponseAction(
+            HipDataFlowServiceClient hipDataFlowServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipDataFlowServiceClient);
+    }
+    @Bean("hipDataFlowRequestResponseOrchestrator")
+    public ResponseOrchestrator hipDataFlowRequestResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipDataFlowServiceClient> hipDataFlowRequestResponseAction) {
+        return new ResponseOrchestrator(validator, hipDataFlowRequestResponseAction);
     }
 }
