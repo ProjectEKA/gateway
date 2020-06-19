@@ -14,9 +14,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -26,6 +27,8 @@ import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 public class DataflowController {
     RequestOrchestrator<DataFlowRequestServiceClient> dataflowRequestRequestOrchestrator;
     RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator;
+    ResponseOrchestrator hipDataFlowRequestResponseOrchestrator;
+
     ResponseOrchestrator dataFlowRequestResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -42,7 +45,7 @@ public class DataflowController {
     public Mono<Void> onInitDataflowRequest(HttpEntity<String> requestEntity) {
         return dataFlowRequestResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
     }
-    
+
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_HEALTH_INFORMATION_HIP_REQUEST)
     public Mono<Void> initHIPDataflowRequest(HttpEntity<String> requestEntity) {
@@ -50,6 +53,12 @@ public class DataflowController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> hipDataflowRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, clientId));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(V_1_HEALTH_INFORMATION_HIP_ON_REQUEST)
+    public Mono<Void> hipDataFlowOnRequest(HttpEntity<String> requestEntity) {
+        return hipDataFlowRequestResponseOrchestrator.processResponse(requestEntity, X_CM_ID );
     }
 
 }
