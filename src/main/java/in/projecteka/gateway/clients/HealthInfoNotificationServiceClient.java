@@ -2,27 +2,21 @@ package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.common.CentralRegistry;
 import in.projecteka.gateway.common.cache.ServiceOptions;
-import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.Map;
 import java.util.Optional;
 
-public class HealthInformationNotificationServiceClient extends ServiceClient{
+public class HealthInfoNotificationServiceClient extends ServiceClient{
 
-    private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
     private static final String REQUEST_ROUTE = "/v1/health-information/notify";
 
-    public HealthInformationNotificationServiceClient(ServiceOptions serviceOptions,
-                                                      WebClient.Builder webClientBuilder,
-                                                      CentralRegistry centralRegistry,
-                                                      BridgeRegistry bridgeRegistry,
-                                                      CMRegistry cmRegistry) {
+    public HealthInfoNotificationServiceClient(ServiceOptions serviceOptions,
+                                               WebClient.Builder webClientBuilder,
+                                               CentralRegistry centralRegistry,
+                                               CMRegistry cmRegistry) {
         super(serviceOptions, webClientBuilder, centralRegistry);
-        this.bridgeRegistry = bridgeRegistry;
         this.cmRegistry = cmRegistry;
     }
 

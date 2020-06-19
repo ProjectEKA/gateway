@@ -2,7 +2,7 @@ package in.projecteka.gateway.dataflow;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
-import in.projecteka.gateway.clients.HealthInformationNotificationServiceClient;
+import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -17,9 +17,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 
 import java.util.List;
 
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -42,7 +44,7 @@ class DataflowControllerTest {
     RequestOrchestrator<HipDataFlowServiceClient> hipDataFlowRequestOrchestrator;
 
     @MockBean
-    RequestOrchestrator<HealthInformationNotificationServiceClient> healthInformationRequestServiceClientRequestOrchestrator;
+    RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -83,6 +85,25 @@ class DataflowControllerTest {
         webTestClient
                 .post()
                 .uri("/v1/health-information/hip/request")
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetHealthInfoNotification() {
+        var token = string();
+        var clientId = string();
+        when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(centralRegistryTokenVerifier.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU, HIP)).build()));
+
+        webTestClient
+                .post()
+                .uri(V_1_HEALTH_INFORMATION_NOTIFY)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

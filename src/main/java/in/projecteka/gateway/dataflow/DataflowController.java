@@ -1,7 +1,7 @@
 package in.projecteka.gateway.dataflow;
 
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
-import in.projecteka.gateway.clients.HealthInformationNotificationServiceClient;
+import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -25,7 +25,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 public class DataflowController {
     RequestOrchestrator<DataFlowRequestServiceClient> dataflowRequestRequestOrchestrator;
     RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator;
-    RequestOrchestrator<HealthInformationNotificationServiceClient> healthInformationNotifyOrchestrator;
+    RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_HEALTH_INFORMATION_CM_REQUEST)
@@ -51,7 +51,7 @@ public class DataflowController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> healthInformationNotifyOrchestrator.handleThis(requestEntity,X_CM_ID,clientId));
+                .flatMap(clientId -> healthInfoNotificationOrchestrator.handleThis(requestEntity,X_CM_ID,clientId));
     }
 
 }
