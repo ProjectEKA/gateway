@@ -43,6 +43,15 @@
         "x-dead-letter-exchange": "gw.dead-letter-exchange",
         "x-queue-type": "classic"
       }
+    },
+    {
+      "name": "gw.dataflow",
+      "routing_key": "gw.dataflow",
+      "exchange": "gw.exchange",
+      "arguments": {
+        "x-dead-letter-exchange": "gw.dead-letter-exchange",
+        "x-queue-type": "classic"
+      }
     }
   ]
 }
