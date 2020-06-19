@@ -2,16 +2,15 @@ package in.projecteka.gateway.dataflow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
-import in.projecteka.gateway.common.ResponseOrchestrator;
-import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
-import in.projecteka.gateway.common.Validator;
-import in.projecteka.gateway.common.ValidatedResponseAction;
+import in.projecteka.gateway.common.RequestOrchestrator;
+import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
+import in.projecteka.gateway.common.ValidatedResponseAction;
+import in.projecteka.gateway.common.Validator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,12 +34,7 @@ import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
-import static in.projecteka.gateway.common.Role.CM;
-import static in.projecteka.gateway.common.Role.HIU;
-import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
@@ -62,10 +56,6 @@ class DataflowControllerTest {
     @MockBean
     RequestOrchestrator<HipDataFlowServiceClient> hipDataFlowRequestOrchestrator;
 
-    @Qualifier("hipDataFlowRequestResponseOrchestrator")
-    @MockBean
-    ResponseOrchestrator hipDataFlowRequestResponseOrchestrator;
-
     @Autowired
     WebTestClient webTestClient;
 
@@ -80,17 +70,18 @@ class DataflowControllerTest {
     ResponseOrchestrator dataFlowRequestResponseOrchestrator;
 
     @MockBean
-    Validator dataFlowRequestResponseValidator;
-
-    @MockBean
     @Qualifier("dataFlowRequestResponseAction")
     ValidatedResponseAction validatedResponseAction;
+
+    @Qualifier("hipDataFlowRequestResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator hipDataFlowRequestResponseOrchestrator;
 
     @Captor
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
     @MockBean
-    Validator hipDataFlowResposeValidator;
+    Validator dataFlowResposeValidator;
 
     @Test
     void shouldFireAndForgetForInitDataFlowRequest() {
@@ -123,7 +114,7 @@ class DataflowControllerTest {
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
 
-        when(dataFlowRequestResponseValidator.validateResponse(requestEntity, X_HIU_ID))
+        when(dataFlowResposeValidator.validateResponse(requestEntity, X_HIU_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
@@ -173,7 +164,7 @@ class DataflowControllerTest {
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
 
-        when(hipDataFlowResposeValidator.validateResponse(requestEntity, X_CM_ID))
+        when(dataFlowResposeValidator.validateResponse(requestEntity, X_CM_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
