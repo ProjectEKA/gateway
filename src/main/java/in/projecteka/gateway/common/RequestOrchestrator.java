@@ -40,9 +40,8 @@ public class RequestOrchestrator<T extends ServiceClient> {
             request.put(REQUEST_ID, gatewayRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
-                    .flatMap(updatedRequest ->
-                            serviceClient.routeRequest(updatedRequest,
-                                    validatedRequest.getConfig().getHost()))
+                    .flatMap(updatedRequest -> serviceClient.routeRequest(updatedRequest,
+                            validatedRequest.getClientId()))
                     .onErrorMap(ClientError.class,
                             clientError -> {
                                 logger.error(clientError.getMessage(), clientError);

@@ -1,22 +1,26 @@
 package in.projecteka.gateway.common;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
+
+import static in.projecteka.gateway.common.Utils.updateRequestId;
 
 @AllArgsConstructor
 public class ResponseOrchestrator {
     Validator validator;
     ValidatedResponseAction validatedResponseAction;
 
-    public Mono<Void> processResponse(HttpEntity<String> requestEntity, String id) {
-        validator.validateResponse(requestEntity, id)
-                .flatMap(validRequest -> {
-                    JsonNode updatedJsonNode = Utils.updateRequestId(validRequest.getDeserializedJsonNode(),
-                            validRequest.getCallerRequestId());
-                    return validatedResponseAction.execute(id, validRequest.getId(), updatedJsonNode);
-                }).subscribe();
-        return Mono.empty();
+    public Mono<Void> processResponse(HttpEntity<String> maybeResponse, String routingKey) {
+        return validator.validateResponse(maybeResponse, routingKey)
+                .doOnSuccess(this::offloadThis)
+                .then();
+    }
+
+    private void offloadThis(ValidatedResponse response) {
+        Mono.defer(() -> {
+            var updatedJsonNode = updateRequestId(response.getDeSerializedJsonNode(), response.getCallerRequestId());
+            return validatedResponseAction.execute(response.getId(), updatedJsonNode);
+        }).subscribe();
     }
 }

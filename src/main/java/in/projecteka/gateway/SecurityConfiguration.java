@@ -34,12 +34,16 @@ import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIU_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_ON_REQUEST;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -54,11 +58,13 @@ public class SecurityConfiguration {
             V_1_CONSENT_REQUESTS_INIT,
             V_1_CONSENTS_FETCH,
             V_1_PATIENTS_FIND,
+            V_1_HEALTH_INFORMATION_CM_REQUEST,
     };
     public static final String[] HIP_API_IS = new String[]{
             V_1_CARE_CONTEXTS_ON_DISCOVER,
             V_1_LINKS_LINK_ON_INIT,
-            V_1_LINKS_LINK_ON_CONFIRM
+            V_1_LINKS_LINK_ON_CONFIRM,
+            V_1_HEALTH_INFORMATION_HIP_ON_REQUEST
     };
     public static final String[] CM_API_IS = new String[]{
             V_1_CARE_CONTEXTS_DISCOVER,
@@ -68,7 +74,9 @@ public class SecurityConfiguration {
             V_1_CONSENTS_HIP_NOTIFY,
             V_1_CONSENTS_HIU_NOTIFY,
             V_1_CONSENT_REQUESTS_ON_INIT,
-            V_1_PATIENTS_ON_FIND
+            V_1_PATIENTS_ON_FIND,
+            V_1_HEALTH_INFORMATION_HIP_REQUEST,
+            V_1_HEALTH_INFORMATION_CM_ON_REQUEST
     };
 
     @Bean

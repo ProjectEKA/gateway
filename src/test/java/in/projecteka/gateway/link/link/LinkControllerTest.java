@@ -109,7 +109,7 @@ public class LinkControllerTest {
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(linkValidator.validateResponse(requestEntity, X_CM_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(X_CM_ID), eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
         when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
 

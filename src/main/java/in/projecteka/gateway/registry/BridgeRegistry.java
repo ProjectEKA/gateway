@@ -14,4 +14,8 @@ public class BridgeRegistry {
                 .filter(yamlRegistryMapping -> yamlRegistryMapping.getServesAs().contains(serviceType))
                 .findFirst();
     }
+
+    public Optional<String> getHostFor(String id, ServiceType serviceType) {
+        return getConfigFor(id, serviceType).map(YamlRegistryMapping::getHost);
+    }
 }
