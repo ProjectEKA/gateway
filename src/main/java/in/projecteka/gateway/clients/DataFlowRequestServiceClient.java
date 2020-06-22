@@ -31,7 +31,7 @@ public class DataFlowRequestServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
     }
 
     @Override
