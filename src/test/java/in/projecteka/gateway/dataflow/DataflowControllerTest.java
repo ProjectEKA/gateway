@@ -1,6 +1,7 @@
 package in.projecteka.gateway.dataflow;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
@@ -27,12 +28,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
@@ -68,14 +70,18 @@ class DataflowControllerTest {
     ResponseOrchestrator dataFlowRequestResponseOrchestrator;
 
     @MockBean
-    Validator dataFlowRequestResponseValidator;
-
-    @MockBean
     @Qualifier("dataFlowRequestResponseAction")
     ValidatedResponseAction validatedResponseAction;
 
+    @Qualifier("hipDataFlowRequestResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator hipDataFlowRequestResponseOrchestrator;
+
     @Captor
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
+
+    @MockBean
+    Validator dataFlowResposeValidator;
 
     @Test
     void shouldFireAndForgetForInitDataFlowRequest() {
@@ -108,7 +114,7 @@ class DataflowControllerTest {
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
 
-        when(dataFlowRequestResponseValidator.validateResponse(requestEntity, X_HIU_ID))
+        when(dataFlowResposeValidator.validateResponse(requestEntity, X_HIU_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
@@ -136,6 +142,38 @@ class DataflowControllerTest {
         webTestClient
                 .post()
                 .uri("/v1/health-information/hip/request")
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForHipDataFlowResponse() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        var requestId = UUID.randomUUID().toString();
+        var callerRequestId = UUID.randomUUID().toString();
+        var testId = string();
+        var objectNode = OBJECT_MAPPER.createObjectNode();
+        var respNode = OBJECT_MAPPER.createObjectNode();
+        objectNode.put(REQUEST_ID, requestId);
+        respNode.put(REQUEST_ID, callerRequestId);
+        objectNode.set("resp", respNode);
+        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
+
+        when(dataFlowResposeValidator.validateResponse(requestEntity, X_CM_ID))
+                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+                .thenReturn(empty());
+        when(centralRegistryTokenVerifier.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
+
+        webTestClient
+                .post()
+                .uri("/v1/health-information/hip/on-request")
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

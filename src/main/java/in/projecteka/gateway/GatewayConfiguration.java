@@ -504,4 +504,16 @@ public class GatewayConfiguration {
         container.setMessageListener(hipDataflowRequestAction);
         return container;
     }
+
+    @Bean("hipDataFlowRequestResponseAction")
+    public DefaultValidatedResponseAction<HipDataFlowServiceClient> hipDataFlowRequestResponseAction(
+            HipDataFlowServiceClient hipDataFlowServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipDataFlowServiceClient);
+    }
+    @Bean("hipDataFlowRequestResponseOrchestrator")
+    public ResponseOrchestrator hipDataFlowRequestResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipDataFlowServiceClient> hipDataFlowRequestResponseAction) {
+        return new ResponseOrchestrator(validator, hipDataFlowRequestResponseAction);
+    }
 }
