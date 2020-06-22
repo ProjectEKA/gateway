@@ -462,12 +462,19 @@ public class GatewayConfiguration {
         return new HealthInfoNotificationServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
     }
 
+    @Bean("healthInfoNotificationRequestAction")
+    public DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction(
+            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient) {
+        return new DefaultValidatedRequestAction<>(healthInfoNotificationServiceClient);
+    }
+
     @Bean("healthInfoNotificationOrchestrator")
     public RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, healthInfoNotificationServiceClient);
+            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient,
+            DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, healthInfoNotificationServiceClient,healthInfoNotificationRequestAction);
     }
 
     @Bean
