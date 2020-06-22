@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 
 import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
 import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
@@ -479,7 +480,7 @@ public class GatewayConfiguration {
                 defalutHipDataflowRequestAction,
                 serviceOptions,
                 GW_DATAFLOW_QUEUE,
-                "X-HIP-ID");
+                X_HIP_ID);
     }
 
     @Bean("hipDataflowRequestOrchestrator")
