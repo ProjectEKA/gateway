@@ -7,6 +7,7 @@ public class Constants {
     public static final String REQUEST_ID = "requestId";
     public static final String GW_DEAD_LETTER_EXCHANGE = "gw.dead-letter-exchange";
     public static final String GW_LINK_QUEUE = "gw.link";
+    public static final String GW_DATAFLOW_QUEUE = "gw.dataflow";
 
     // APIs
     public static final String V_1_CARE_CONTEXTS_ON_DISCOVER = "/v1/care-contexts/on-discover";

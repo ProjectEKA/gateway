@@ -30,11 +30,6 @@ public class DataFlowRequestServiceClient extends ServiceClient {
     }
 
     @Override
-    public Mono<Void> routeRequest(Map<String, Object> request, String url) {
-        return super.routeRequest(request, url + REQUEST_ROUTE);
-    }
-
-    @Override
     protected Optional<String> getResponseUrl(String clientId) {
         return bridgeRegistry.getConfigFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
     }
