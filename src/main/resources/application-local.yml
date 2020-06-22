@@ -1,0 +1,11 @@
+server:
+  port: 8000
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+clientregistry:
+  clientId: gateway
+  clientSecret: ${CLIENT_SECRET}
+  url: http://localhost:8080
+  jwkUrl: http://localhost:8080/certs
