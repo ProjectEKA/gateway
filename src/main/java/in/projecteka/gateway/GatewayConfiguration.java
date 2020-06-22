@@ -14,6 +14,7 @@ import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
+import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
@@ -394,6 +395,22 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<DataFlowRequestServiceClient> dataFlowRequestResponseAction) {
         return new ResponseOrchestrator(validator, dataFlowRequestResponseAction);
+    }
+
+    @Bean
+    public HealthInfoNotificationServiceClient healthInformationRequestServiceClient(ServiceOptions serviceOptions,
+                                                                                     WebClient.Builder builder,
+                                                                                     CentralRegistry centralRegistry,
+                                                                                     CMRegistry cmRegistry) {
+        return new HealthInfoNotificationServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    }
+
+    @Bean("healthInfoNotificationOrchestrator")
+    public RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, healthInfoNotificationServiceClient);
     }
 
     @Bean
