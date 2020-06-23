@@ -39,6 +39,7 @@ import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
+import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
@@ -66,6 +67,7 @@ public class SecurityConfiguration {
             V_1_CARE_CONTEXTS_ON_DISCOVER,
             V_1_LINKS_LINK_ON_INIT,
             V_1_LINKS_LINK_ON_CONFIRM,
+            V_1_CONSENTS_HIP_ON_NOTIFY,
             V_1_HEALTH_INFORMATION_NOTIFY,
             V_1_HEALTH_INFORMATION_HIP_ON_REQUEST
     };

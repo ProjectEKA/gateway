@@ -21,6 +21,7 @@ public class Constants {
     public static final String V_1_CONSENTS_FETCH = "/v1/consents/fetch";
     public static final String V_1_CONSENTS_ON_FETCH = "/v1/consents/on-fetch";
     public static final String V_1_CONSENTS_HIP_NOTIFY = "/v1/consents/hip/notify";
+    public static final String V_1_CONSENTS_HIP_ON_NOTIFY = "/v1/consents/hip/on-notify";
     public static final String V_1_CONSENTS_HIU_NOTIFY = "/v1/consents/hiu/notify";
     public static final String V_1_PATIENTS_FIND = "/v1/patients/find";
     public static final String V_1_PATIENTS_ON_FIND = "/v1/patients/on-find";

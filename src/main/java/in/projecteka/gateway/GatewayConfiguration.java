@@ -540,4 +540,17 @@ public class GatewayConfiguration {
             DefaultValidatedResponseAction<HipDataFlowServiceClient> hipDataFlowRequestResponseAction) {
         return new ResponseOrchestrator(validator, hipDataFlowRequestResponseAction);
     }
+
+    @Bean("hipConsentNotifyResponseAction")
+    public DefaultValidatedResponseAction<HipConsentNotifyServiceClient> hipConsentNotifyResponseAction(
+            HipConsentNotifyServiceClient hipConsentNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipConsentNotifyServiceClient);
+    }
+
+    @Bean("hipConsentNotifyResponseOrchestrator")
+    public ResponseOrchestrator hipConsentNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipConsentNotifyServiceClient> hipConsentNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, hipConsentNotifyResponseAction);
+    }
 }
