@@ -38,10 +38,8 @@ class CentralRegistryTokenVerifierTest {
         roleValues.add(randomRole1);
         roleValues.add(randomRole2);
         roles.forEach(role -> roleValues.add(role.name().toUpperCase()));
-        Map<String, Object> clientObj = new HashMap<>();
-        clientObj.put("roles", roleValues);
-        Map<String, Object> resourseAccess = new HashMap<>();
-        resourseAccess.put(clientId, clientObj);
+        Map<String, Object> realmAccess = new HashMap<>();
+        realmAccess.put("roles", roleValues);
         var rsaKey = new RSAKeyGenerator(2048).keyID(string()).generate();
         var signer = new RSASSASigner(rsaKey);
         var claimsSet = new JWTClaimsSet.Builder()
@@ -51,7 +49,7 @@ class CentralRegistryTokenVerifierTest {
                 .issueTime(new Date())
                 .claim("clientId", clientId)
                 .expirationTime(new Date(new Date().getTime() + 60 * 1000))
-                .claim("resource_access", resourseAccess)
+                .claim("realm_access", realmAccess)
                 .build();
         var signedJWT = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).keyID(rsaKey.getKeyID()).build(),
@@ -73,10 +71,8 @@ class CentralRegistryTokenVerifierTest {
         var randomRole2 = string();
         roleValues.add(randomRole1);
         roleValues.add(randomRole2);
-        Map<String, Object> clientObj = new HashMap<>();
-        clientObj.put("roles", roleValues);
-        Map<String, Object> resourceAccess = new HashMap<>();
-        resourceAccess.put(clientId, clientObj);
+        Map<String, Object> realmAccess = new HashMap<>();
+        realmAccess.put("roles", roleValues);
         var rsaKey = new RSAKeyGenerator(2048).keyID(string()).generate();
         var signer = new RSASSASigner(rsaKey);
         var claimsSet = new JWTClaimsSet.Builder()
@@ -86,7 +82,7 @@ class CentralRegistryTokenVerifierTest {
                 .issueTime(new Date())
                 .claim("clientId", clientId)
                 .expirationTime(new Date(new Date().getTime() + 60 * 1000))
-                .claim("resource_access", resourceAccess)
+                .claim("realm_access", realmAccess)
                 .build();
         var signedJWT = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).keyID(rsaKey.getKeyID()).build(),
@@ -128,7 +124,7 @@ class CentralRegistryTokenVerifierTest {
     @Test
     void returnEmptyWhenTokenDoesNotHaveProperResourseAccess() throws JOSEException {
         var clientId = string();
-        var resourceAccess = string();
+        var realmAccess = string();
         var rsaKey = new RSAKeyGenerator(2048).keyID(string()).generate();
         var signer = new RSASSASigner(rsaKey);
         var claimsSet = new JWTClaimsSet.Builder()
@@ -137,7 +133,7 @@ class CentralRegistryTokenVerifierTest {
                 .claim("scope", string())
                 .issueTime(new Date())
                 .claim("clientId", clientId)
-                .claim("resource_access", resourceAccess)
+                .claim("realm_access", realmAccess)
                 .expirationTime(new Date(new Date().getTime() + 60 * 1000))
                 .build();
         var signedJWT = new SignedJWT(
