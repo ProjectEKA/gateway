@@ -14,13 +14,16 @@ import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
+import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.RetryableValidatedRequestAction;
 import in.projecteka.gateway.common.RetryableValidatedResponseAction;
 import in.projecteka.gateway.common.Validator;
 import in.projecteka.gateway.common.cache.CacheAdapter;
@@ -46,7 +49,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
 import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
@@ -113,12 +118,19 @@ public class GatewayConfiguration {
         return new DiscoveryServiceClient(serviceOptions, builder, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("discoveryRequestAction")
+    public DefaultValidatedRequestAction<DiscoveryServiceClient> discoveryRequestAction(
+            DiscoveryServiceClient discoveryServiceClient) {
+        return new DefaultValidatedRequestAction<>(discoveryServiceClient);
+    }
+
     @Bean("discoveryRequestOrchestrator")
     public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            DiscoveryServiceClient discoveryServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient);
+            DiscoveryServiceClient discoveryServiceClient,
+            DefaultValidatedRequestAction<DiscoveryServiceClient> discoveryRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient,discoveryRequestAction);
     }
 
     @Bean("discoveryResponseAction")
@@ -150,12 +162,19 @@ public class GatewayConfiguration {
         return new LinkInitServiceClient(builder, serviceOptions, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("linkInitRequestAction")
+    public DefaultValidatedRequestAction<LinkInitServiceClient> linkInitRequestAction(
+            LinkInitServiceClient linkInitServiceClient) {
+        return new DefaultValidatedRequestAction<>(linkInitServiceClient);
+    }
+
     @Bean("linkInitRequestOrchestrator")
     public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            LinkInitServiceClient linkInitServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient);
+            LinkInitServiceClient linkInitServiceClient,
+            DefaultValidatedRequestAction<LinkInitServiceClient> linkInitRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, linkInitRequestAction);
     }
 
     @Bean("linkInitResponseAction")
@@ -180,12 +199,19 @@ public class GatewayConfiguration {
         return new LinkConfirmServiceClient(builder, serviceOptions, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("linkConfirmRequestAction")
+    public DefaultValidatedRequestAction<LinkConfirmServiceClient> linkConfirmRequestAction(
+            LinkConfirmServiceClient linkConfirmServiceClient) {
+        return new DefaultValidatedRequestAction<>(linkConfirmServiceClient);
+    }
+
     @Bean("linkConfirmRequestOrchestrator")
     public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            LinkConfirmServiceClient linkConfirmServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient);
+            LinkConfirmServiceClient linkConfirmServiceClient,
+            DefaultValidatedRequestAction<LinkConfirmServiceClient> linkConfirmRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, linkConfirmServiceClient, linkConfirmRequestAction);
     }
 
     @Bean("linkConfirmResponseAction")
@@ -210,17 +236,6 @@ public class GatewayConfiguration {
                 linkConfirmResponseAction,
                 serviceOptions,
                 GW_LINK_QUEUE);
-    }
-
-    @Bean
-    SimpleMessageListenerContainer container(
-            ConnectionFactory connectionFactory,
-            RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction) {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.setQueueNames(GW_LINK_QUEUE);
-        container.setMessageListener(retryableLinkResponseAction);
-        return container;
     }
 
 
@@ -249,20 +264,35 @@ public class GatewayConfiguration {
         return new ConsentFetchServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry, cmRegistry);
     }
 
+    @Bean("consentRequestAction")
+    public DefaultValidatedRequestAction<ConsentRequestServiceClient> consentRequestAction(
+            ConsentRequestServiceClient consentRequestServiceClient) {
+        return new DefaultValidatedRequestAction<>(consentRequestServiceClient);
+    }
+
+
     @Bean("consentRequestOrchestrator")
     public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            ConsentRequestServiceClient consentRequestServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient);
+            ConsentRequestServiceClient consentRequestServiceClient,
+            DefaultValidatedRequestAction<ConsentRequestServiceClient> consentRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentRequestServiceClient,consentRequestAction);
+    }
+
+    @Bean("consentFetchRequestAction")
+    public DefaultValidatedRequestAction<ConsentFetchServiceClient> consentFetchRequestAction(
+            ConsentFetchServiceClient consentFetchServiceClient) {
+        return new DefaultValidatedRequestAction<>(consentFetchServiceClient);
     }
 
     @Bean("consentFetchRequestOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            ConsentFetchServiceClient consentFetchServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient);
+            ConsentFetchServiceClient consentFetchServiceClient,
+            DefaultValidatedRequestAction<ConsentFetchServiceClient> consentRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient,consentRequestAction);
     }
 
     @Bean("consentFetchResponseAction")
@@ -278,12 +308,19 @@ public class GatewayConfiguration {
         return new ResponseOrchestrator(validator, consentFetchResponseAction);
     }
 
+    @Bean("patientSearchRequestAction")
+    public DefaultValidatedRequestAction<PatientSearchServiceClient> patientSearchRequestAction(
+            PatientSearchServiceClient patientSearchServiceClient) {
+        return new DefaultValidatedRequestAction<>(patientSearchServiceClient);
+    }
+
     @Bean("patientSearchOrchestrator")
     public RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            PatientSearchServiceClient patientSearchServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, patientSearchServiceClient);
+            PatientSearchServiceClient patientSearchServiceClient,
+            DefaultValidatedRequestAction<PatientSearchServiceClient> patientSearchRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, patientSearchServiceClient, patientSearchRequestAction);
     }
 
     @Bean
@@ -307,12 +344,19 @@ public class GatewayConfiguration {
         return new HipConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("hipConsentNotifyRequestAction")
+    public DefaultValidatedRequestAction<HipConsentNotifyServiceClient> hipConsentNotifyRequestAction(
+            HipConsentNotifyServiceClient hipConsentNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(hipConsentNotifyServiceClient);
+    }
+
     @Bean("hipConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            HipConsentNotifyServiceClient hipConsentNotifyServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, hipConsentNotifyServiceClient);
+            HipConsentNotifyServiceClient hipConsentNotifyServiceClient,
+            DefaultValidatedRequestAction<HipConsentNotifyServiceClient> hipConsentNotifyRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hipConsentNotifyServiceClient, hipConsentNotifyRequestAction);
     }
 
     @Bean
@@ -324,12 +368,19 @@ public class GatewayConfiguration {
         return new HiuConsentNotifyServiceClient(serviceOptions, builder, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("hiuConsentNotifyRequestAction")
+    public DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestAction(
+            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(hiuConsentNotifyServiceClient);
+    }
+
     @Bean("hiuConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, hiuConsentNotifyServiceClient);
+            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient,
+            DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hiuConsentNotifyServiceClient,hiuConsentNotifyRequestAction);
     }
 
     @Bean("consentResponseAction")
@@ -376,11 +427,18 @@ public class GatewayConfiguration {
         return new DataFlowRequestServiceClient(serviceOptions, builder, centralRegistry, bridgeRegistry, cmRegistry);
     }
 
+    @Bean("dataflowRequestAction")
+    public DefaultValidatedRequestAction<DataFlowRequestServiceClient> dataflowRequestAction(
+            DataFlowRequestServiceClient dataFlowRequestServiceClient) {
+        return new DefaultValidatedRequestAction<>(dataFlowRequestServiceClient);
+    }
+
     @Bean("dataFlowRequestOrchestrator")
     public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(CacheAdapter<String, String> requestIdMappings,
                                                                                          Validator validator,
-                                                                                         DataFlowRequestServiceClient dataFlowRequestServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient);
+                                                                                         DataFlowRequestServiceClient dataFlowRequestServiceClient,
+                                                                                         DefaultValidatedRequestAction<DataFlowRequestServiceClient> dataflowRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, dataFlowRequestServiceClient, dataflowRequestAction);
     }
 
     @Bean("dataFlowRequestResponseAction")
@@ -397,6 +455,29 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    public HealthInfoNotificationServiceClient healthInformationRequestServiceClient(ServiceOptions serviceOptions,
+                                                                                     WebClient.Builder builder,
+                                                                                     CentralRegistry centralRegistry,
+                                                                                     CMRegistry cmRegistry) {
+        return new HealthInfoNotificationServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
+    }
+
+    @Bean("healthInfoNotificationRequestAction")
+    public DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction(
+            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient) {
+        return new DefaultValidatedRequestAction<>(healthInfoNotificationServiceClient);
+    }
+
+    @Bean("healthInfoNotificationOrchestrator")
+    public RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator(
+            CacheAdapter<String, String> requestIdMappings,
+            Validator validator,
+            HealthInfoNotificationServiceClient healthInfoNotificationServiceClient,
+            DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, healthInfoNotificationServiceClient,healthInfoNotificationRequestAction);
+    }
+
+    @Bean
     public HipDataFlowServiceClient hipDataFlowServiceClient(ServiceOptions serviceOptions,
                                                              WebClient.Builder builder,
                                                              CMRegistry cmRegistry,
@@ -405,12 +486,47 @@ public class GatewayConfiguration {
         return new HipDataFlowServiceClient(serviceOptions, builder, centralRegistry, cmRegistry, bridgeRegistry);
     }
 
+    @Bean("defalutHipDataflowRequestAction")
+    public DefaultValidatedRequestAction<HipDataFlowServiceClient> defalutHipDataflowRequestAction(
+            HipDataFlowServiceClient hipDataFlowServiceClient) {
+        return new DefaultValidatedRequestAction<>(hipDataFlowServiceClient);
+    }
+
+
+    @Bean("hipDataflowRequestAction")
+    public RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction(
+            DefaultValidatedRequestAction<HipDataFlowServiceClient> defalutHipDataflowRequestAction,
+            AmqpTemplate amqpTemplate,
+            Jackson2JsonMessageConverter converter,
+            ServiceOptions serviceOptions) {
+        return new RetryableValidatedRequestAction<>(amqpTemplate,
+                converter,
+                defalutHipDataflowRequestAction,
+                serviceOptions,
+                GW_DATAFLOW_QUEUE,
+                X_HIP_ID);
+    }
+
     @Bean("hipDataflowRequestOrchestrator")
     public RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
             Validator validator,
-            HipDataFlowServiceClient hipDataFlowServiceClient) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, hipDataFlowServiceClient);
+            HipDataFlowServiceClient hipDataFlowServiceClient,
+            RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings, validator, hipDataFlowServiceClient,hipDataflowRequestAction);
+    }
+
+    @Bean
+    SimpleMessageListenerContainer container(
+            ConnectionFactory connectionFactory,
+            RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction,
+            RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
+        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+        container.setQueueNames(GW_LINK_QUEUE,GW_DATAFLOW_QUEUE);
+        container.setMessageListener(retryableLinkResponseAction);
+        container.setMessageListener(hipDataflowRequestAction);
+        return container;
     }
 
     @Bean("hipDataFlowRequestResponseAction")

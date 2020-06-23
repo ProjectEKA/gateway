@@ -7,6 +7,7 @@ public class Constants {
     public static final String REQUEST_ID = "requestId";
     public static final String GW_DEAD_LETTER_EXCHANGE = "gw.dead-letter-exchange";
     public static final String GW_LINK_QUEUE = "gw.link";
+    public static final String GW_DATAFLOW_QUEUE = "gw.dataflow";
 
     // APIs
     public static final String V_1_CARE_CONTEXTS_ON_DISCOVER = "/v1/care-contexts/on-discover";
@@ -26,8 +27,8 @@ public class Constants {
     public static final String V_1_HEALTH_INFORMATION_CM_REQUEST = "/v1/health-information/cm/request";
     public static final String V_1_HEALTH_INFORMATION_CM_ON_REQUEST = "/v1/health-information/cm/on-request";
     public static final String V_1_HEALTH_INFORMATION_HIP_REQUEST ="/v1/health-information/hip/request";
+    public static final String V_1_HEALTH_INFORMATION_NOTIFY ="/v1/health-information/notify";
     public static final String V_1_HEALTH_INFORMATION_HIP_ON_REQUEST ="/v1/health-information/hip/on-request";
-
 
     private Constants() { }
 }

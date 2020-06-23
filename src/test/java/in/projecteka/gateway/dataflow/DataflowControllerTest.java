@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
+import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -28,6 +29,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
@@ -55,6 +57,9 @@ class DataflowControllerTest {
 
     @MockBean
     RequestOrchestrator<HipDataFlowServiceClient> hipDataFlowRequestOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -151,6 +156,25 @@ class DataflowControllerTest {
     }
 
     @Test
+    void shouldFireAndForgetHealthInfoNotification() {
+        var token = string();
+        var clientId = string();
+        when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(centralRegistryTokenVerifier.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU, HIP)).build()));
+
+        webTestClient
+                .post()
+                .uri(V_1_HEALTH_INFORMATION_NOTIFY)
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
     void shouldFireAndForgetForHipDataFlowResponse() throws JsonProcessingException {
         var token = string();
         var clientId = string();
@@ -181,5 +205,4 @@ class DataflowControllerTest {
                 .expectStatus()
                 .isAccepted();
     }
-
 }

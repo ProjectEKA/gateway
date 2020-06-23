@@ -24,6 +24,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
     CacheAdapter<String, String> requestIdMappings;
     Validator validator;
     T serviceClient;
+    ValidatedRequestAction requestAction;
 
     public Mono<Void> handleThis(HttpEntity<String> maybeRequest, String routingKey, String clientId) {
         return validator.validateRequest(maybeRequest, routingKey)
@@ -40,8 +41,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             request.put(REQUEST_ID, gatewayRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
-                    .flatMap(updatedRequest -> serviceClient.routeRequest(updatedRequest,
-                            validatedRequest.getClientId()))
+                    .flatMap(updatedRequest -> requestAction.execute(validatedRequest.getClientId(),updatedRequest))
                     .onErrorMap(ClientError.class,
                             clientError -> {
                                 logger.error(clientError.getMessage(), clientError);
