@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -60,7 +60,7 @@ class UserControllerTest {
     JWKSet centralRegistryJWKSet;
 
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    Authenticator authenticator;
 
     @MockBean
     @Qualifier("patientSearchResponseAction")
@@ -81,7 +81,7 @@ class UserControllerTest {
         var token = string();
         var clientId = string();
         when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
         webTestClient
@@ -107,7 +107,7 @@ class UserControllerTest {
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
         when(patientSearchValidator.validateResponse(requestEntity, X_HIU_ID))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))

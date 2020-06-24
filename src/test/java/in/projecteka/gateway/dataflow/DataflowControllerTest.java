@@ -6,7 +6,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -68,7 +68,7 @@ class DataflowControllerTest {
     JWKSet centralRegistryJWKSet;
 
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    Authenticator authenticator;
 
     @Qualifier("dataFlowRequestResponseOrchestrator")
     @MockBean
@@ -93,7 +93,7 @@ class DataflowControllerTest {
         var token = string();
         var clientId = string();
         when(dataFlowRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
         webTestClient
@@ -123,7 +123,7 @@ class DataflowControllerTest {
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
 
         webTestClient
                 .post()
@@ -140,7 +140,7 @@ class DataflowControllerTest {
     void shouldFireAndForgetForHipDataFlowRequestInDataFlowController() {
         var token = string();
         var clientId = string();
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
         when(hipDataFlowRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 
@@ -160,7 +160,7 @@ class DataflowControllerTest {
         var token = string();
         var clientId = string();
         when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU, HIP)).build()));
 
         webTestClient
@@ -192,7 +192,7 @@ class DataflowControllerTest {
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
 
         webTestClient

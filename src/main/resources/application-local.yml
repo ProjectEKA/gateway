@@ -4,8 +4,9 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-clientregistry:
+identity:
   clientId: gateway
   clientSecret: ${CLIENT_SECRET}
-  url: http://localhost:8080
-  jwkUrl: http://localhost:8080/certs
+  url: http://localhost:9001/auth
+  realm: central-registry
+  host: ${HOST:http://localhost:8000}

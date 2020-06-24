@@ -42,4 +42,8 @@ public class ClientError extends Throwable {
         return new ClientError(UNAUTHORIZED,
                 new ErrorRepresentation(new Error(INVALID_TOKEN, "Token verification failed")));
     }
+
+    public static ClientError unknownUnAuthorizedError(String message) {
+        return new ClientError(UNAUTHORIZED, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+    }
 }
