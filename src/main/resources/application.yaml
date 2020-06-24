@@ -17,8 +17,9 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
-clientregistry:
+identity:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}
-  url: ${CENTRAL_REGISTRY_URL}
-  jwkUrl: ${CENTRAL_REGISTRY_JWK_URL}
+  url: ${KEYCLOAK_URL}
+  realm: ${REALM}
+  host: ${GATEWAY_HOST}

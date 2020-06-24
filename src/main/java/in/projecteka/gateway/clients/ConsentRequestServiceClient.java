@@ -1,6 +1,6 @@
 package in.projecteka.gateway.clients;
 
-import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -18,10 +18,10 @@ public class ConsentRequestServiceClient extends ServiceClient {
 
     public ConsentRequestServiceClient(ServiceOptions serviceOptions,
                                        WebClient.Builder webClientBuilder,
-                                       CentralRegistry centralRegistry,
+                                       IdentityService identityService,
                                        BridgeRegistry bridgeRegistry,
                                        CMRegistry cmRegistry) {
-        super(serviceOptions, webClientBuilder, centralRegistry);
+        super(serviceOptions, webClientBuilder, identityService);
         this.bridgeRegistry = bridgeRegistry;
         this.cmRegistry = cmRegistry;
     }

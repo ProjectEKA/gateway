@@ -1,20 +1,20 @@
 package in.projecteka.gateway.clients;
 
-import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Optional;
 
-public class HealthInfoNotificationServiceClient extends ServiceClient{
+public class HealthInfoNotificationServiceClient extends ServiceClient {
 
     private final CMRegistry cmRegistry;
     private static final String REQUEST_ROUTE = "/v1/health-information/notify";
 
     public HealthInfoNotificationServiceClient(ServiceOptions serviceOptions,
                                                WebClient.Builder webClientBuilder,
-                                               CentralRegistry centralRegistry,
+                                               IdentityService centralRegistry,
                                                CMRegistry cmRegistry) {
         super(serviceOptions, webClientBuilder, centralRegistry);
         this.cmRegistry = cmRegistry;
@@ -28,4 +28,5 @@ public class HealthInfoNotificationServiceClient extends ServiceClient{
     @Override
     protected Optional<String> getRequestUrl(String clientId) {
         return cmRegistry.getHostFor(clientId).map(host -> host + REQUEST_ROUTE);
-    }}
+    }
+}

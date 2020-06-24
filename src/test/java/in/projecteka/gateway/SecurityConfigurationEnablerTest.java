@@ -2,7 +2,7 @@ package in.projecteka.gateway;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.common.Caller;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +31,7 @@ class SecurityConfigurationEnablerTest {
     JWKSet centralRegistryJWKSet;
 
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    Authenticator authenticator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -52,7 +52,7 @@ class SecurityConfigurationEnablerTest {
     void return403Forbidden() {
         var token = string();
         var caller = Caller.builder().roles(List.of(Role.CM)).build();
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(Mono.just(caller));
+        when(authenticator.verify(token)).thenReturn(Mono.just(caller));
 
         webTestClient
                 .post()

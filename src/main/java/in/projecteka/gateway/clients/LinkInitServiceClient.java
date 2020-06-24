@@ -1,6 +1,6 @@
 package in.projecteka.gateway.clients;
 
-import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -18,10 +18,10 @@ public class LinkInitServiceClient extends ServiceClient {
 
     public LinkInitServiceClient(WebClient.Builder webClientBuilder,
                                  ServiceOptions serviceOptions,
-                                 CentralRegistry centralRegistry,
+                                 IdentityService identityService,
                                  CMRegistry cmRegistry,
                                  BridgeRegistry bridgeRegistry) {
-        super(serviceOptions, webClientBuilder, centralRegistry);
+        super(serviceOptions, webClientBuilder, identityService);
         this.cmRegistry = cmRegistry;
         this.bridgeRegistry = bridgeRegistry;
     }

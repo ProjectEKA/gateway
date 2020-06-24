@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -74,13 +74,13 @@ public class LinkControllerTest {
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    Authenticator authenticator;
 
     @Test
     public void shouldFireAndForgetForLinkInit() {
         var token = string();
         var clientId = string();
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
         when(linkInitRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 
@@ -111,7 +111,7 @@ public class LinkControllerTest {
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
 
         webTestClient
                 .post()
@@ -128,7 +128,7 @@ public class LinkControllerTest {
     public void shouldFireAndForgetForLinkConfirm() {
         var clientId = string();
         var token = string();
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
         when(linkConfirmRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
 

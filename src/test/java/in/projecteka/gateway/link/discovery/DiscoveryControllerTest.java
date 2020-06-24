@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -70,14 +70,14 @@ class DiscoveryControllerTest {
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
     @MockBean
-    CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+    Authenticator authenticator;
 
     @Test
     public void shouldFireAndForgetForDiscover() {
         var token = string();
         var clientId = string();
         when(requestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token))
+        when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
 
         webTestClient
@@ -107,7 +107,7 @@ class DiscoveryControllerTest {
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
         when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
                 .thenReturn(empty());
-        when(centralRegistryTokenVerifier.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
 
         webTestClient
                 .post()

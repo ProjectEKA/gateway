@@ -25,6 +25,7 @@ task bootRunLocal {
         systemProperty "spring.profiles.active", 'local'
     }
 }
+
 bootRunLocal.finalizedBy bootRun
 
 dependencies {

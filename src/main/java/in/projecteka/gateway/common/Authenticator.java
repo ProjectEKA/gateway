@@ -30,11 +30,11 @@ import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static reactor.core.publisher.Mono.just;
 
-public class CentralRegistryTokenVerifier {
+public class Authenticator {
     private final ConfigurableJWTProcessor<SecurityContext> jwtProcessor;
-    private final Logger logger = Logger.getLogger(CentralRegistryTokenVerifier.class);
+    private final Logger logger = Logger.getLogger(Authenticator.class);
 
-    public CentralRegistryTokenVerifier(JWKSet jwkSet) {
+    public Authenticator(JWKSet jwkSet) {
         var immutableJWKSet = new ImmutableJWKSet<>(jwkSet);
         jwtProcessor = new DefaultJWTProcessor<>();
         jwtProcessor.setJWSTypeVerifier(new DefaultJOSEObjectTypeVerifier<>(JOSEObjectType.JWT));

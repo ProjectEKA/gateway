@@ -1,8 +1,8 @@
 package in.projecteka.gateway;
 
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.ClientRegistryProperties;
-import in.projecteka.gateway.common.CentralRegistryTokenVerifier;
+import in.projecteka.gateway.clients.IdentityProperties;
+import in.projecteka.gateway.common.Authenticator;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 
 import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_ON_DISCOVER;
+import static in.projecteka.gateway.common.Constants.V_1_CERTS;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_FETCH;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIU_NOTIFY;
@@ -35,6 +36,10 @@ import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
@@ -42,10 +47,8 @@ import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.V_1_SESSIONS;
+import static in.projecteka.gateway.common.Constants.V_1_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -56,14 +59,14 @@ import static org.springframework.util.StringUtils.hasText;
 @EnableWebFluxSecurity
 public class SecurityConfiguration {
 
-    public static final String[] HIU_AP_IS = new String[]{
+    protected static final String[] HIU_APIS = new String[]{
             V_1_CONSENT_REQUESTS_INIT,
             V_1_CONSENTS_FETCH,
             V_1_PATIENTS_FIND,
             V_1_HEALTH_INFORMATION_CM_REQUEST,
             V_1_HEALTH_INFORMATION_NOTIFY
     };
-    public static final String[] HIP_API_IS = new String[]{
+    protected static final String[] HIP_APIS = new String[]{
             V_1_CARE_CONTEXTS_ON_DISCOVER,
             V_1_LINKS_LINK_ON_INIT,
             V_1_LINKS_LINK_ON_CONFIRM,
@@ -71,7 +74,7 @@ public class SecurityConfiguration {
             V_1_HEALTH_INFORMATION_NOTIFY,
             V_1_HEALTH_INFORMATION_HIP_ON_REQUEST
     };
-    public static final String[] CM_API_IS = new String[]{
+    protected static final String[] CM_APIS = new String[]{
             V_1_CARE_CONTEXTS_DISCOVER,
             V_1_LINKS_LINK_INIT,
             V_1_LINKS_LINK_CONFIRM,
@@ -83,6 +86,9 @@ public class SecurityConfiguration {
             V_1_HEALTH_INFORMATION_HIP_REQUEST,
             V_1_HEALTH_INFORMATION_CM_ON_REQUEST
     };
+    protected static final String[] ALLOW_LIST_APIS = {V_1_CERTS,
+                                                    V_1_WELL_KNOWN_OPENID_CONFIGURATION,
+                                                    V_1_SESSIONS};
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
@@ -95,9 +101,11 @@ public class SecurityConfiguration {
                 .csrf().disable()
                 .logout().disable()
                 .authorizeExchange()
-                .pathMatchers(CM_API_IS).hasAnyRole(CM.name())
-                .pathMatchers(HIP_API_IS).hasAnyRole(HIP.name())
-                .pathMatchers(HIU_AP_IS).hasAnyRole(HIU.name())
+                .pathMatchers(ALLOW_LIST_APIS).permitAll().and()
+                .authorizeExchange()
+                .pathMatchers(CM_APIS).hasAnyRole(CM.name())
+                .pathMatchers(HIP_APIS).hasAnyRole(HIP.name())
+                .pathMatchers(HIU_APIS).hasAnyRole(HIU.name())
                 .and()
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
@@ -110,25 +118,25 @@ public class SecurityConfiguration {
     }
 
     @Bean("centralRegistryJWKSet")
-    public JWKSet jwkSet(ClientRegistryProperties clientRegistryProperties)
+    public JWKSet jwkSet(IdentityProperties identityProperties)
             throws IOException, ParseException {
-        return JWKSet.load(new URL(clientRegistryProperties.getJwkUrl()));
+        return JWKSet.load(new URL(identityProperties.getJwkUrl()));
     }
 
     @Bean
-    public CentralRegistryTokenVerifier centralRegistryTokenVerifier(
+    public Authenticator centralRegistryTokenVerifier(
             @Qualifier("centralRegistryJWKSet") JWKSet jwkSet) {
-        return new CentralRegistryTokenVerifier(jwkSet);
+        return new Authenticator(jwkSet);
     }
 
     @Bean
-    public SecurityContextRepository contextRepository(CentralRegistryTokenVerifier centralRegistryTokenVerifier) {
-        return new SecurityContextRepository(centralRegistryTokenVerifier);
+    public SecurityContextRepository contextRepository(Authenticator authenticator) {
+        return new SecurityContextRepository(authenticator);
     }
 
     @AllArgsConstructor
     private static class SecurityContextRepository implements ServerSecurityContextRepository {
-        private final CentralRegistryTokenVerifier centralRegistryTokenVerifier;
+        private final Authenticator authenticator;
 
         @Override
         public Mono<Void> save(ServerWebExchange exchange, SecurityContext context) {
@@ -145,7 +153,7 @@ public class SecurityConfiguration {
         }
 
         private Mono<SecurityContext> checkCentralRegistry(String token) {
-            return centralRegistryTokenVerifier.verify(token)
+            return authenticator.verify(token)
                     .map(caller -> {
                         var authorities = caller.getRoles()
                                 .stream()
