@@ -1,7 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
@@ -32,7 +32,7 @@ public abstract class ServiceClient {
 
     protected final ServiceOptions serviceOptions;
     protected final WebClient.Builder webClientBuilder;
-    protected final CentralRegistry centralRegistry;
+    protected final IdentityService identityService;
 
     public Mono<Void> routeRequest(Map<String, Object> request, String clientId) {
         return routeCommon(request, clientId, this::getRequestUrl);
@@ -62,7 +62,7 @@ public abstract class ServiceClient {
     }
 
     private <T> Mono<Void> route(T request, String url) {
-        return centralRegistry.authenticate()
+        return identityService.authenticate()
                 .flatMap(token ->
                         webClientBuilder.build()
                                 .post()

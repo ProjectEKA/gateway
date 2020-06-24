@@ -27,9 +27,13 @@ public class Constants {
     public static final String V_1_PATIENTS_ON_FIND = "/v1/patients/on-find";
     public static final String V_1_HEALTH_INFORMATION_CM_REQUEST = "/v1/health-information/cm/request";
     public static final String V_1_HEALTH_INFORMATION_CM_ON_REQUEST = "/v1/health-information/cm/on-request";
-    public static final String V_1_HEALTH_INFORMATION_HIP_REQUEST ="/v1/health-information/hip/request";
-    public static final String V_1_HEALTH_INFORMATION_NOTIFY ="/v1/health-information/notify";
-    public static final String V_1_HEALTH_INFORMATION_HIP_ON_REQUEST ="/v1/health-information/hip/on-request";
+    public static final String V_1_HEALTH_INFORMATION_HIP_REQUEST = "/v1/health-information/hip/request";
+    public static final String V_1_HEALTH_INFORMATION_NOTIFY = "/v1/health-information/notify";
+    public static final String V_1_HEALTH_INFORMATION_HIP_ON_REQUEST = "/v1/health-information/hip/on-request";
+    public static final String V_1_SESSIONS = "/v1/sessions";
+    public static final String V_1_WELL_KNOWN_OPENID_CONFIGURATION = "/v1/.well-known/openid-configuration";
+    public static final String V_1_CERTS = "/v1/certs";
 
-    private Constants() { }
+    private Constants() {
+    }
 }

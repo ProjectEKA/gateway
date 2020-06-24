@@ -26,7 +26,7 @@ import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static java.lang.String.format;
 import static reactor.test.StepVerifier.create;
 
-class CentralRegistryTokenVerifierTest {
+class AuthenticatorTest {
 
     @Test
     void returnCallerWithSupportedRolesWhenTokenHasRoles() throws JOSEException {
@@ -56,7 +56,7 @@ class CentralRegistryTokenVerifierTest {
                 claimsSet);
         signedJWT.sign(signer);
         String token = signedJWT.serialize();
-        var centralRegistryTokenVerifier = new CentralRegistryTokenVerifier(new JWKSet(rsaKey.toPublicJWK()));
+        var centralRegistryTokenVerifier = new Authenticator(new JWKSet(rsaKey.toPublicJWK()));
 
         Mono<Caller> verify = centralRegistryTokenVerifier.verify(format("bearer %s", token));
 
@@ -89,7 +89,7 @@ class CentralRegistryTokenVerifierTest {
                 claimsSet);
         signedJWT.sign(signer);
         String token = signedJWT.serialize();
-        var centralRegistryTokenVerifier = new CentralRegistryTokenVerifier(new JWKSet(rsaKey.toPublicJWK()));
+        var centralRegistryTokenVerifier = new Authenticator(new JWKSet(rsaKey.toPublicJWK()));
 
         Mono<Caller> verify = centralRegistryTokenVerifier.verify(format("bearer %s", token));
 
@@ -114,7 +114,7 @@ class CentralRegistryTokenVerifierTest {
                 claimsSet);
         signedJWT.sign(signer);
         String token = signedJWT.serialize();
-        var centralRegistryTokenVerifier = new CentralRegistryTokenVerifier(new JWKSet(rsaKey.toPublicJWK()));
+        var centralRegistryTokenVerifier = new Authenticator(new JWKSet(rsaKey.toPublicJWK()));
 
         Mono<Caller> verify = centralRegistryTokenVerifier.verify(format("bearer %s", token));
 
@@ -141,7 +141,7 @@ class CentralRegistryTokenVerifierTest {
                 claimsSet);
         signedJWT.sign(signer);
         String token = signedJWT.serialize();
-        var centralRegistryTokenVerifier = new CentralRegistryTokenVerifier(new JWKSet(rsaKey.toPublicJWK()));
+        var centralRegistryTokenVerifier = new Authenticator(new JWKSet(rsaKey.toPublicJWK()));
 
         Mono<Caller> verify = centralRegistryTokenVerifier.verify(format("bearer %s", token));
 

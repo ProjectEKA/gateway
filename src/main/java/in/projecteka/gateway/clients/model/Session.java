@@ -2,30 +2,26 @@ package in.projecteka.gateway.clients.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Value;
 
 @Builder
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Value
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Session {
 
     @JsonAlias({"access_token"})
-    private String accessToken;
+    String accessToken;
 
     @JsonAlias({"expires_in"})
-    private int expiresIn;
+    int expiresIn;
 
     @JsonAlias({"refresh_expires_in"})
-    private int refreshExpiresIn;
+    int refreshExpiresIn;
 
     @JsonAlias({"refresh_token"})
-    private String refreshToken;
+    String refreshToken;
 
     @JsonAlias({"token_type"})
-    private String tokenType;
+    String tokenType;
 }

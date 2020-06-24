@@ -1,7 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import in.projecteka.gateway.common.CentralRegistry;
+import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class ServiceClientTest {
     ArgumentCaptor<ClientRequest> captor;
 
     @Mock
-    CentralRegistry centralRegistry;
+    IdentityService identityService;
 
     @Mock
     ExchangeFunction exchangeFunction;
@@ -60,12 +60,12 @@ class ServiceClientTest {
         var token = string();
         var request = new HashMap<String, Object>();
         var url = string();
-        when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(identityService.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
-        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return empty();
@@ -88,12 +88,12 @@ class ServiceClientTest {
         var clientId = string();
         var request = OBJECT_MAPPER.createObjectNode();
         var url = "/temp-url";
-        when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(identityService.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
-        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
@@ -117,12 +117,12 @@ class ServiceClientTest {
         var url = "/temp-url";
         var clientId = string();
         var request = errorResult().build();
-        when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(identityService.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .build()));
-        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
@@ -145,14 +145,14 @@ class ServiceClientTest {
         var url = "/temp-url";
         var clientId = string();
         var request = errorResult().build();
-        when(centralRegistry.authenticate()).thenReturn(just(token));
+        when(identityService.authenticate()).thenReturn(just(token));
         var error = OBJECT_MAPPER.createObjectNode().put("error", "something went wrong");
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.GATEWAY_TIMEOUT)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
                         .body(OBJECT_MAPPER.writeValueAsString(error))
                         .build()));
-        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return of(url);
@@ -173,7 +173,7 @@ class ServiceClientTest {
 
     @Test
     void returnErrorIfUnableToFindAHostForAClient() {
-        var serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, centralRegistry) {
+        var serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, identityService) {
             @Override
             protected Optional<String> getResponseUrl(String clientId) {
                 return empty();
