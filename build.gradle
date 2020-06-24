@@ -20,6 +20,13 @@ repositories {
     mavenCentral()
 }
 
+task bootRunLocal {
+    bootRun.configure {
+        systemProperty "spring.profiles.active", 'local'
+    }
+}
+bootRunLocal.finalizedBy bootRun
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
