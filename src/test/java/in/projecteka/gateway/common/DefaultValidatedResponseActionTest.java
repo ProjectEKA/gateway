@@ -30,9 +30,10 @@ class DefaultValidatedResponseActionTest {
     @Test
     void invokeServiceClientForRoutingResponse() {
         String cmId = string();
+        var routingKey = string();
         JsonNode mockRequest = Mockito.mock(JsonNode.class);
-        when(serviceClient.routeResponse(mockRequest, cmId)).thenReturn(Mono.empty());
+        when(serviceClient.routeResponse(mockRequest, cmId, routingKey)).thenReturn(Mono.empty());
 
-        create(defaultValidatedResponseAction.routeResponse(cmId, mockRequest)).verifyComplete();
+        create(defaultValidatedResponseAction.routeResponse(cmId, mockRequest, routingKey)).verifyComplete();
     }
 }

@@ -15,8 +15,8 @@ public class DefaultValidatedResponseAction<T extends ServiceClient> implements 
     T serviceClient;
 
     @Override
-    public Mono<Void> routeResponse(String clientId, JsonNode updatedRequest) {
-        return serviceClient.routeResponse(updatedRequest, clientId);
+    public Mono<Void> routeResponse(String clientId, JsonNode updatedRequest, String routingKey) {
+        return serviceClient.routeResponse(updatedRequest, clientId, routingKey);
     }
 
     @Override

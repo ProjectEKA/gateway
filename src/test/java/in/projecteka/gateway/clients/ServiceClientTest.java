@@ -77,7 +77,7 @@ class ServiceClientTest {
             }
         };
 
-        StepVerifier.create(serviceClient.routeRequest(request, string())).verifyComplete();
+        StepVerifier.create(serviceClient.routeRequest(request, string(), string())).verifyComplete();
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
@@ -88,6 +88,7 @@ class ServiceClientTest {
         var clientId = string();
         var request = OBJECT_MAPPER.createObjectNode();
         var url = "/temp-url";
+        var routingKey = string();
         when(identityService.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
@@ -105,7 +106,7 @@ class ServiceClientTest {
             }
         };
 
-        StepVerifier.create(serviceClient.routeResponse(request, clientId)).verifyComplete();
+        StepVerifier.create(serviceClient.routeResponse(request, clientId, routingKey)).verifyComplete();
 
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
@@ -117,6 +118,8 @@ class ServiceClientTest {
         var url = "/temp-url";
         var clientId = string();
         var request = errorResult().build();
+        var sourceRoutingKey = string();
+
         when(identityService.authenticate()).thenReturn(just(token));
         when(exchangeFunction.exchange(captor.capture()))
                 .thenReturn(just(ClientResponse.create(HttpStatus.OK)
@@ -134,7 +137,7 @@ class ServiceClientTest {
             }
         };
 
-        StepVerifier.create(serviceClient.notifyError(clientId, request)).verifyComplete();
+        StepVerifier.create(serviceClient.notifyError(clientId, sourceRoutingKey, request)).verifyComplete();
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
@@ -145,6 +148,8 @@ class ServiceClientTest {
         var url = "/temp-url";
         var clientId = string();
         var request = errorResult().build();
+        var sourceRoutingKey = string();
+
         when(identityService.authenticate()).thenReturn(just(token));
         var error = OBJECT_MAPPER.createObjectNode().put("error", "something went wrong");
         when(exchangeFunction.exchange(captor.capture()))
@@ -164,7 +169,7 @@ class ServiceClientTest {
             }
         };
 
-        Mono<Void> notifyError = serviceClient.notifyError(clientId, request);
+        Mono<Void> notifyError = serviceClient.notifyError(clientId, sourceRoutingKey, request);
 
         StepVerifier.create(notifyError).verifyError(ClientError.class);
         assertThat(captor.getValue().url()).hasPath(url);
@@ -184,6 +189,6 @@ class ServiceClientTest {
                 return empty();
             }
         };
-        StepVerifier.create(serviceClient.notifyError(string(), errorResult().build())).verifyError(ClientError.class);
+        StepVerifier.create(serviceClient.notifyError(string(), string(), errorResult().build())).verifyError(ClientError.class);
     }
 }

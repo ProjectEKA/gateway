@@ -18,8 +18,8 @@ public class DefaultValidatedRequestAction<T extends ServiceClient> implements V
     T serviceClient;
 
     @Override
-    public Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest) {
-        return serviceClient.routeRequest(updatedRequest,id);
+    public Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest, String routingKey) {
+        return serviceClient.routeRequest(updatedRequest, id, routingKey);
     }
 
     @Override

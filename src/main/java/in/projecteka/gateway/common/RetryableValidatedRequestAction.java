@@ -1,6 +1,5 @@
 package in.projecteka.gateway.common;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import lombok.AllArgsConstructor;
@@ -14,7 +13,6 @@ import org.springframework.amqp.core.MessagePostProcessor;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.core.ParameterizedTypeReference;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +36,7 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
                 ParameterizedTypeReference.forType(Map.class));
         String clientIdHeader = message.getMessageProperties().getHeader(clientIdRequestHeader);
         try {
-            routeRequest(clientIdHeader, map).block();
+            routeRequest(clientIdHeader, map, clientIdRequestHeader).block();
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
                 logger.error("Exceeded retry attempts; parking the message");
@@ -64,8 +62,8 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
     }
 
     @Override
-    public Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest) {
-        return defaultValidatedRequestAction.routeRequest(id,updatedRequest);
+    public Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest, String routingKey) {
+        return defaultValidatedRequestAction.routeRequest(id,updatedRequest, routingKey);
     }
 
    // Todo: need to route response back to the caller ( callerDetails (id,response api) )

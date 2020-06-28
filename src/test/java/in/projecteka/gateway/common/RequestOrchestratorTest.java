@@ -80,7 +80,7 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(error(mappingNotFoundForId(routingKey)));
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
                 .expectErrorSatisfies(throwable ->
                         assertThat(throwable).isEqualToComparingFieldByField(mappingNotFoundForId(routingKey)))
                 .verify();
@@ -97,9 +97,9 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(empty());
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId)).verifyComplete();
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)).verifyComplete();
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
     }
 
@@ -114,11 +114,11 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(new TimeoutException()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -138,11 +138,11 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(new RuntimeException()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -162,11 +162,11 @@ class RequestOrchestratorTest {
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId),captor.capture())).thenReturn(error(ClientError.unableToConnect()));
+        when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(ClientError.unableToConnect()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), errorResult.capture())).thenReturn(empty());
+        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);

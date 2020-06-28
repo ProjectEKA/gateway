@@ -13,14 +13,14 @@ public class ResponseOrchestrator {
 
     public Mono<Void> processResponse(HttpEntity<String> maybeResponse, String routingKey) {
         return validator.validateResponse(maybeResponse, routingKey)
-                .doOnSuccess(this::offloadThis)
+                .doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey))
                 .then();
     }
 
-    private void offloadThis(ValidatedResponse response) {
+    private void offloadThis(ValidatedResponse response, String routingKey) {
         Mono.defer(() -> {
             var updatedJsonNode = updateRequestId(response.getDeSerializedJsonNode(), response.getCallerRequestId());
-            return validatedResponseAction.execute(response.getId(), updatedJsonNode);
+            return validatedResponseAction.execute(response.getId(), updatedJsonNode, routingKey);
         }).subscribe();
     }
 }

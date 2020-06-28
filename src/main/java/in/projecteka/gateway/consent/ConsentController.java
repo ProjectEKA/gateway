@@ -35,7 +35,7 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId -> consentRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -50,7 +50,7 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId -> consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

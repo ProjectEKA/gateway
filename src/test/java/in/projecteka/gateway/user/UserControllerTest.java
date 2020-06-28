@@ -80,7 +80,7 @@ class UserControllerTest {
     void shouldFireAndForgetForPatientsFindInUserController() {
         var token = string();
         var clientId = string();
-        when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
@@ -102,15 +102,16 @@ class UserControllerTest {
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var testId = string();
         var token = string();
+        var routingKey = X_HIU_ID;
         objectNode.put(REQUEST_ID, requestId);
         ObjectNode respNode = OBJECT_MAPPER.createObjectNode();
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-        when(patientSearchValidator.validateResponse(requestEntity, X_HIU_ID))
+        when(patientSearchValidator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
 
         webTestClient

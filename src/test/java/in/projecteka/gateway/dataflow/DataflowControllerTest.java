@@ -41,6 +41,7 @@ import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -92,7 +93,7 @@ class DataflowControllerTest {
     void shouldFireAndForgetForInitDataFlowRequest() {
         var token = string();
         var clientId = string();
-        when(dataFlowRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(dataFlowRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
@@ -113,15 +114,16 @@ class DataflowControllerTest {
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var respNode = OBJECT_MAPPER.createObjectNode();
         var token = string();
+        var routingKey = X_HIU_ID;
         var testId = string();
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
 
-        when(dataFlowResposeValidator.validateResponse(requestEntity, X_HIU_ID))
+        when(dataFlowResposeValidator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
 
@@ -142,7 +144,8 @@ class DataflowControllerTest {
         var clientId = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
-        when(hipDataFlowRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(hipDataFlowRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId)))
+                .thenReturn(empty());
 
         webTestClient
                 .post()
@@ -159,7 +162,8 @@ class DataflowControllerTest {
     void shouldFireAndForgetHealthInfoNotification() {
         var token = string();
         var clientId = string();
-        when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
+        when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), anyString(), eq(clientId)))
+                .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU, HIP)).build()));
 
@@ -181,6 +185,7 @@ class DataflowControllerTest {
         var requestId = UUID.randomUUID().toString();
         var callerRequestId = UUID.randomUUID().toString();
         var testId = string();
+        var routingKey = X_CM_ID;
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var respNode = OBJECT_MAPPER.createObjectNode();
         objectNode.put(REQUEST_ID, requestId);
@@ -188,9 +193,9 @@ class DataflowControllerTest {
         objectNode.set("resp", respNode);
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
 
-        when(dataFlowResposeValidator.validateResponse(requestEntity, X_CM_ID))
+        when(dataFlowResposeValidator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
