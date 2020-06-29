@@ -26,13 +26,19 @@ public class RequestOrchestrator<T extends ServiceClient> {
     T serviceClient;
     ValidatedRequestAction requestAction;
 
-    public Mono<Void> handleThis(HttpEntity<String> maybeRequest, String routingKey, String clientId) {
-        return validator.validateRequest(maybeRequest, routingKey)
-                .doOnSuccess(request -> offloadThis(request, clientId))
+    public Mono<Void> handleThis(HttpEntity<String> maybeRequest,
+                                 String targetRoutingKey,
+                                 String sourceRoutingKey,
+                                 String clientId) {
+        return validator.validateRequest(maybeRequest, targetRoutingKey)
+                .doOnSuccess(request -> offloadThis(request, targetRoutingKey, sourceRoutingKey, clientId))
                 .then();
     }
 
-    private void offloadThis(ValidatedRequest validatedRequest, String clientId) {
+    private void offloadThis(ValidatedRequest validatedRequest,
+                             String targetRoutingKey,
+                             String sourceRoutingKey,
+                             String clientId) {
         Mono.defer(() -> {
             var gatewayRequestId = UUID.randomUUID();
             var downstreamRequestId = gatewayRequestId.toString();
@@ -41,7 +47,8 @@ public class RequestOrchestrator<T extends ServiceClient> {
             request.put(REQUEST_ID, gatewayRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
-                    .flatMap(updatedRequest -> requestAction.execute(validatedRequest.getClientId(),updatedRequest))
+                    .flatMap(updatedRequest ->
+                            requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey))
                     .onErrorMap(ClientError.class,
                             clientError -> {
                                 logger.error(clientError.getMessage(), clientError);
@@ -62,7 +69,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
                     .doOnError(ErrorResult.class,
                             errorResult -> {
                                 logger.error("Notifying caller about the failure", errorResult);
-                                serviceClient.notifyError(clientId, errorResult).subscribe();
+                                serviceClient.notifyError(clientId, sourceRoutingKey, errorResult).subscribe();
                             });
         }).subscribe();
     }

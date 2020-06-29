@@ -29,14 +29,15 @@ public class RetryableValidatedResponseAction<T extends ServiceClient>
     private final DefaultValidatedResponseAction<T> defaultValidatedResponseAction;
     private final ServiceOptions serviceOptions;
     private final String deadLetterRoutingKey;
+    private final String clientIdRequestHeader;
 
     @Override
     public void onMessage(Message message) {
         var jsonNode = (JsonNode) converter.fromMessage(message,
                 ParameterizedTypeReference.forType(JsonNode.class));
-        String xCmId = message.getMessageProperties().getHeader("X-CM-ID");
+        String xCmId = message.getMessageProperties().getHeader(clientIdRequestHeader);
         try {
-            routeResponse(xCmId, jsonNode).block();
+            routeResponse(xCmId, jsonNode, clientIdRequestHeader).block();
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
                 logger.error("Exceeded retry attempts; parking the message");
@@ -62,8 +63,8 @@ public class RetryableValidatedResponseAction<T extends ServiceClient>
     }
 
     @Override
-    public Mono<Void> routeResponse(String clientId, JsonNode updatedRequest) {
-        return defaultValidatedResponseAction.routeResponse(clientId, updatedRequest);
+    public Mono<Void> routeResponse(String clientId, JsonNode updatedRequest, String routingKey) {
+        return defaultValidatedResponseAction.routeResponse(clientId, updatedRequest, routingKey);
     }
 
     @Override

@@ -82,7 +82,7 @@ public class LinkControllerTest {
         var clientId = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
-        when(linkInitRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(linkInitRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
                 .post()
@@ -106,10 +106,11 @@ public class LinkControllerTest {
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
+        var routingKey = X_CM_ID;
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
-        when(linkValidator.validateResponse(requestEntity, X_CM_ID))
+        when(linkValidator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
 
@@ -130,7 +131,7 @@ public class LinkControllerTest {
         var token = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
-        when(linkConfirmRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(linkConfirmRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
 
         webTestClient
                 .post()

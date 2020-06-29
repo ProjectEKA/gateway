@@ -70,55 +70,58 @@ class RetryableValidatedRequestActionTest {
 
     @Test
     void shouldRouteResponseAndNotRetryWhenSuccessful() {
+        var routingKey = "X-HIP-ID";
         MessageProperties props = new MessageProperties();
         String testCmId = "testHipId";
-        props.setHeader("X-HIP-ID", testCmId);
+        props.setHeader(routingKey, testCmId);
         when(converter.fromMessage(message, ParameterizedTypeReference.forType(Map.class))).thenReturn(map);
-        when(message.getMessageProperties().getHeader("X-HIP-ID")).thenReturn(testCmId);
-        doReturn(Mono.empty()).when(retryableValidatedRequestAction).routeRequest(testCmId, map);
+        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testCmId);
+        doReturn(Mono.empty()).when(retryableValidatedRequestAction).routeRequest(testCmId, map, routingKey);
 
         retryableValidatedRequestAction.onMessage(message);
 
-        verify(retryableValidatedRequestAction).routeRequest(testCmId, map);
+        verify(retryableValidatedRequestAction).routeRequest(testCmId, map, routingKey);
     }
 
     @Test
     void shouldPushToDLQUponFailureWhenMaxRetryHasNotExceeded() {
+        var routingKey = "X-HIP-ID";
         MessageProperties props = new MessageProperties();
         String testHipId = "testHipId";
-        props.setHeader("X-HIP-ID", testHipId);
+        props.setHeader(routingKey, testHipId);
         when(converter.fromMessage(message, ParameterizedTypeReference.forType(Map.class))).thenReturn(map);
-        when(message.getMessageProperties().getHeader("X-HIP-ID")).thenReturn(testHipId);
+        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testHipId);
         doReturn(false).when(retryableValidatedRequestAction).hasExceededRetryCount(message);
         doReturn(Mono.error(new RuntimeException()))
                 .when(retryableValidatedRequestAction)
-                .routeRequest(testHipId, map);
+                .routeRequest(testHipId, map, routingKey);
 
         Assertions.assertThrows(AmqpRejectAndDontRequeueException.class,
                 () -> retryableValidatedRequestAction.onMessage(message));
 
-        verify(retryableValidatedRequestAction).routeRequest(testHipId, map);
+        verify(retryableValidatedRequestAction).routeRequest(testHipId, map, routingKey);
         verify(retryableValidatedRequestAction).hasExceededRetryCount(message);
     }
 
     @Test
     void shouldPushToParkingLotUponFailureWhenMaxRetryHasExceeded() {
+        var routingKey = "X-HIP-ID";
         MessageProperties props = new MessageProperties();
         String testHipId = "testHipId";
-        props.setHeader("X-HIP-ID", testHipId);
+        props.setHeader(routingKey, testHipId);
         when(converter.fromMessage(message, ParameterizedTypeReference.forType(Map.class))).thenReturn(map);
-        when(message.getMessageProperties().getHeader("X-HIP-ID")).thenReturn(testHipId);
+        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testHipId);
         String testRoutingKey = "testRoutingKey";
         when(message.getMessageProperties().getReceivedRoutingKey()).thenReturn(testRoutingKey);
         doNothing().when(amqpTemplate).convertAndSend("gw.parking.exchange", testRoutingKey, message);
         doReturn(true).when(retryableValidatedRequestAction).hasExceededRetryCount(message);
         doReturn(Mono.error(new RuntimeException()))
                 .when(retryableValidatedRequestAction)
-                .routeRequest(testHipId, map);
+                .routeRequest(testHipId, map, routingKey);
 
         retryableValidatedRequestAction.onMessage(message);
 
-        verify(retryableValidatedRequestAction).routeRequest(testHipId, map);
+        verify(retryableValidatedRequestAction).routeRequest(testHipId, map, routingKey);
         verify(retryableValidatedRequestAction).hasExceededRetryCount(message);
         verify(amqpTemplate).convertAndSend("gw.parking.exchange", testRoutingKey, message);
     }
@@ -152,12 +155,14 @@ class RetryableValidatedRequestActionTest {
     @Test
     void shouldRouteResponse() {
         var testHipId = string();
-        when(defaultValidatedRequestAction.routeRequest(testHipId, map)).thenReturn(Mono.empty());
+        var routingKey = string();
 
-        StepVerifier.create(retryableValidatedRequestAction.routeRequest(testHipId, map))
+        when(defaultValidatedRequestAction.routeRequest(testHipId, map, routingKey)).thenReturn(Mono.empty());
+
+        StepVerifier.create(retryableValidatedRequestAction.routeRequest(testHipId, map, routingKey))
                 .verifyComplete();
 
-        verify(defaultValidatedRequestAction).routeRequest(testHipId, map);
+        verify(defaultValidatedRequestAction).routeRequest(testHipId, map, routingKey);
     }
 
     @Test

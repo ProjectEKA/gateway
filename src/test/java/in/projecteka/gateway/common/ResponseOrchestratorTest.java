@@ -70,20 +70,21 @@ class ResponseOrchestratorTest {
         var objectNode = OBJECT_MAPPER.createObjectNode();
         var respNode = OBJECT_MAPPER.createObjectNode();
         var testCmId = string();
+        var routingKey = X_CM_ID;
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, cmRequestId);
         objectNode.set("resp", respNode);
-        when(validator.validateResponse(requestEntity, X_CM_ID))
+        when(validator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testCmId, cmRequestId, objectNode)));
         when(requestIdMappings.get(eq(requestId))).thenReturn(just(cmRequestId));
-        when(validatedResponseAction.execute(eq(testCmId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testCmId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
 
-        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
+        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, routingKey))
                 .verifyComplete();
 
-        verify(validator).validateResponse(requestEntity, X_CM_ID);
+        verify(validator).validateResponse(requestEntity, routingKey);
         Assertions.assertEquals(cmRequestId, jsonNodeArgumentCaptor.getValue().path("resp").path(REQUEST_ID).asText());
     }
 }

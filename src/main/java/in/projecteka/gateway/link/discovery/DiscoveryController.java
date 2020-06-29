@@ -30,7 +30,8 @@ public class DiscoveryController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> discoveryRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, clientId));
+                .flatMap(clientId ->
+                        discoveryRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
