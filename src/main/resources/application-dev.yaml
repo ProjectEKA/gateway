@@ -17,8 +17,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: test
-    password: test
+    username: guest
+    password: guest
 identity:
   clientId: gateway
   clientSecret: bf1e85d0-dc58-4cb0-8d90-74a6ea1f059c

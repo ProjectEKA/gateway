@@ -4,6 +4,8 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
+    username: guest
+    password: guest
 identity:
   clientId: gateway
   clientSecret: ${CLIENT_SECRET}
