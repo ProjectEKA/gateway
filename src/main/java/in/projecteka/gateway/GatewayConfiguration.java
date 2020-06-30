@@ -31,6 +31,7 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -44,6 +45,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
+import in.projecteka.gateway.common.heartbeat.Heartbeat;
 
 import java.io.File;
 import java.io.IOException;
@@ -577,5 +579,10 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<HipConsentNotifyServiceClient> hipConsentNotifyResponseAction) {
         return new ResponseOrchestrator(validator, hipConsentNotifyResponseAction);
+    }
+
+    @Bean
+    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties) {
+        return new Heartbeat(rabbitmqOptions,identityProperties);
     }
 }

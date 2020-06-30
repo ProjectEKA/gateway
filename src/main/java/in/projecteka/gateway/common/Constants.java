@@ -33,6 +33,7 @@ public class Constants {
     public static final String V_1_SESSIONS = "/v1/sessions";
     public static final String V_1_WELL_KNOWN_OPENID_CONFIGURATION = "/v1/.well-known/openid-configuration";
     public static final String V_1_CERTS = "/v1/certs";
+    public static final String V_1_HEARTBEAT = "/v1/heartbeat";
 
     private Constants() {
     }

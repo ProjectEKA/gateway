@@ -48,6 +48,7 @@ import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.V_1_SESSIONS;
+import static in.projecteka.gateway.common.Constants.V_1_HEARTBEAT;
 import static in.projecteka.gateway.common.Constants.V_1_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
@@ -87,8 +88,10 @@ public class SecurityConfiguration {
             V_1_HEALTH_INFORMATION_CM_ON_REQUEST
     };
     protected static final String[] ALLOW_LIST_APIS = {V_1_CERTS,
-                                                    V_1_WELL_KNOWN_OPENID_CONFIGURATION,
-                                                    V_1_SESSIONS};
+            V_1_WELL_KNOWN_OPENID_CONFIGURATION,
+            V_1_SESSIONS,
+            V_1_HEARTBEAT
+    };
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
