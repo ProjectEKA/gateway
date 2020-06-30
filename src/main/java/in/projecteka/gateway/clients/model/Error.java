@@ -22,6 +22,10 @@ public class Error implements Serializable {
     public static Error unKnownError(String message) {
         return new Error(ErrorCode.UNKNOWN_ERROR_OCCURRED, message);
     }
+
+    public static Error serviceDownError(String message) {
+        return new Error(ErrorCode.SERVICE_DOWN, message);
+    }
 }
 
 
