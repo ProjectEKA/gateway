@@ -17,6 +17,8 @@ spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
 identity:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}
