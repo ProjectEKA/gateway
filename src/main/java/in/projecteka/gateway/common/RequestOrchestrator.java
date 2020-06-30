@@ -9,6 +9,7 @@ import in.projecteka.gateway.common.model.GatewayResponse;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
@@ -45,6 +46,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             var request = validatedRequest.getDeSerializedRequest();
             var upstreamRequestId = validatedRequest.getRequesterRequestId();
             request.put(REQUEST_ID, gatewayRequestId);
+            MDC.put("gateway-request-id", downstreamRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
                     .flatMap(updatedRequest ->

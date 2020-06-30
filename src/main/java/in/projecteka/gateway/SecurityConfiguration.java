@@ -153,6 +153,7 @@ public class SecurityConfiguration {
             if (!hasText(token)) {
                 return Mono.empty();
             }
+
             return checkCentralRegistry(token);
         }
 

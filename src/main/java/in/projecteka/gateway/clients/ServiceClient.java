@@ -7,6 +7,7 @@ import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -67,11 +68,19 @@ public abstract class ServiceClient {
     }
 
     private <T> Mono<Void> route(T request, String url, String routingKey, String clientId) {
-        return routingKey.equals(X_HIP_ID) || routingKey.equals(X_HIU_ID)
-                ? identityService.authenticate()
-                    .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, clientId)).then()
-                : identityService.authenticate()
-                    .flatMap(token -> cmWebClientBuilder(request, url, token)).then();
+
+        MDC.put("path", url);
+        MDC.put("method", "POST");
+        if (routingKey.equals(X_HIP_ID) || routingKey.equals(X_HIU_ID)) {
+            MDC.put("target-id", clientId);
+            logger.info("Target service info");
+            return identityService.authenticate()
+                    .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, clientId)).then();
+        }
+        logger.info("Target service info");
+        MDC.clear();
+        return identityService.authenticate()
+                .flatMap(token -> cmWebClientBuilder(request, url, token)).then();
     }
 
     private <T> Mono<ResponseEntity<Void>> cmWebClientBuilder(T request, String url, String token) {
