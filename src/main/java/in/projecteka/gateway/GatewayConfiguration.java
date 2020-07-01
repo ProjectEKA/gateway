@@ -53,6 +53,7 @@ import java.util.concurrent.TimeUnit;
 
 import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
 import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
@@ -240,7 +241,8 @@ public class GatewayConfiguration {
                 converter,
                 linkConfirmResponseAction,
                 serviceOptions,
-                GW_LINK_QUEUE);
+                GW_LINK_QUEUE,
+                X_CM_ID);
     }
 
 

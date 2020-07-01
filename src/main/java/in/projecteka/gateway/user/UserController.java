@@ -30,7 +30,8 @@ public class UserController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, clientId));
+                .flatMap(clientId ->
+                        patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

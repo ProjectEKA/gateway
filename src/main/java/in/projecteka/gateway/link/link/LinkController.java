@@ -35,7 +35,8 @@ public class LinkController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> linkInitRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, clientId));
+                .flatMap(clientId ->
+                        linkInitRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -50,7 +51,8 @@ public class LinkController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> linkConfirmRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, clientId));
+                .flatMap(clientId ->
+                        linkConfirmRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

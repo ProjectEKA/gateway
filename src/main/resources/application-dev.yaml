@@ -17,9 +17,11 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
+    username: guest
+    password: guest
 identity:
   clientId: gateway
-  clientSecret: 29868f71-ee62-45c6-9c42-f5ecf8bb9179
+  clientSecret: bf1e85d0-dc58-4cb0-8d90-74a6ea1f059c
   url: http://localhost:9001/auth
   realm: central-registry
   host: http://localhost:8000

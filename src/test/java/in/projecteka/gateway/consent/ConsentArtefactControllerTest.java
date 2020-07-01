@@ -81,7 +81,7 @@ public class ConsentArtefactControllerTest {
     public void shouldFireAndForgetHIPConsentNotification() {
         var token = string();
         var clientId = string();
-        when(hipConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(clientId)))
+        when(hipConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId)))
                 .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
@@ -103,7 +103,8 @@ public class ConsentArtefactControllerTest {
         var token = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
-        when(hiuConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
+        when(hiuConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIU_ID), eq(X_CM_ID), eq(clientId)))
+                .thenReturn(empty());
 
         webTestClient
                 .post()
@@ -127,10 +128,11 @@ public class ConsentArtefactControllerTest {
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, callerRequestId);
         objectNode.set("resp", respNode);
+        var routingKey = X_CM_ID;
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
-        when(notifyValidator.validateResponse(requestEntity, X_CM_ID))
+        when(notifyValidator.validateResponse(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture()))
+        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
 

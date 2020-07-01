@@ -64,17 +64,20 @@ public class SecurityConfiguration {
             V_1_CONSENT_REQUESTS_INIT,
             V_1_CONSENTS_FETCH,
             V_1_PATIENTS_FIND,
-            V_1_HEALTH_INFORMATION_CM_REQUEST,
-            V_1_HEALTH_INFORMATION_NOTIFY
+            V_1_HEALTH_INFORMATION_CM_REQUEST
     };
     protected static final String[] HIP_APIS = new String[]{
             V_1_CARE_CONTEXTS_ON_DISCOVER,
             V_1_LINKS_LINK_ON_INIT,
             V_1_LINKS_LINK_ON_CONFIRM,
             V_1_CONSENTS_HIP_ON_NOTIFY,
-            V_1_HEALTH_INFORMATION_NOTIFY,
             V_1_HEALTH_INFORMATION_HIP_ON_REQUEST
     };
+
+    protected static final String[] HIU_HIP_APIS = new String[] {
+            V_1_HEALTH_INFORMATION_NOTIFY
+    };
+
     protected static final String[] CM_APIS = new String[]{
             V_1_CARE_CONTEXTS_DISCOVER,
             V_1_LINKS_LINK_INIT,
@@ -107,6 +110,7 @@ public class SecurityConfiguration {
                 .pathMatchers(ALLOW_LIST_APIS).permitAll().and()
                 .authorizeExchange()
                 .pathMatchers(CM_APIS).hasAnyRole(CM.name())
+                .pathMatchers(HIU_HIP_APIS).hasAnyRole(HIU.name(), HIP.name())
                 .pathMatchers(HIP_APIS).hasAnyRole(HIP.name())
                 .pathMatchers(HIU_APIS).hasAnyRole(HIU.name())
                 .and()
