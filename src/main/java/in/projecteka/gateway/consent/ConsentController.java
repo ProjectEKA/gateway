@@ -6,6 +6,8 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
+import net.minidev.json.JSONObject;
+import net.minidev.json.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
+import reactor.util.context.Context;
 
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_FETCH;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
@@ -22,8 +25,7 @@ import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
-import static in.projecteka.gateway.common.Utils.requestInfoLog;
-import static in.projecteka.gateway.common.Utils.responseInfoLog;
+import static in.projecteka.gateway.common.Utils.*;
 
 @RestController
 @AllArgsConstructor
@@ -38,15 +40,18 @@ public class ConsentController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_CONSENT_REQUESTS_INIT)
     public Mono<Void> createConsentRequest(HttpEntity<String> requestEntity) {
+        JSONObject requestBody = (JSONObject) JSONValue.parse(requestEntity.getBody());
+        String requestId = (String) requestBody.get("requestId");
+
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
+                .doOnEach(logWithContext(requestEntity, a -> logger.info("Consent Request init")))
                 .flatMap(clientId -> {
-                    requestInfoLog(requestEntity, clientId
-                            , X_HIU_ID, X_CM_ID
-                            , V_1_CONSENT_REQUESTS_INIT);
-                    logger.info("Consent Request init");
-
+//                    requestInfoLog(requestEntity, clientId
+//                            , X_HIU_ID, X_CM_ID
+//                            , V_1_CONSENT_REQUESTS_INIT);
+                    System.out.println(clientId+"---------->");
                     return consentRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId);
                 });
     }
