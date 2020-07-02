@@ -584,7 +584,7 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties) {
-        return new Heartbeat(rabbitmqOptions,identityProperties);
+    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions) {
+        return new Heartbeat(rabbitmqOptions,identityProperties, redisOptions);
     }
 }
