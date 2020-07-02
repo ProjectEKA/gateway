@@ -3,14 +3,19 @@ package in.projecteka.gateway.common.heartbeat;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import in.projecteka.gateway.clients.IdentityProperties;
+import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
 import in.projecteka.gateway.common.heartbeat.model.Status;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
+
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.SocketAddress;
+import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 
@@ -18,8 +23,9 @@ import static in.projecteka.gateway.clients.model.Error.serviceDownError;
 
 @AllArgsConstructor
 public class Heartbeat {
-    private RabbitmqOptions rabbitmqOptions;
-    private IdentityProperties identityProperties;
+    private final RabbitmqOptions rabbitmqOptions;
+    private final IdentityProperties identityProperties;
+    private final RedisOptions redisOptions;
 
     public Mono<HeartbeatResponse> getStatus() {
         try {
@@ -33,7 +39,7 @@ public class Heartbeat {
                     .status(Status.DOWN)
                     .error(serviceDownError("Service Down"))
                     .build());
-        } catch (IOException | InterruptedException | TimeoutException e) {
+        } catch (IOException | TimeoutException e) {
             return Mono.just(HeartbeatResponse.builder()
                     .timeStamp(Instant.now().toString())
                     .status(Status.DOWN)
@@ -51,12 +57,8 @@ public class Heartbeat {
         return connection.isOpen();
     }
 
-    private boolean isRedisUp() throws IOException, InterruptedException {
-        String command = "redis-cli ping";
-        Runtime runtime = Runtime.getRuntime();
-        Process process = runtime.exec(command);
-        int exitValue = process.waitFor();
-        return exitValue == 0;
+    private boolean isRedisUp() throws IOException {
+        return checkConnection(redisOptions.getHost(), redisOptions.getPort());
     }
 
     private boolean isKeycloakUp() throws IOException {
@@ -66,6 +68,20 @@ public class Heartbeat {
         httpURLConnection.connect();
         int responseCode = httpURLConnection.getResponseCode();
         return responseCode == 200;
+    }
+
+    private boolean checkConnection(String host, int port) throws IOException {
+        boolean isAlive;
+        SocketAddress socketAddress = new InetSocketAddress(host, port);
+        Socket socket = new Socket();
+        try {
+            socket.connect(socketAddress);
+            socket.close();
+            isAlive = true;
+        } catch (IOException exception) {
+            throw exception;
+        }
+        return isAlive;
     }
 }
 
