@@ -8,7 +8,9 @@ import java.util.Arrays;
 public enum ErrorCode {
     UNKNOWN_ERROR_OCCURRED(1000),
     INVALID_TOKEN(1017),
-    SERVICE_DOWN(4222);
+    SERVICE_DOWN(4222),
+    DB_OPERATION_FAILED(1018);
+
     private final int value;
 
     ErrorCode(int val) {

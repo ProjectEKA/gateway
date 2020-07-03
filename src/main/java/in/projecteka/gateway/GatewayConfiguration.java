@@ -21,6 +21,7 @@ import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
+import in.projecteka.gateway.common.MappingRepository;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.RetryableValidatedRequestAction;
@@ -35,9 +36,13 @@ import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.ServiceType;
 import in.projecteka.gateway.registry.YamlRegistry;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.PoolOptions;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -46,6 +51,8 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.util.Pair;
+import org.springframework.data.util.Pair;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -99,6 +106,37 @@ public class GatewayConfiguration {
                 });
     }
 
+    @Bean({"consentManagerMappings"})
+    public CacheAdapter<String, String> createCacheAdapterForCMMappings(MappingRepository mappingRepository) {
+        return new LoadingCacheAdapter(createMappingCacheForCM(2, mappingRepository));
+    }
+
+    public LoadingCache<String, String> createMappingCacheForCM(int duration, MappingRepository mappingRepository) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .build(new CacheLoader<>() {
+                    public String load(String key) {
+                          return "";
+                    }
+                });
+    }
+
+    @Bean({"bridgeMappings"})
+    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(MappingRepository mappingRepository) {
+        return new LoadingCacheAdapter(createMappingCacheForBridge(1, mappingRepository));
+    }
+    public LoadingCache<Pair<String,ServiceType>, String> createMappingCacheForBridge(int duration, MappingRepository mappingRepository) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .build(new CacheLoader<>() {
+                    public String load(Pair<String,ServiceType> key) {
+                        return "";
+                    }
+                });
+    }
+
     @Bean
     public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
@@ -106,13 +144,14 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public CMRegistry cmRegistry(YamlRegistry yamlRegistry) {
-        return new CMRegistry(yamlRegistry);
+    public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings, MappingRepository mappingRepository) {
+        return new CMRegistry(consentManagerMappings, mappingRepository);
     }
 
     @Bean
-    public BridgeRegistry bridgeRegistry(YamlRegistry yamlRegistry) {
-        return new BridgeRegistry(yamlRegistry);
+    public BridgeRegistry bridgeRegistry(CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                         MappingRepository mappingRepository) {
+        return new BridgeRegistry(bridgeMappings, mappingRepository);
     }
 
     @Bean
@@ -628,5 +667,23 @@ public class GatewayConfiguration {
                     configurer.defaultCodecs().jackson2JsonEncoder(encoder);
                     configurer.defaultCodecs().jackson2JsonDecoder(decoder);
                 }).build();
+    }
+
+    @Bean
+    public PgPool pgPool(DbOptions dbOptions) {
+        PgConnectOptions connectOptions = new PgConnectOptions()
+                .setPort(dbOptions.getPort())
+                .setHost(dbOptions.getHost())
+                .setDatabase(dbOptions.getSchema())
+                .setUser(dbOptions.getUser())
+                .setPassword(dbOptions.getPassword());
+        PoolOptions poolOptions = new PoolOptions()
+                .setMaxSize(dbOptions.getPoolSize());
+        return PgPool.pool(connectOptions, poolOptions);
+    }
+
+    @Bean
+    public MappingRepository mappingRepository(PgPool pgPool) {
+        return new MappingRepository(pgPool);
     }
 }

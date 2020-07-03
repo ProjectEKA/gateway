@@ -12,7 +12,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @EnableConfigurationProperties({RedisOptions.class,
         ServiceOptions.class,
         IdentityProperties.class,
-        RabbitmqOptions.class})
+        RabbitmqOptions.class,
+		DbOptions.class})
 public class GatewayApplication {
     public static void main(String[] args) {
         SpringApplication.run(GatewayApplication.class, args);
