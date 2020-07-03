@@ -1,21 +1,15 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import lombok.AllArgsConstructor;
 
 import java.util.Optional;
 
 @AllArgsConstructor
 public class CMRegistry {
-    YamlRegistry yamlRegistry;
-
-    public Optional<YamlRegistryMapping> getConfigFor(String id) {
-        return yamlRegistry.getConsentManagers()
-                .stream()
-                .filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id))
-                .findFirst();
-    }
+    private final CacheAdapter<String, String> consentManagerMappings;
 
     public Optional<String> getHostFor(String id) {
-        return getConfigFor(id).map(YamlRegistryMapping::getHost);
+        return Optional.ofNullable(consentManagerMappings.get(id).toString());
     }
 }

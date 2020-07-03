@@ -21,6 +21,7 @@ import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
+import in.projecteka.gateway.common.MappingRepository;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.RetryableValidatedRequestAction;
@@ -31,12 +32,17 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
+import in.projecteka.gateway.registry.BridgeMappingKey;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.PoolOptions;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -45,7 +51,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.client.WebClient;
-import in.projecteka.gateway.common.heartbeat.Heartbeat;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +63,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
+
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
@@ -91,6 +97,38 @@ public class GatewayConfiguration {
                 });
     }
 
+    @Bean({"consentManagerMappings"})
+    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings(MappingRepository mappingRepository) {
+        return new LoadingCacheAdapter(createMappingCacheForCM(2, mappingRepository));
+    }
+
+    public LoadingCache<String, String> createMappingCacheForCM(int duration, MappingRepository mappingRepository) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .build(new CacheLoader<>() {
+                    public String load(String key) {
+                        return mappingRepository.cmHost(key).block();
+                    }
+                });
+    }
+//
+//    @Bean({"bridgeMappings"})
+//    public CacheAdapter<BridgeMappingKey, String> createLoadingCacheAdapterForBridgeMappings(MappingRepository mappingRepository) {
+//        return new LoadingCacheAdapter(createMappingCacheForBridge(2, mappingRepository));
+//    }
+//
+//    public LoadingCache<BridgeMappingKey, String> createMappingCacheForBridge(int duration, MappingRepository mappingRepository) {
+//        return CacheBuilder
+//                .newBuilder()
+//                .expireAfterWrite(duration, TimeUnit.MINUTES)
+//                .build(new CacheLoader<>() {
+//                    public String load(String key) {
+//                        return mappingRepository.bridgeHost(key).block();
+//                    }
+//                });
+//    }
+
     @Bean
     public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
@@ -98,8 +136,8 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public CMRegistry cmRegistry(YamlRegistry yamlRegistry) {
-        return new CMRegistry(yamlRegistry);
+    public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings) {
+        return new CMRegistry(consentManagerMappings);
     }
 
     @Bean
@@ -586,5 +624,23 @@ public class GatewayConfiguration {
     @Bean
     public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions) {
         return new Heartbeat(rabbitmqOptions,identityProperties, redisOptions);
+    }
+
+    @Bean
+    public PgPool pgPool(DbOptions dbOptions) {
+        PgConnectOptions connectOptions = new PgConnectOptions()
+                .setPort(dbOptions.getPort())
+                .setHost(dbOptions.getHost())
+                .setDatabase(dbOptions.getSchema())
+                .setUser(dbOptions.getUser())
+                .setPassword(dbOptions.getPassword());
+        PoolOptions poolOptions = new PoolOptions()
+                .setMaxSize(dbOptions.getPoolSize());
+        return PgPool.pool(connectOptions, poolOptions);
+    }
+
+    @Bean
+    public MappingRepository mappingRepository(PgPool pgPool) {
+        return new MappingRepository(pgPool);
     }
 }

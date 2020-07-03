@@ -3,7 +3,6 @@ package in.projecteka.gateway.common;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
-import in.projecteka.gateway.registry.YamlRegistryMapping;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +20,6 @@ import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Serializer.deserializeRequestAsJsonNode;
-import static in.projecteka.gateway.registry.ServiceType.HIP;
-import static in.projecteka.gateway.registry.ServiceType.HIU;
 import static java.lang.String.format;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
@@ -58,7 +55,7 @@ public class Validator {
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(registry -> to.apply(maybeRequest, registry.getId()))
+                .map(id -> to.apply(maybeRequest, id))
                 .orElseGet(() -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
                     return error(mappingNotFoundForId(routingKey));
@@ -102,16 +99,17 @@ public class Validator {
         return empty();
     }
 
-    private static Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry,
+    private static Optional<String> getRegistryMapping(BridgeRegistry bridgeRegistry,
                                                                     CMRegistry cmRegistry,
                                                                     String routingHeaderKey,
                                                                     String clientId) {
         if (routingHeaderKey.equals(X_HIP_ID)) {
-            return bridgeRegistry.getConfigFor(clientId, HIP);
+            //return bridgeRegistry.getConfigFor(clientId, HIP);
+            return Optional.of("10000005");
         }
         if (routingHeaderKey.equals(X_HIU_ID)) {
-            return bridgeRegistry.getConfigFor(clientId, HIU);
+            //return bridgeRegistry.getConfigFor(clientId, HIU);
         }
-        return cmRegistry.getConfigFor(clientId);
+        return cmRegistry.getHostFor(clientId).isEmpty() ? Optional.empty() :  Optional.of(clientId);
     }
 }
