@@ -50,7 +50,8 @@ public class Validator {
         return validate(maybeResponse, routingKey, this::toResponse);
     }
 
-    private <T> Mono<T> validate(HttpEntity<String> maybeRequest, String routingKey,
+    private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
+                                 String routingKey,
                                  BiFunction<HttpEntity<String>, String, Mono<T>> to) {
         String clientId = maybeRequest.getHeaders().getFirst(routingKey);
         if (!hasText(clientId)) {
