@@ -73,6 +73,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
+
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
@@ -107,7 +108,7 @@ public class GatewayConfiguration {
     }
 
     @Bean({"consentManagerMappings"})
-    public CacheAdapter<String, String> createCacheAdapterForCMMappings(MappingRepository mappingRepository) {
+    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings(MappingRepository mappingRepository) {
         return new LoadingCacheAdapter(createMappingCacheForCM(2, mappingRepository));
     }
 

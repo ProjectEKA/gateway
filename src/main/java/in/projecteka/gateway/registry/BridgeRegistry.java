@@ -14,7 +14,7 @@ public class BridgeRegistry {
     public Mono<String> getHostFor(String id, ServiceType serviceType) {
         return bridgeMappings.get(Pair.of(id, serviceType))
                 .switchIfEmpty(mappingRepository.bridgeHost(Pair.of(id, serviceType))
-                    .flatMap(url -> bridgeMappings.put(Pair.of(id, serviceType), url)
-                        .thenReturn(url)));
+                        .flatMap(url -> bridgeMappings.put(Pair.of(id, serviceType), url)
+                                .thenReturn(url)));
     }
 }
