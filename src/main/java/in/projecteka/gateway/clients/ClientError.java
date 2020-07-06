@@ -6,10 +6,12 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
+import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.TOO_MANY_REQUESTS;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Getter
@@ -38,9 +40,9 @@ public class ClientError extends Throwable {
         return new ClientError(BAD_REQUEST, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
-    public static ClientError unAuthorized() {
-        return new ClientError(UNAUTHORIZED,
-                new ErrorRepresentation(new Error(INVALID_TOKEN, "Token verification failed")));
+    public static ClientError tooManyRequests() {
+        return new ClientError(TOO_MANY_REQUESTS,
+                new ErrorRepresentation(new Error(TOO_MANY_REQUESTS_FOUND, "Too many requests found")));
     }
 
     public static ClientError unknownUnAuthorizedError(String message) {

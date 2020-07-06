@@ -48,6 +48,9 @@ class RequestOrchestratorTest {
     CacheAdapter<String, String> requestIdMappings;
 
     @Mock
+    CacheAdapter<String, String> requestIdValidator;
+
+    @Mock
     DiscoveryServiceClient discoveryServiceClient;
 
     @Captor
@@ -65,6 +68,7 @@ class RequestOrchestratorTest {
     void init() {
         MockitoAnnotations.initMocks(this);
         requestOrchestrator = Mockito.spy(new RequestOrchestrator<>(requestIdMappings,
+                requestIdValidator,
                 discoveryValidator,
                 discoveryServiceClient,
                 validatedRequestAction));

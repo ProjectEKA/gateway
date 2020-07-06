@@ -64,6 +64,9 @@ class ValidatorTest {
     CacheAdapter<String, String> requestIdMappings;
 
     @Mock
+    CacheAdapter<String, String> requestIdValidator;
+
+    @Mock
     YamlRegistryMapping cmConfig;
 
     static Stream<Arguments> bridgeConfigs() {
@@ -73,7 +76,7 @@ class ValidatorTest {
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
-        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings));
+        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings, requestIdValidator));
     }
 
     @ParameterizedTest
@@ -204,11 +207,13 @@ class ValidatorTest {
         var testRequestId = string();
         var respNode = Map.of(REQUEST_ID, testRequestId);
         var body = Map.of("resp", respNode);
+        String requestId = UUID.randomUUID().toString();
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(body));
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
         when(cmRegistry.getConfigFor(testCmId)).thenReturn(of(cmConfig));
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.empty());
+        when(requestIdValidator.get(requestId)).thenReturn(Mono.empty());
 
         StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
                 .expectErrorSatisfies(throwable ->
