@@ -14,12 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_FETCH;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.*;
 
 @RestController
 @AllArgsConstructor
@@ -35,13 +30,16 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
+                .flatMap(clientId -> consentRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                        .subscriberContext(context -> context.put("apiCalled", V_1_CONSENT_REQUESTS_INIT)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_CONSENT_REQUESTS_ON_INIT)
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
-        return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+        return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
+                .subscriberContext(context -> context.put("apiCalled",V_1_CONSENT_REQUESTS_ON_INIT));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -50,12 +48,15 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
+                .flatMap(clientId ->
+                        consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                        .subscriberContext(context -> context.put("apiCalled",V_1_CONSENTS_FETCH)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_CONSENTS_ON_FETCH)
     public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
-        return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+        return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
+                        .subscriberContext(context -> context.put("apiCalled",V_1_CONSENTS_ON_FETCH));
     }
 }

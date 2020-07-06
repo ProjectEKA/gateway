@@ -36,13 +36,15 @@ public class LinkController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        linkInitRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId));
+                        linkInitRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId))
+                        .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_INIT));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_LINKS_LINK_ON_INIT)
     public Mono<Void> linkOnInit(HttpEntity<String> requestEntity) {
-        return linkInitResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
+        return linkInitResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
+                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_ON_INIT));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -52,12 +54,14 @@ public class LinkController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        linkConfirmRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId));
+                        linkConfirmRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId))
+                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_CONFIRM));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_LINKS_LINK_ON_CONFIRM)
     public Mono<Void> linkOnConfirm(HttpEntity<String> requestEntity) {
-        return linkConfirmResponseOrchestrator.processResponse(requestEntity, X_CM_ID);
+        return linkConfirmResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
+                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_ON_CONFIRM));
     }
 }

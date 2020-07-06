@@ -9,6 +9,14 @@
         </layout>
     </appender>
 
+    <appender name="jsonConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
+    </appender>
+
+
+    <!--    <Logger name="CONSOLE_JSON_APPENDER" level="TRACE" additivity="false">-->
+<!--        <AppenderRef ref="ConsoleJSONAppender" />-->
+<!--    </Logger>-->
 
 <!--    <appender name="file-appender"-->
 <!--              class="ch.qos.logback.core.rolling.RollingFileAppender">-->
@@ -29,6 +37,7 @@
     <!-- LOG everything at INFO level -->
     <root level="info">
         <appender-ref ref="console"/>
+        <appender-ref ref="jsonConsoleAppender"/>
 <!--        <appender-ref ref="file-appender"/>-->
     </root>
 

@@ -12,11 +12,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.model.Error.unKnownError;
-import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.*;
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @AllArgsConstructor
 public class RequestOrchestrator<T extends ServiceClient> {
@@ -30,25 +33,44 @@ public class RequestOrchestrator<T extends ServiceClient> {
                                  String targetRoutingKey,
                                  String sourceRoutingKey,
                                  String clientId) {
-        return validator.validateRequest(maybeRequest, targetRoutingKey)
-                .doOnSuccess(request -> offloadThis(request, targetRoutingKey, sourceRoutingKey, clientId))
+        StringBuilder apiCalled = new StringBuilder("");
+        return Mono.subscriberContext().flatMap(context -> {
+            apiCalled.append((String) context.get("apiCalled"));
+            return validator.validateRequest(maybeRequest, targetRoutingKey);
+        })
+                .doOnSuccess(request -> offloadThis(request, targetRoutingKey, sourceRoutingKey, clientId, apiCalled.toString()))
                 .then();
     }
 
     private void offloadThis(ValidatedRequest validatedRequest,
                              String targetRoutingKey,
                              String sourceRoutingKey,
-                             String clientId) {
+                             String clientId, String apiCalled) {
         Mono.defer(() -> {
             var gatewayRequestId = UUID.randomUUID();
             var downstreamRequestId = gatewayRequestId.toString();
             var request = validatedRequest.getDeSerializedRequest();
             var upstreamRequestId = validatedRequest.getRequesterRequestId();
             request.put(REQUEST_ID, gatewayRequestId);
+            Map<String, String> nameMap = new HashMap<>();
+            nameMap.put(X_HIU_ID, "HIU");
+            nameMap.put(X_CM_ID, "CM");
+            nameMap.put(X_HIP_ID, "HIP");
+
+            logger.info("", keyValue("requestId", upstreamRequestId)
+                    , keyValue("source", nameMap.get(sourceRoutingKey))
+                    , keyValue("sourceId", clientId)
+                    , keyValue("apiCalled", apiCalled)
+                    , keyValue("target", nameMap.get(targetRoutingKey))
+                    , keyValue("targetId", validatedRequest.getClientId()));
+
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
-                    .flatMap(updatedRequest ->
-                            requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey))
+                    .flatMap(updatedRequest -> {
+                        logger.info("", keyValue("requestId", upstreamRequestId)
+                                , keyValue("gatewayId", gatewayRequestId));
+                        return requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey);
+                    })
                     .onErrorMap(ClientError.class,
                             clientError -> {
                                 logger.error(clientError.getMessage(), clientError);
