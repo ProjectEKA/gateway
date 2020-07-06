@@ -55,10 +55,10 @@ public class Validator {
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(id -> to.apply(maybeRequest, id))
-                .orElseGet(() -> {
+                .flatMap(id -> Mono.defer(() -> to.apply(maybeRequest, id)))
+                .doOnError(exception -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
-                    return error(mappingNotFoundForId(routingKey));
+                    //error(mappingNotFoundForId(routingKey));
                 });
     }
 
@@ -99,17 +99,18 @@ public class Validator {
         return empty();
     }
 
-    private static Optional<String> getRegistryMapping(BridgeRegistry bridgeRegistry,
+    private static Mono<String> getRegistryMapping(BridgeRegistry bridgeRegistry,
                                                                     CMRegistry cmRegistry,
                                                                     String routingHeaderKey,
                                                                     String clientId) {
         if (routingHeaderKey.equals(X_HIP_ID)) {
             //return bridgeRegistry.getConfigFor(clientId, HIP);
-            return Optional.of("10000005");
         }
         if (routingHeaderKey.equals(X_HIU_ID)) {
             //return bridgeRegistry.getConfigFor(clientId, HIU);
         }
-        return cmRegistry.getHostFor(clientId).isEmpty() ? Optional.empty() :  Optional.of(clientId);
+        return cmRegistry.getHostFor(clientId)
+                .switchIfEmpty(error(mappingNotFoundForId(routingHeaderKey)))
+                .flatMap(host -> Mono.just(clientId));
     }
 }

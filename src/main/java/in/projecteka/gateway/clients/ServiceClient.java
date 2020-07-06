@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
@@ -49,20 +48,20 @@ public abstract class ServiceClient {
         return routeCommon(request, clientId, this::getResponseUrl, sourceRoutingKey);
     }
 
-    protected abstract Optional<String> getResponseUrl(String clientId);
+    protected abstract Mono<String> getResponseUrl(String clientId);
 
-    protected abstract Optional<String> getRequestUrl(String clientId);
+    protected abstract Mono<String> getRequestUrl(String clientId);
 
 
     private <T> Mono<Void> routeCommon(T requestBody,
                                        String clientId,
-                                       Function<String, Optional<String>> urlGetter,
+                                       Function<String, Mono<String>> urlGetter,
                                        String routingKey) {
         return urlGetter.apply(clientId)
-                .map(url -> from(requestBody).map(serialized -> route(serialized, url, routingKey, clientId)).orElse(empty()))
-                .orElseGet(() -> {
+                .flatMap(url -> from(requestBody).map(serialized -> route(serialized, url, routingKey, clientId)).orElse(empty()))
+                .switchIfEmpty(error(mappingNotFoundForId(clientId)))
+                .doOnError(exception -> {
                     logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
-                    return error(mappingNotFoundForId(clientId));
                 });
     }
 

@@ -1,15 +1,19 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.common.MappingRepository;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import lombok.AllArgsConstructor;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
 public class CMRegistry {
     private final CacheAdapter<String, String> consentManagerMappings;
+    private final MappingRepository mappingRepository;
 
-    public Optional<String> getHostFor(String id) {
-        return Optional.ofNullable(consentManagerMappings.get(id).toString());
+    public Mono<String> getHostFor(String id) {
+        return consentManagerMappings.get(id)
+                .switchIfEmpty(mappingRepository.cmHost(id)
+                        .flatMap(url -> consentManagerMappings.put(id, url)
+                                .thenReturn(url)));
     }
 }

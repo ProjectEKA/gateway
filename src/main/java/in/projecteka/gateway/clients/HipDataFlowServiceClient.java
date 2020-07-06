@@ -30,12 +30,12 @@ public class HipDataFlowServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Optional<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId) {
         return cmRegistry.getHostFor(clientId).map(host -> host + RESPONSE_ROUTE);
     }
 
     @Override
-    protected Optional<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId) {
         return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + REQUEST_ROUTE);
     }
 }

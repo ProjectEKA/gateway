@@ -34,7 +34,6 @@ import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
-import in.projecteka.gateway.registry.BridgeMappingKey;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -63,7 +62,6 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
-
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
@@ -98,7 +96,7 @@ public class GatewayConfiguration {
     }
 
     @Bean({"consentManagerMappings"})
-    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings(MappingRepository mappingRepository) {
+    public CacheAdapter<String, String> createCacheAdapterForCMMappings(MappingRepository mappingRepository) {
         return new LoadingCacheAdapter(createMappingCacheForCM(2, mappingRepository));
     }
 
@@ -108,26 +106,10 @@ public class GatewayConfiguration {
                 .expireAfterWrite(duration, TimeUnit.MINUTES)
                 .build(new CacheLoader<>() {
                     public String load(String key) {
-                        return mappingRepository.cmHost(key).block();
+                          return "";
                     }
                 });
     }
-//
-//    @Bean({"bridgeMappings"})
-//    public CacheAdapter<BridgeMappingKey, String> createLoadingCacheAdapterForBridgeMappings(MappingRepository mappingRepository) {
-//        return new LoadingCacheAdapter(createMappingCacheForBridge(2, mappingRepository));
-//    }
-//
-//    public LoadingCache<BridgeMappingKey, String> createMappingCacheForBridge(int duration, MappingRepository mappingRepository) {
-//        return CacheBuilder
-//                .newBuilder()
-//                .expireAfterWrite(duration, TimeUnit.MINUTES)
-//                .build(new CacheLoader<>() {
-//                    public String load(String key) {
-//                        return mappingRepository.bridgeHost(key).block();
-//                    }
-//                });
-//    }
 
     @Bean
     public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
@@ -136,8 +118,8 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings) {
-        return new CMRegistry(consentManagerMappings);
+    public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings, MappingRepository mappingRepository) {
+        return new CMRegistry(consentManagerMappings, mappingRepository);
     }
 
     @Bean
