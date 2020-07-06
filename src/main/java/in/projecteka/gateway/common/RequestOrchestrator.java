@@ -23,7 +23,7 @@ import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 public class RequestOrchestrator<T extends ServiceClient> {
     private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
     CacheAdapter<String, String> requestIdMappings;
-    CacheAdapter<String, String> requestIdValidator;
+    CacheAdapter<String, String> requestIdTimestampMappings;
     Validator validator;
     T serviceClient;
     ValidatedRequestAction requestAction;
@@ -48,7 +48,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             var upstreamRequestId = validatedRequest.getRequesterRequestId();
             request.put(REQUEST_ID, gatewayRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
-                    .then(requestIdValidator.put(upstreamRequestId.toString(), request.get(TIMESTAMP).toString()))
+                    .then(requestIdTimestampMappings.put(upstreamRequestId.toString(), request.get(TIMESTAMP).toString()))
                     .thenReturn(request)
                     .flatMap(updatedRequest ->
                             requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey))

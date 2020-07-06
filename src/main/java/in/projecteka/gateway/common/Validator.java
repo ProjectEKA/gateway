@@ -45,34 +45,38 @@ public class Validator {
     BridgeRegistry bridgeRegistry;
     CMRegistry cmRegistry;
     CacheAdapter<String, String> requestIdMappings;
-    CacheAdapter<String, String> requestIdValidator;
+    CacheAdapter<String, String> requestIdTimestampMappings;
 
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
-        return validate(maybeRequest, routingKey, Validator::toRequest);
+        return validateReq(maybeRequest, routingKey, Validator::toRequest);
     }
 
     public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
         return validate(maybeResponse, routingKey, this::toResponse);
     }
 
-    private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
+    private <T> Mono<T> validateReq(HttpEntity<String> maybeRequest,
                                  String routingKey,
                                  BiFunction<HttpEntity<String>, String, Mono<T>> to) {
         return Mono.just(maybeRequest)
                 .filterWhen(this::isValidRequest)
                 .switchIfEmpty(error(tooManyRequests()))
-                .flatMap(val -> {
-                    String clientId = maybeRequest.getHeaders().getFirst(routingKey);
-                    if (!hasText(clientId)) {
-                        logger.error(HEADER_NOT_FOUND, routingKey);
-                        return error(mappingNotFoundForId(routingKey));
-                    }
-                    return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                            .map(registry -> to.apply(maybeRequest, registry.getId()))
-                            .orElseGet(() -> {
-                                logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
-                                return error(mappingNotFoundForId(routingKey));
-                            });
+                .flatMap(val -> validate(maybeRequest, routingKey, to));
+    }
+
+    private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
+                                 String routingKey,
+                                 BiFunction<HttpEntity<String>, String, Mono<T>> to) {
+        String clientId = maybeRequest.getHeaders().getFirst(routingKey);
+        if (!hasText(clientId)) {
+            logger.error(HEADER_NOT_FOUND, routingKey);
+            return error(mappingNotFoundForId(routingKey));
+        }
+        return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
+                .map(registry -> to.apply(maybeRequest, registry.getId()))
+                .orElseGet(() -> {
+                    logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
+                    return error(mappingNotFoundForId(routingKey));
                 });
     }
 
@@ -135,7 +139,7 @@ public class Validator {
 
     private Mono<Boolean> isRequestIdPresent(HttpEntity<String> maybeRequest) {
         return getValue(maybeRequest, REQUEST_ID)
-                .flatMap(requestId -> requestIdValidator.get(requestId))
+                .flatMap(requestId -> requestIdTimestampMappings.get(requestId))
                 .map(StringUtils::hasText)
                 .switchIfEmpty(Mono.just(false));
     }
