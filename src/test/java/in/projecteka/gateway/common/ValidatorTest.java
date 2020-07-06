@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -162,7 +163,7 @@ class ValidatorTest {
         var requestId = UUID.randomUUID();
         var bridgeId = string();
         var bridgeConfig = yamlRegistryMapping().id(bridgeId).build();
-        String timestamp = LocalDateTime.now().plusMinutes(2).toString();
+        String timestamp = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(2).toString();
         var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
 
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);

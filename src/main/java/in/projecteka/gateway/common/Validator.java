@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,39 +48,6 @@ public class Validator {
     CacheAdapter<String, String> requestIdMappings;
     CacheAdapter<String, String> requestIdTimestampMappings;
 
-    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
-        return validateReq(maybeRequest, routingKey, Validator::toRequest);
-    }
-
-    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
-        return validate(maybeResponse, routingKey, this::toResponse);
-    }
-
-    private <T> Mono<T> validateReq(HttpEntity<String> maybeRequest,
-                                 String routingKey,
-                                 BiFunction<HttpEntity<String>, String, Mono<T>> to) {
-        return Mono.just(maybeRequest)
-                .filterWhen(this::isValidRequest)
-                .switchIfEmpty(error(tooManyRequests()))
-                .flatMap(val -> validate(maybeRequest, routingKey, to));
-    }
-
-    private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
-                                 String routingKey,
-                                 BiFunction<HttpEntity<String>, String, Mono<T>> to) {
-        String clientId = maybeRequest.getHeaders().getFirst(routingKey);
-        if (!hasText(clientId)) {
-            logger.error(HEADER_NOT_FOUND, routingKey);
-            return error(mappingNotFoundForId(routingKey));
-        }
-        return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .map(registry -> to.apply(maybeRequest, registry.getId()))
-                .orElseGet(() -> {
-                    logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
-                    return error(mappingNotFoundForId(routingKey));
-                });
-    }
-
     private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, String clientId) {
         return Serializer.from(maybeRequest)
                 .filter(request -> hasText((String) request.get(REQUEST_ID)))
@@ -89,22 +57,6 @@ public class Validator {
                     var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
                     logger.error(errorMessage);
                     return error(invalidRequest(errorMessage));
-                });
-    }
-
-    private Mono<ValidatedResponse> toResponse(HttpEntity<String> maybeResponse, String clientId) {
-        return deserializeRequestAsJsonNode(maybeResponse)
-                .filter(jsonNode -> !jsonNode.path("resp").path(REQUEST_ID).asText().isEmpty())
-                .switchIfEmpty(defer(() -> {
-                    logger.error(RESP_REQUEST_ID_IS_NULL_OR_EMPTY);
-                    return error(invalidRequest(RESP_REQUEST_ID_IS_NULL_OR_EMPTY));
-                }))
-                .flatMap(jsonNode -> {
-                    var respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
-                    return requestIdMappings.get(respRequestId)
-                            .filter(StringUtils::hasText)
-                            .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
-                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
                 });
     }
 
@@ -130,25 +82,72 @@ public class Validator {
         return cmRegistry.getConfigFor(clientId);
     }
 
+    public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
+        return validateReq(maybeRequest, routingKey, Validator::toRequest);
+    }
+
+    public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
+        return validate(maybeResponse, routingKey, this::toResponse);
+    }
+
+    private <T> Mono<T> validateReq(HttpEntity<String> maybeRequest,
+                                    String routingKey,
+                                    BiFunction<HttpEntity<String>, String, Mono<T>> to) {
+        return Mono.just(maybeRequest)
+                .filterWhen(this::isValidRequest)
+                .switchIfEmpty(error(tooManyRequests()))
+                .flatMap(val -> validate(maybeRequest, routingKey, to));
+    }
+
+    private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
+                                 String routingKey,
+                                 BiFunction<HttpEntity<String>, String, Mono<T>> to) {
+        String clientId = maybeRequest.getHeaders().getFirst(routingKey);
+        if (!hasText(clientId)) {
+            logger.error(HEADER_NOT_FOUND, routingKey);
+            return error(mappingNotFoundForId(routingKey));
+        }
+        return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
+                .map(registry -> to.apply(maybeRequest, registry.getId()))
+                .orElseGet(() -> {
+                    logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
+                    return error(mappingNotFoundForId(routingKey));
+                });
+    }
+
+    private Mono<ValidatedResponse> toResponse(HttpEntity<String> maybeResponse, String clientId) {
+        return deserializeRequestAsJsonNode(maybeResponse)
+                .filter(jsonNode -> !jsonNode.path("resp").path(REQUEST_ID).asText().isEmpty())
+                .switchIfEmpty(defer(() -> {
+                    logger.error(RESP_REQUEST_ID_IS_NULL_OR_EMPTY);
+                    return error(invalidRequest(RESP_REQUEST_ID_IS_NULL_OR_EMPTY));
+                }))
+                .flatMap(jsonNode -> {
+                    var respRequestId = jsonNode.path("resp").path(REQUEST_ID).asText();
+                    return requestIdMappings.get(respRequestId)
+                            .filter(StringUtils::hasText)
+                            .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
+                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
+                });
+    }
+
     private Mono<Boolean> isValidRequest(HttpEntity<String> maybeRequest) {
         return isRequestIdPresent(maybeRequest)
-                .flatMap(isRequestIdPresent -> isRequestIdValidInGivenTimestamp(maybeRequest)
-                        .flatMap(isRequestIdValidInGivenTimestamp ->
-                                Mono.just(!isRequestIdPresent && isRequestIdValidInGivenTimestamp)));
+                .flatMap(result -> error(tooManyRequests()))
+                .then(isRequestIdValidInGivenTimestamp(maybeRequest));
     }
 
     private Mono<Boolean> isRequestIdPresent(HttpEntity<String> maybeRequest) {
         return getValue(maybeRequest, REQUEST_ID)
                 .flatMap(requestId -> requestIdTimestampMappings.get(requestId))
-                .map(StringUtils::hasText)
-                .switchIfEmpty(Mono.just(false));
+                .map(StringUtils::hasText);
     }
 
     private Mono<String> getValue(HttpEntity<String> maybeRequest, String key) {
         return Serializer.from(maybeRequest)
                 .filter(request -> hasText((String) request.get(key)))
                 .flatMap(request -> of((String) request.get(key))
-                    .map(Mono::just))
+                        .map(Mono::just))
                 .orElseGet(() -> {
                     var errorMessage = "Invalid request";
                     logger.error(errorMessage);
@@ -158,16 +157,17 @@ public class Validator {
 
     private Mono<Boolean> isRequestIdValidInGivenTimestamp(HttpEntity<String> maybeRequest) {
         return getValue(maybeRequest, TIMESTAMP)
-                .flatMap(timestamp -> just(isValidTimestamp(toDate(timestamp))));
-
+                .map(timestamp -> isValidTimestamp(toDate(timestamp)));
     }
+
     private LocalDateTime toDate(String timestamp) {
         return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     private boolean isValidTimestamp(LocalDateTime timestamp) {
-        LocalDateTime currentTime = LocalDateTime.now();
-        LocalDateTime requestExpiryTime = currentTime.plusMinutes(10);
-        return timestamp.isAfter(currentTime) && timestamp.isBefore(requestExpiryTime);
+        LocalDateTime currentTime = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime startTime = currentTime.minusMinutes(1);
+        LocalDateTime endTime = currentTime.plusMinutes(9);
+        return timestamp.isAfter(startTime) && timestamp.isBefore(endTime);
     }
 }

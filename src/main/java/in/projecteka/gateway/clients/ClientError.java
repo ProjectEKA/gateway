@@ -5,7 +5,6 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
