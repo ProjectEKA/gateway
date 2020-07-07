@@ -1,6 +1,5 @@
 package in.projecteka.gateway.link.discovery;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;

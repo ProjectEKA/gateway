@@ -16,6 +16,7 @@ import reactor.core.publisher.Mono;
 import static in.projecteka.gateway.common.Constants.V_1_CERTS;
 import static in.projecteka.gateway.common.Constants.V_1_SESSIONS;
 import static in.projecteka.gateway.common.Constants.V_1_WELL_KNOWN_OPENID_CONFIGURATION;
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @RestController
 @AllArgsConstructor
@@ -26,7 +27,7 @@ public class SessionController {
 
     @PostMapping(V_1_SESSIONS)
     public Mono<Session> with(@RequestBody SessionRequest session) {
-        logger.info("sessions request came for client id {}", session.getClientId());
+        logger.info("", keyValue("clientId", session.getClientId()));
         return identityService.getTokenFor(session.getClientId(), session.getClientSecret());
     }
 
