@@ -13,7 +13,6 @@ import in.projecteka.gateway.common.ValidatedResponse;
 import in.projecteka.gateway.common.ValidatedResponseAction;
 import in.projecteka.gateway.common.Validator;
 import org.json.JSONException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -26,15 +25,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -60,9 +56,6 @@ class ConsentControllerTest {
     RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
 
     @Qualifier("consentResponseOrchestrator")
-    ResponseOrchestrator responseOrchestrator;
-
-    @Qualifier("consentResponseOrchestrator")
     @MockBean
     ResponseOrchestrator consentResponseOrchestrator;
 
@@ -85,11 +78,6 @@ class ConsentControllerTest {
     @MockBean
     Authenticator authenticator;
 
-    @BeforeEach
-    void init(){
-        responseOrchestrator = new ResponseOrchestrator(consentRequestValidator
-                ,validatedResponseAction);
-    }
     @Test
     void shouldFireAndForgetForConsentRequestInit() {
         var token = string();
@@ -110,23 +98,24 @@ class ConsentControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForConsentRequestOnInit() throws JsonProcessingException {
-        var requestId = UUID.randomUUID().toString();
+    void shouldFireAndForgetForConsentRequestOnInit() {
+//        var requestId = UUID.randomUUID().toString();
         var token = string();
-        var callerRequestId = UUID.randomUUID().toString();
-        var objectNode = OBJECT_MAPPER.createObjectNode();
-        var respNode = OBJECT_MAPPER.createObjectNode();
-        var testId = string();
-        objectNode.put(REQUEST_ID, requestId);
-        respNode.put(REQUEST_ID, callerRequestId);
-        objectNode.set("resp", respNode);
-        var routingKey = X_HIU_ID;
-        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
+//        var callerRequestId = UUID.randomUUID().toString();
+//        var objectNode = OBJECT_MAPPER.createObjectNode();
+//        var respNode = OBJECT_MAPPER.createObjectNode();
+//        var testId = string();
+//        objectNode.put(REQUEST_ID, requestId);
+//        respNode.put(REQUEST_ID, callerRequestId);
+//        objectNode.set("resp", respNode);
+//        var routingKey = X_HIU_ID;
+//        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-        when(consentRequestValidator.validateResponse(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
-                .thenReturn(empty());
+//        when(consentRequestValidator.validateResponse(requestEntity, routingKey))
+//                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
+//        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
+//                .thenReturn(empty());
+        when(consentResponseOrchestrator.processResponse(any(),eq(X_HIU_ID))).thenReturn(empty());
 
         webTestClient
                 .post()
