@@ -92,12 +92,15 @@ class RequestOrchestratorTest {
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
         String clientId = string();
+        var apiCalled = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
         when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)).verifyComplete();
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+                .subscriberContext(context -> context.put("apiCalled",apiCalled)))
+                .verifyComplete();
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
     }
 
@@ -117,7 +120,8 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+                .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -131,6 +135,7 @@ class RequestOrchestratorTest {
     void notifyCallerAboutUnknownFailure(String routingKey) throws JsonProcessingException {
         var clientId = string();
         var requestId = UUID.randomUUID();
+        var apiCalled = string();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
@@ -141,7 +146,8 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+                .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);
@@ -157,6 +163,7 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
+        var apiCalled = string();
         var targetClientId = string();
         when(discoveryValidator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
@@ -165,7 +172,8 @@ class RequestOrchestratorTest {
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+                .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
         verify(discoveryValidator).validateRequest(requestEntity, routingKey);

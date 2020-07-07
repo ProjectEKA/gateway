@@ -57,9 +57,7 @@ class ResponseOrchestratorTest {
         when(validator.validateResponse(requestEntity, X_CM_ID)).thenReturn(error(error));
 
         StepVerifier.create(responseOrchestrator.processResponse(requestEntity, X_CM_ID))
-                .expectErrorSatisfies(throwable -> {
-                    assertThat(throwable).isEqualToComparingFieldByField(error);
-                })
+                .expectErrorSatisfies(throwable -> assertThat(throwable).isEqualToComparingFieldByField(error))
                 .verify();
     }
 
@@ -72,6 +70,7 @@ class ResponseOrchestratorTest {
         var testCmId = string();
         var routingKey = X_CM_ID;
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
+        var apiCalled = string();
         objectNode.put(REQUEST_ID, requestId);
         respNode.put(REQUEST_ID, cmRequestId);
         objectNode.set("resp", respNode);
@@ -81,7 +80,7 @@ class ResponseOrchestratorTest {
         when(validatedResponseAction.execute(eq(testCmId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
                 .thenReturn(empty());
 
-        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, routingKey))
+        StepVerifier.create(responseOrchestrator.processResponse(requestEntity, routingKey).subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
         verify(validator).validateResponse(requestEntity, routingKey);

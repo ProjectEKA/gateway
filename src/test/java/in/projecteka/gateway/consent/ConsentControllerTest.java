@@ -99,22 +99,8 @@ class ConsentControllerTest {
 
     @Test
     void shouldFireAndForgetForConsentRequestOnInit() {
-//        var requestId = UUID.randomUUID().toString();
         var token = string();
-//        var callerRequestId = UUID.randomUUID().toString();
-//        var objectNode = OBJECT_MAPPER.createObjectNode();
-//        var respNode = OBJECT_MAPPER.createObjectNode();
-//        var testId = string();
-//        objectNode.put(REQUEST_ID, requestId);
-//        respNode.put(REQUEST_ID, callerRequestId);
-//        objectNode.set("resp", respNode);
-//        var routingKey = X_HIU_ID;
-//        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-//        when(consentRequestValidator.validateResponse(requestEntity, routingKey))
-//                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-//        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
-//                .thenReturn(empty());
         when(consentResponseOrchestrator.processResponse(any(),eq(X_HIU_ID))).thenReturn(empty());
 
         webTestClient
@@ -148,7 +134,7 @@ class ConsentControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException, JSONException {
+    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         var callerRequestId = UUID.randomUUID().toString();
         var objectNode = OBJECT_MAPPER.createObjectNode();
