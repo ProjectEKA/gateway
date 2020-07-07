@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
@@ -161,7 +162,11 @@ public class Validator {
     }
 
     private LocalDateTime toDate(String timestamp) {
-        return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .optionalStart().appendOffsetId()
+                .toFormatter();
+        return LocalDateTime.parse(timestamp, dateTimeFormatter);
     }
 
     private boolean isValidTimestamp(LocalDateTime timestamp) {
