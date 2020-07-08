@@ -1,5 +1,5 @@
 server:
-  port: 8004
+  port: 8000
 spring:
   rabbitmq:
     host: localhost
@@ -8,10 +8,10 @@ spring:
     password: guest
 identity:
   clientId: gateway
-  clientSecret: 7672d2c6-8555-462e-9c11-f83d667a86c5
+  clientSecret: ${CLIENT_SECRET}
   url: http://localhost:9001/auth
   realm: central-registry
-  host: ${HOST:http://localhost:8004}
+  host: ${HOST:http://localhost:8000}
 gateway:
   db:
     host: localhost
