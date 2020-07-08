@@ -1,7 +1,6 @@
 package in.projecteka.gateway;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -37,7 +36,6 @@ import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.ServiceType;
-import in.projecteka.gateway.registry.YamlRegistry;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.vertx.pgclient.PgConnectOptions;
@@ -61,8 +59,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
@@ -135,12 +131,6 @@ public class GatewayConfiguration {
                         return "";
                     }
                 });
-    }
-
-    @Bean
-    public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(new File(serviceOptions.getRegistryPath()), YamlRegistry.class);
     }
 
     @Bean
