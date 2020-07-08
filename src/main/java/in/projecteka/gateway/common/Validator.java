@@ -92,9 +92,9 @@ public class Validator {
                             .filter(StringUtils::hasText)
                             .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
                             .map(callerRequestId -> {
-                                logger.info("",keyValue("requestId",callerRequestId),
+                                logger.info("Received a response", keyValue("requestId", callerRequestId),
                                                 keyValue("gatewayId",respRequestId),
-                                                keyValue("sourceId",clientId));
+                                                keyValue("targetId",clientId));
                                 return new ValidatedResponse(clientId, callerRequestId, jsonNode);
                             });
                 });

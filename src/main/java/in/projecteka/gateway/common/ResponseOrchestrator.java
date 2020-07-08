@@ -37,7 +37,7 @@ public class ResponseOrchestrator {
             nameMap.put(X_CM_ID,"CM");
             nameMap.put(X_HIP_ID,"HIP");
             var updatedJsonNode = updateRequestId(response.getDeSerializedJsonNode(), response.getCallerRequestId());
-                    logger.info("", keyValue("requestId", response.getCallerRequestId())
+                    logger.info("Passing the response back to",keyValue("requestId", response.getCallerRequestId())
                     , keyValue("target", nameMap.get(routingKey))
                     , keyValue("targetId", response.getId())
                     ,keyValue("apiCalled",apiCalled));

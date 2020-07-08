@@ -57,7 +57,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             nameMap.put(X_CM_ID, "CM");
             nameMap.put(X_HIP_ID, "HIP");
 
-            logger.info("", keyValue("requestId", upstreamRequestId)
+            logger.info("Received a request", keyValue("requestId", upstreamRequestId)
                     , keyValue("source", nameMap.get(sourceRoutingKey))
                     , keyValue("sourceId", clientId)
                     , keyValue("apiCalled", apiCalled)
@@ -67,7 +67,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
                     .thenReturn(request)
                     .flatMap(updatedRequest -> {
-                        logger.info("", keyValue("requestId", upstreamRequestId)
+                        logger.info("About to call a target ", keyValue("requestId", upstreamRequestId)
                                 , keyValue("gatewayId", gatewayRequestId));
                         return requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey);
                     })

@@ -27,7 +27,7 @@ public class SessionController {
 
     @PostMapping(V_1_SESSIONS)
     public Mono<Session> with(@RequestBody SessionRequest session) {
-        logger.info("", keyValue("clientId", session.getClientId()));
+        logger.info("Session request received ", keyValue("clientId", session.getClientId()));
         return identityService.getTokenFor(session.getClientId(), session.getClientSecret());
     }
 
