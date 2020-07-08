@@ -57,10 +57,11 @@ public class Validator {
             return error(mappingNotFoundForId(routingKey));
         }
         return getRegistryMapping(bridgeRegistry, cmRegistry, routingKey, clientId)
-                .flatMap(id -> Mono.defer(() -> to.apply(maybeRequest, id)))
-                .doOnError(exception -> {
+                .switchIfEmpty(Mono.defer(() -> {
                     logger.error(NO_MAPPING_FOUND_FOR_ROUTING_KEY, routingKey, clientId);
-                });
+                    return error(mappingNotFoundForId(routingKey));
+                }))
+                .flatMap(id -> to.apply(maybeRequest, id));
     }
 
     private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, String clientId) {
@@ -101,21 +102,21 @@ public class Validator {
     }
 
     private static Mono<String> getRegistryMapping(BridgeRegistry bridgeRegistry,
-                                                                    CMRegistry cmRegistry,
-                                                                    String routingHeaderKey,
-                                                                    String clientId) {
+                                                   CMRegistry cmRegistry,
+                                                   String routingHeaderKey,
+                                                   String clientId) {
         if (routingHeaderKey.equals(X_HIP_ID)) {
             return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
-                    .switchIfEmpty(error(mappingNotFoundForId(routingHeaderKey)))
+                    .switchIfEmpty(Mono.empty())
                     .flatMap(host -> Mono.just(clientId));
         }
         if (routingHeaderKey.equals(X_HIU_ID)) {
             return bridgeRegistry.getHostFor(clientId, ServiceType.HIU)
-                    .switchIfEmpty(error(mappingNotFoundForId(routingHeaderKey)))
+                    .switchIfEmpty(Mono.empty())
                     .flatMap(host -> Mono.just(clientId));
         }
         return cmRegistry.getHostFor(clientId)
-                .switchIfEmpty(error(mappingNotFoundForId(routingHeaderKey)))
+                .switchIfEmpty(Mono.empty())
                 .flatMap(host -> Mono.just(clientId));
     }
 }

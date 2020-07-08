@@ -17,7 +17,7 @@ public class MappingRepository {
     private static final String SELECT_BRIDGE_MAPPING = "SELECT bridge.url FROM bridge " +
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.bridge_id = $1 AND bridge_service.type = $2 " +
-            "WHERE bridge.active = $3 AND bridge.blacklisted = $4";
+            "WHERE bridge.active = $3 AND bridge.blacklisted = $4 AND bridge_service.active = $5";
 
     private final PgPool dbClient;
 
@@ -35,14 +35,13 @@ public class MappingRepository {
                                 monoSink.success();
                                 return;
                             }
-                            var host = iterator.next().getString("url");
-                            monoSink.success(host);
+                            monoSink.success(iterator.next().getString(0));
                         }));
     }
 
     public Mono<String> bridgeHost(Pair<String, ServiceType> bridge) {
         return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE_MAPPING)
-                .execute(Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false),
+                .execute(Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false, true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -54,8 +53,7 @@ public class MappingRepository {
                                 monoSink.success();
                                 return;
                             }
-                            var host = iterator.next().getString("url");
-                            monoSink.success(host);
+                            monoSink.success(iterator.next().getString(0));
                         }));
     }
 

@@ -52,7 +52,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.util.Pair;
-import org.springframework.data.util.Pair;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -108,14 +107,14 @@ public class GatewayConfiguration {
     }
 
     @Bean({"consentManagerMappings"})
-    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings(MappingRepository mappingRepository) {
-        return new LoadingCacheAdapter(createMappingCacheForCM(2, mappingRepository));
+    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings() {
+        return new LoadingCacheAdapter(createMappingCacheForCM(12));
     }
 
-    public LoadingCache<String, String> createMappingCacheForCM(int duration, MappingRepository mappingRepository) {
+    public LoadingCache<String, String> createMappingCacheForCM(int duration) {
         return CacheBuilder
                 .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .expireAfterWrite(duration, TimeUnit.HOURS)
                 .build(new CacheLoader<>() {
                     public String load(String key) {
                           return "";
@@ -124,13 +123,13 @@ public class GatewayConfiguration {
     }
 
     @Bean({"bridgeMappings"})
-    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(MappingRepository mappingRepository) {
-        return new LoadingCacheAdapter(createMappingCacheForBridge(1, mappingRepository));
+    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
+        return new LoadingCacheAdapter(createMappingCacheForBridge(12));
     }
-    public LoadingCache<Pair<String,ServiceType>, String> createMappingCacheForBridge(int duration, MappingRepository mappingRepository) {
+    public LoadingCache<Pair<String,ServiceType>, String> createMappingCacheForBridge(int duration) {
         return CacheBuilder
                 .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .expireAfterWrite(duration, TimeUnit.HOURS)
                 .build(new CacheLoader<>() {
                     public String load(Pair<String,ServiceType> key) {
                         return "";
