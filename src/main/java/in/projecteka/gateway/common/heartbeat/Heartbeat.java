@@ -4,6 +4,7 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.common.cache.RedisOptions;
+import in.projecteka.gateway.common.heartbeat.model.CacheMethodProperty;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
 import in.projecteka.gateway.common.heartbeat.model.Status;
 import lombok.AllArgsConstructor;
@@ -23,9 +24,11 @@ import static in.projecteka.gateway.clients.model.Error.serviceDownError;
 
 @AllArgsConstructor
 public class Heartbeat {
+    public static final String CACHE_METHOD_NAME = "guava";
     private final RabbitmqOptions rabbitmqOptions;
     private final IdentityProperties identityProperties;
     private final RedisOptions redisOptions;
+    private final CacheMethodProperty cacheMethod;
 
     public Mono<HeartbeatResponse> getStatus() {
         try {
@@ -58,6 +61,8 @@ public class Heartbeat {
     }
 
     private boolean isRedisUp() throws IOException {
+        if (cacheMethod.getMethodName().equals(CACHE_METHOD_NAME))
+            return true;
         return checkConnection(redisOptions.getHost(), redisOptions.getPort());
     }
 
