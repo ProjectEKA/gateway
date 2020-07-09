@@ -32,6 +32,7 @@ import static in.projecteka.gateway.registry.ServiceType.HIU;
 import static java.lang.String.format;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
 import static org.springframework.util.StringUtils.hasText;
 import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
@@ -128,7 +129,12 @@ public class Validator {
                     return requestIdMappings.get(respRequestId)
                             .filter(StringUtils::hasText)
                             .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
-                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
+                            .map(callerRequestId -> {
+                                logger.info("Received a response {} {} {}", keyValue("requestId", callerRequestId),
+                                        keyValue("gatewayId", respRequestId),
+                                        keyValue("targetId", clientId));
+                                return new ValidatedResponse(clientId, callerRequestId, jsonNode);
+                            });
                 });
     }
 

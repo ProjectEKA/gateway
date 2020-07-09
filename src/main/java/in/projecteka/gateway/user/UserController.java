@@ -31,12 +31,14 @@ public class UserController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId));
+                        patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                        .subscriberContext(context -> context.put("apiCalled",V_1_PATIENTS_FIND)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_PATIENTS_ON_FIND)
     public Mono<Void> onFindPatient(HttpEntity<String> requestEntity) {
-        return patientSearchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID);
+        return patientSearchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
+                .subscriberContext(context -> context.put("apiCalled",V_1_PATIENTS_ON_FIND));
     }
 }
