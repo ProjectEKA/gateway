@@ -13,11 +13,11 @@ import reactor.core.publisher.Mono;
 public class MappingRepository {
     private static final Logger logger = LoggerFactory.getLogger(MappingRepository.class);
     private static final String SELECT_CM_MAPPING = "select url from consent_manager" +
-            " where cm_id = $1 and active = $2 and blacklisted = $3";
+            " where cm_id = $1 and active = $2 and blocklisted = $3";
     private static final String SELECT_BRIDGE_MAPPING = "SELECT bridge.url FROM bridge " +
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.bridge_id = $1 AND bridge_service.type = $2 " +
-            "WHERE bridge.active = $3 AND bridge.blacklisted = $4 AND bridge_service.active = $5";
+            "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
 
     private final PgPool dbClient;
 
