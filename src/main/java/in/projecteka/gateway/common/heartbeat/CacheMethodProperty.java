@@ -1,4 +1,4 @@
-package in.projecteka.gateway.common.heartbeat.model;
+package in.projecteka.gateway.common.heartbeat;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

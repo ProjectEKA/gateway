@@ -4,7 +4,6 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.common.cache.RedisOptions;
-import in.projecteka.gateway.common.heartbeat.model.CacheMethodProperty;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
 import in.projecteka.gateway.common.heartbeat.model.Status;
 import lombok.AllArgsConstructor;
