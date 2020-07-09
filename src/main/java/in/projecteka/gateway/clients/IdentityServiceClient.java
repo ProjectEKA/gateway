@@ -9,7 +9,6 @@ import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -25,18 +24,9 @@ public class IdentityServiceClient {
 
     public IdentityServiceClient(WebClient.Builder webClientBuilder, String baseUrl, String realm) {
         this.realm = realm;
-        this.webClientBuilder = webClientBuilder.baseUrl(baseUrl).filter(logRequest());
+        this.webClientBuilder = webClientBuilder.baseUrl(baseUrl);
     }
 
-    private static ExchangeFilterFunction logRequest() {
-        return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            logger.info("Request: {} {}", clientRequest.method(), clientRequest.url());
-            clientRequest
-                    .headers()
-                    .forEach((name, values) -> values.forEach(value -> logger.info("{}={}", name, value)));
-            return Mono.just(clientRequest);
-        });
-    }
 
     public Mono<Session> getTokenFor(String clientId, String clientSecret) {
         return getToken(loginRequestWith(clientId, clientSecret));

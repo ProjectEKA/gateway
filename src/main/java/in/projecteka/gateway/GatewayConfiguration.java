@@ -31,6 +31,7 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
@@ -41,11 +42,18 @@ import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.reactive.ClientHttpConnector;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
-import in.projecteka.gateway.common.heartbeat.Heartbeat;
+import reactor.netty.http.client.HttpClient;
+import reactor.netty.resources.ConnectionProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -114,7 +122,7 @@ public class GatewayConfiguration {
 
     @Bean("discoveryServiceClient")
     public DiscoveryServiceClient discoveryServiceClient(ServiceOptions serviceOptions,
-                                                         WebClient.Builder builder,
+                                                         @Qualifier("customBuilder") WebClient.Builder builder,
                                                          CMRegistry cmRegistry,
                                                          IdentityService identityService,
                                                          BridgeRegistry bridgeRegistry) {
@@ -164,7 +172,7 @@ public class GatewayConfiguration {
 
     @Bean("linkInitServiceClient")
     public LinkInitServiceClient linkInitServiceClient(ServiceOptions serviceOptions,
-                                                       WebClient.Builder builder,
+                                                       @Qualifier("customBuilder") WebClient.Builder builder,
                                                        CMRegistry cmRegistry,
                                                        IdentityService identityService,
                                                        BridgeRegistry bridgeRegistry) {
@@ -205,11 +213,12 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public LinkConfirmServiceClient linkConfirmServiceClient(ServiceOptions serviceOptions,
-                                                             WebClient.Builder builder,
-                                                             CMRegistry cmRegistry,
-                                                             IdentityService identityService,
-                                                             BridgeRegistry bridgeRegistry) {
+    public LinkConfirmServiceClient linkConfirmServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            CMRegistry cmRegistry,
+            IdentityService identityService,
+            BridgeRegistry bridgeRegistry) {
         return new LinkConfirmServiceClient(builder, serviceOptions, identityService, cmRegistry, bridgeRegistry);
     }
 
@@ -267,20 +276,22 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public ConsentRequestServiceClient consentRequestServiceClient(ServiceOptions serviceOptions,
-                                                                   WebClient.Builder builder,
-                                                                   BridgeRegistry bridgeRegistry,
-                                                                   IdentityService identityService,
-                                                                   CMRegistry cmRegistry) {
+    public ConsentRequestServiceClient consentRequestServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
         return new ConsentRequestServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
     @Bean
-    public ConsentFetchServiceClient consentFetchServiceClient(ServiceOptions serviceOptions,
-                                                               WebClient.Builder builder,
-                                                               BridgeRegistry bridgeRegistry,
-                                                               IdentityService identityService,
-                                                               CMRegistry cmRegistry) {
+    public ConsentFetchServiceClient consentFetchServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
         return new ConsentFetchServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
@@ -359,8 +370,9 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public IdentityServiceClient clientRegistryClient(WebClient.Builder builder,
-                                                      IdentityProperties identityProperties) {
+    public IdentityServiceClient clientRegistryClient(
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityProperties identityProperties) {
         return new IdentityServiceClient(builder, identityProperties.getUrl(), identityProperties.getRealm());
     }
 
@@ -371,11 +383,12 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public HipConsentNotifyServiceClient hipConsentNotifyServiceClient(ServiceOptions serviceOptions,
-                                                                       WebClient.Builder builder,
-                                                                       IdentityService identityService,
-                                                                       CMRegistry cmRegistry,
-                                                                       BridgeRegistry bridgeRegistry) {
+    public HipConsentNotifyServiceClient hipConsentNotifyServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            CMRegistry cmRegistry,
+            BridgeRegistry bridgeRegistry) {
         return new HipConsentNotifyServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
     }
 
@@ -400,11 +413,12 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient(ServiceOptions serviceOptions,
-                                                                       WebClient.Builder builder,
-                                                                       IdentityService identityService,
-                                                                       CMRegistry cmRegistry,
-                                                                       BridgeRegistry bridgeRegistry) {
+    public HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            CMRegistry cmRegistry,
+            BridgeRegistry bridgeRegistry) {
         return new HiuConsentNotifyServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
     }
 
@@ -442,11 +456,12 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public PatientSearchServiceClient patientSearchServiceClient(ServiceOptions serviceOptions,
-                                                                 WebClient.Builder builder,
-                                                                 IdentityService identityService,
-                                                                 BridgeRegistry bridgeRegistry,
-                                                                 CMRegistry cmRegistry) {
+    public PatientSearchServiceClient patientSearchServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            BridgeRegistry bridgeRegistry,
+            CMRegistry cmRegistry) {
         return new PatientSearchServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
@@ -464,11 +479,12 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public DataFlowRequestServiceClient dataFlowRequestServiceClient(ServiceOptions serviceOptions,
-                                                                     WebClient.Builder builder,
-                                                                     IdentityService identityService,
-                                                                     BridgeRegistry bridgeRegistry,
-                                                                     CMRegistry cmRegistry) {
+    public DataFlowRequestServiceClient dataFlowRequestServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            BridgeRegistry bridgeRegistry,
+            CMRegistry cmRegistry) {
         return new DataFlowRequestServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
@@ -506,10 +522,11 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public HealthInfoNotificationServiceClient healthInformationRequestServiceClient(ServiceOptions serviceOptions,
-                                                                                     WebClient.Builder builder,
-                                                                                     IdentityService centralRegistry,
-                                                                                     CMRegistry cmRegistry) {
+    public HealthInfoNotificationServiceClient healthInformationRequestServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService centralRegistry,
+            CMRegistry cmRegistry) {
         return new HealthInfoNotificationServiceClient(serviceOptions, builder, centralRegistry, cmRegistry);
     }
 
@@ -535,7 +552,7 @@ public class GatewayConfiguration {
 
     @Bean
     public HipDataFlowServiceClient hipDataFlowServiceClient(ServiceOptions serviceOptions,
-                                                             WebClient.Builder builder,
+                                                             @Qualifier("customBuilder") WebClient.Builder builder,
                                                              CMRegistry cmRegistry,
                                                              IdentityService identityService,
                                                              BridgeRegistry bridgeRegistry) {
@@ -617,6 +634,31 @@ public class GatewayConfiguration {
 
     @Bean
     public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions) {
-        return new Heartbeat(rabbitmqOptions,identityProperties, redisOptions);
+        return new Heartbeat(rabbitmqOptions, identityProperties, redisOptions);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "webclient.keepalive", havingValue = "false")
+    public ClientHttpConnector clientHttpConnector() {
+        return new ReactorClientHttpConnector(HttpClient.create(ConnectionProvider.newConnection()));
+    }
+
+    @Bean("customBuilder")
+    public WebClient.Builder webClient(final ClientHttpConnector clientHttpConnector, ObjectMapper objectMapper) {
+        return WebClient
+                .builder()
+                .exchangeStrategies(exchangeStrategies(objectMapper))
+                .clientConnector(clientHttpConnector);
+    }
+
+    private ExchangeStrategies exchangeStrategies(ObjectMapper objectMapper) {
+        var encoder = new Jackson2JsonEncoder(objectMapper);
+        var decoder = new Jackson2JsonDecoder(objectMapper);
+        return ExchangeStrategies
+                .builder()
+                .codecs(configurer -> {
+                    configurer.defaultCodecs().jackson2JsonEncoder(encoder);
+                    configurer.defaultCodecs().jackson2JsonDecoder(decoder);
+                }).build();
     }
 }

@@ -26,3 +26,5 @@ identity:
   url: ${KEYCLOAK_URL}
   realm: ${REALM}
   host: ${GATEWAY_HOST}
+webclient:
+  keepAlive: ${GATEWAY_KEEP_ALIVE:true}
