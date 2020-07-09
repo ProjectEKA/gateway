@@ -17,11 +17,13 @@ import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.model.Error.unKnownError;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 
 @AllArgsConstructor
 public class RequestOrchestrator<T extends ServiceClient> {
     private static final Logger logger = LoggerFactory.getLogger(RequestOrchestrator.class);
     CacheAdapter<String, String> requestIdMappings;
+    CacheAdapter<String, String> requestIdTimestampMappings;
     Validator validator;
     T serviceClient;
     ValidatedRequestAction requestAction;
@@ -46,6 +48,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
             var upstreamRequestId = validatedRequest.getRequesterRequestId();
             request.put(REQUEST_ID, gatewayRequestId);
             return requestIdMappings.put(downstreamRequestId, upstreamRequestId.toString())
+                    .then(requestIdTimestampMappings.put(upstreamRequestId.toString(), request.get(TIMESTAMP).toString()))
                     .thenReturn(request)
                     .flatMap(updatedRequest ->
                             requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey))
