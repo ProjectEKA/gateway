@@ -71,7 +71,7 @@ public class GatewayConfiguration {
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
         RedisClient redisClient = getRedisClient(redisOptions);
-        return new RedisCacheAdapter(redisClient, 5);
+        return new RedisCacheAdapter(redisClient, redisOptions.getExpiry());
     }
 
     private RedisClient getRedisClient(RedisOptions redisOptions) {
@@ -86,7 +86,7 @@ public class GatewayConfiguration {
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean({"requestIdMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapter() {
-        return new LoadingCacheAdapter(createSessionCache(5));
+        return new LoadingCacheAdapter(createSessionCache(10));
     }
 
     public LoadingCache<String, String> createSessionCache(int duration) {
@@ -139,10 +139,15 @@ public class GatewayConfiguration {
     @Bean("discoveryRequestOrchestrator")
     public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             DiscoveryServiceClient discoveryServiceClient,
             DefaultValidatedRequestAction<DiscoveryServiceClient> discoveryRequestAction) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, discoveryServiceClient, discoveryRequestAction);
+        return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
+                validator,
+                discoveryServiceClient,
+                discoveryRequestAction);
     }
 
     @Bean("discoveryResponseAction")
@@ -161,8 +166,9 @@ public class GatewayConfiguration {
     @Bean
     public Validator validator(BridgeRegistry bridgeRegistry,
                                CMRegistry cmRegistry,
-                               CacheAdapter<String, String> requestIdMappings) {
-        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings);
+                               CacheAdapter<String, String> requestIdMappings,
+                               CacheAdapter<String, String> requestIdTimestampMappings) {
+        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings, requestIdTimestampMappings);
     }
 
     @Bean("linkInitServiceClient")
@@ -183,10 +189,15 @@ public class GatewayConfiguration {
     @Bean("linkInitRequestOrchestrator")
     public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             LinkInitServiceClient linkInitServiceClient,
             DefaultValidatedRequestAction<LinkInitServiceClient> linkInitRequestAction) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, linkInitServiceClient, linkInitRequestAction);
+        return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
+                validator,
+                linkInitServiceClient,
+                linkInitRequestAction);
     }
 
     @Bean("linkInitResponseAction")
@@ -221,10 +232,12 @@ public class GatewayConfiguration {
     @Bean("linkConfirmRequestOrchestrator")
     public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             LinkConfirmServiceClient linkConfirmServiceClient,
             DefaultValidatedRequestAction<LinkConfirmServiceClient> linkConfirmRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 linkConfirmServiceClient,
                 linkConfirmRequestAction);
@@ -293,10 +306,12 @@ public class GatewayConfiguration {
     @Bean("consentRequestOrchestrator")
     public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             ConsentRequestServiceClient consentRequestServiceClient,
             DefaultValidatedRequestAction<ConsentRequestServiceClient> consentRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 consentRequestServiceClient,
                 consentRequestAction);
@@ -311,10 +326,15 @@ public class GatewayConfiguration {
     @Bean("consentFetchRequestOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             ConsentFetchServiceClient consentFetchServiceClient,
             DefaultValidatedRequestAction<ConsentFetchServiceClient> consentRequestAction) {
-        return new RequestOrchestrator<>(requestIdMappings, validator, consentFetchServiceClient, consentRequestAction);
+        return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
+                validator,
+                consentFetchServiceClient,
+                consentRequestAction);
     }
 
     @Bean("consentFetchResponseAction")
@@ -339,10 +359,12 @@ public class GatewayConfiguration {
     @Bean("patientSearchOrchestrator")
     public RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             PatientSearchServiceClient patientSearchServiceClient,
             DefaultValidatedRequestAction<PatientSearchServiceClient> patientSearchRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 patientSearchServiceClient,
                 patientSearchRequestAction);
@@ -380,10 +402,12 @@ public class GatewayConfiguration {
     @Bean("hipConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             HipConsentNotifyServiceClient hipConsentNotifyServiceClient,
             DefaultValidatedRequestAction<HipConsentNotifyServiceClient> hipConsentNotifyRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 hipConsentNotifyServiceClient,
                 hipConsentNotifyRequestAction);
@@ -408,10 +432,12 @@ public class GatewayConfiguration {
     @Bean("hiuConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient,
             DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 hiuConsentNotifyServiceClient,
                 hiuConsentNotifyRequestAction);
@@ -472,10 +498,12 @@ public class GatewayConfiguration {
     @Bean("dataFlowRequestOrchestrator")
     public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             DataFlowRequestServiceClient dataFlowRequestServiceClient,
             DefaultValidatedRequestAction<DataFlowRequestServiceClient> dataflowRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 dataFlowRequestServiceClient,
                 dataflowRequestAction);
@@ -512,10 +540,12 @@ public class GatewayConfiguration {
     @Bean("healthInfoNotificationOrchestrator")
     public RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             HealthInfoNotificationServiceClient healthInfoNotificationServiceClient,
             DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 healthInfoNotificationServiceClient,
                 healthInfoNotificationRequestAction);
@@ -553,10 +583,12 @@ public class GatewayConfiguration {
     @Bean("hipDataflowRequestOrchestrator")
     public RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator(
             CacheAdapter<String, String> requestIdMappings,
+            CacheAdapter<String, String> requestIdTimestampMappings,
             Validator validator,
             HipDataFlowServiceClient hipDataFlowServiceClient,
             RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
+                requestIdTimestampMappings,
                 validator,
                 hipDataFlowServiceClient,
                 hipDataflowRequestAction);

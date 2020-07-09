@@ -31,7 +31,6 @@ import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -40,13 +39,11 @@ import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentCaptor.forClass;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
-import static reactor.core.publisher.Mono.empty;
-import static reactor.core.publisher.Mono.just;
+import static reactor.core.publisher.Mono.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -101,23 +98,10 @@ class ConsentControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForConsentRequestOnInit() throws JsonProcessingException {
-        var requestId = UUID.randomUUID().toString();
+    void shouldFireAndForgetForConsentRequestOnInit() {
         var token = string();
-        var callerRequestId = UUID.randomUUID().toString();
-        var objectNode = OBJECT_MAPPER.createObjectNode();
-        var respNode = OBJECT_MAPPER.createObjectNode();
-        var testId = string();
-        objectNode.put(REQUEST_ID, requestId);
-        respNode.put(REQUEST_ID, callerRequestId);
-        objectNode.set("resp", respNode);
-        var routingKey = X_HIU_ID;
-        var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(objectNode));
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-        when(consentRequestValidator.validateResponse(requestEntity, routingKey))
-                .thenReturn(just(new ValidatedResponse(testId, callerRequestId, objectNode)));
-        when(validatedResponseAction.execute(eq(testId), jsonNodeArgumentCaptor.capture(), eq(routingKey)))
-                .thenReturn(empty());
+        when(consentResponseOrchestrator.processResponse(any(), eq(X_HIU_ID))).thenReturn(empty());
 
         webTestClient
                 .post()
@@ -150,7 +134,7 @@ class ConsentControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException, JSONException {
+    void shouldFireAndForgetForConsentOnFetch() throws JsonProcessingException {
         var requestId = UUID.randomUUID().toString();
         var callerRequestId = UUID.randomUUID().toString();
         var objectNode = OBJECT_MAPPER.createObjectNode();
