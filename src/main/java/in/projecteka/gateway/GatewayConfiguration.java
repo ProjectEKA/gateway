@@ -33,6 +33,7 @@ import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
+import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.YamlRegistry;
@@ -633,8 +634,8 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions) {
-        return new Heartbeat(rabbitmqOptions, identityProperties, redisOptions);
+    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions, CacheMethodProperty cacheMethodProperty) {
+        return new Heartbeat(rabbitmqOptions, identityProperties, redisOptions, cacheMethodProperty);
     }
 
     @Bean
