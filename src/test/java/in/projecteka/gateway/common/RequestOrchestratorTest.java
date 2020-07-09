@@ -17,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpEntity;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeoutException;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -40,10 +42,13 @@ import static reactor.core.publisher.Mono.*;
 class RequestOrchestratorTest {
 
     @Mock
-    Validator discoveryValidator;
+    Validator validator;
 
     @Mock
     CacheAdapter<String, String> requestIdMappings;
+
+    @Mock
+    CacheAdapter<String, String> requestIdTimestampMappings;
 
     @Mock
     DiscoveryServiceClient discoveryServiceClient;
@@ -63,7 +68,8 @@ class RequestOrchestratorTest {
     void init() {
         MockitoAnnotations.initMocks(this);
         requestOrchestrator = Mockito.spy(new RequestOrchestrator<>(requestIdMappings,
-                discoveryValidator,
+                requestIdTimestampMappings,
+                validator,
                 discoveryServiceClient,
                 validatedRequestAction));
     }
@@ -75,7 +81,7 @@ class RequestOrchestratorTest {
         var requestId = UUID.randomUUID().toString();
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
-        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+        when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(error(mappingNotFoundForId(routingKey)));
 
         StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId))
@@ -88,14 +94,17 @@ class RequestOrchestratorTest {
     @ValueSource(strings = {X_CM_ID, X_HIU_ID, X_HIP_ID})
     void callDownStreamSystemForAValidRequest(String routingKey) throws JsonProcessingException {
         var requestId = UUID.randomUUID();
-        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId.toString()));
+        String timestamp = LocalDateTime.now().toString();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId, TIMESTAMP, timestamp));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
         String clientId = string();
+
         var apiCalled = string();
-        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+        when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
+        when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
         when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(empty());
 
         StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
@@ -109,13 +118,16 @@ class RequestOrchestratorTest {
     void notifyCallerAboutTimeoutException(String routingKey) throws JsonProcessingException {
         var clientId = string();
         var requestId = UUID.randomUUID();
-        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        String timestamp = LocalDateTime.now().toString();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId, TIMESTAMP, timestamp));
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
         var apiCalled = string();
-        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+
+        when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
         when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
@@ -124,7 +136,7 @@ class RequestOrchestratorTest {
                 .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
-        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        verify(validator).validateRequest(requestEntity, routingKey);
         assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
         assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Timed out When calling target system");
         assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
@@ -136,12 +148,14 @@ class RequestOrchestratorTest {
         var clientId = string();
         var requestId = UUID.randomUUID();
         var apiCalled = string();
-        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        var timestamp = LocalDateTime.now().toString();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId, TIMESTAMP, timestamp));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
-        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+        when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
         when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
@@ -150,7 +164,7 @@ class RequestOrchestratorTest {
                 .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
-        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        verify(validator).validateRequest(requestEntity, routingKey);
         assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
         assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Error in making call to target system");
         assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
@@ -161,13 +175,15 @@ class RequestOrchestratorTest {
     void notifyCallerAboutClientError(String routingKey) throws JsonProcessingException {
         var clientId = string();
         var requestId = UUID.randomUUID();
-        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId));
+        var timestamp = LocalDateTime.now().toString();
+        var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId, TIMESTAMP, timestamp));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var apiCalled = string();
         var targetClientId = string();
-        when(discoveryValidator.validateRequest(requestEntity, routingKey))
+        when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
+        when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
         when(validatedRequestAction.execute(eq(targetClientId),captor.capture(), eq(routingKey))).thenReturn(error(ClientError.unableToConnect()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
         when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
@@ -176,7 +192,7 @@ class RequestOrchestratorTest {
                 .subscriberContext(context -> context.put("apiCalled",apiCalled)))
                 .verifyComplete();
 
-        verify(discoveryValidator).validateRequest(requestEntity, routingKey);
+        verify(validator).validateRequest(requestEntity, routingKey);
         assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
         assertThat(errorResult.getValue().getError().getMessage())
                 .isEqualTo("Cannot process the request at the moment, please try later.");
