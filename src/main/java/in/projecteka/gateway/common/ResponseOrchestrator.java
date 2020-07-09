@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static in.projecteka.gateway.common.Constants.*;
+import static in.projecteka.gateway.common.Constants.nameMap;
 import static in.projecteka.gateway.common.Utils.updateRequestId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
@@ -32,10 +29,6 @@ public class ResponseOrchestrator {
 
     private void offloadThis(ValidatedResponse response, String routingKey, String apiCalled) {
         Mono.defer(() -> {
-            Map<String, String> nameMap = new HashMap<>();
-            nameMap.put(X_HIU_ID, "HIU");
-            nameMap.put(X_CM_ID, "CM");
-            nameMap.put(X_HIP_ID, "HIP");
             var updatedJsonNode = updateRequestId(response.getDeSerializedJsonNode(), response.getCallerRequestId());
             logger.info("Passing the response back {} {} {} {}", keyValue("requestId", response.getCallerRequestId())
                     , keyValue("target", nameMap.get(routingKey))

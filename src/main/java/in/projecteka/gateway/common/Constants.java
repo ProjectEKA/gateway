@@ -1,5 +1,8 @@
 package in.projecteka.gateway.common;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Constants {
     public static final String API_CALLED = "apiCalled";
     public static final String X_HIP_ID = "X-HIP-ID";
@@ -9,6 +12,13 @@ public class Constants {
     public static final String GW_DEAD_LETTER_EXCHANGE = "gw.dead-letter-exchange";
     public static final String GW_LINK_QUEUE = "gw.link";
     public static final String GW_DATAFLOW_QUEUE = "gw.dataflow";
+    public static final Map<String, String> nameMap = new HashMap<String, String>() {
+        {
+            put(X_HIU_ID, "HIU");
+            put(X_CM_ID, "CM");
+            put(X_HIP_ID, "HIP");
+        }
+    };
 
     // APIs
     public static final String V_1_CARE_CONTEXTS_ON_DISCOVER = "/v1/care-contexts/on-discover";

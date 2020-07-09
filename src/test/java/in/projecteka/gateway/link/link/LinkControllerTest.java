@@ -63,7 +63,7 @@ public class LinkControllerTest {
     Authenticator authenticator;
 
     @Test
-    public void shouldFireAndForgetForLinkInit() {
+    void shouldFireAndForgetForLinkInit() {
         var token = string();
         var clientId = string();
         when(authenticator.verify(token))
@@ -100,7 +100,7 @@ public class LinkControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForLinkConfirm() {
+    void shouldFireAndForgetForLinkConfirm() {
         var clientId = string();
         var token = string();
         when(authenticator.verify(token))
