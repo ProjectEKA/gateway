@@ -19,6 +19,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 
 import static org.mockito.Mockito.when;
@@ -49,7 +51,7 @@ class HeartbeatControllerTest {
     @Test
     void shouldGiveCMStatusAsUp() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
-                .timeStamp(Instant.now().toString())
+                .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                 .status(Status.UP)
                 .build();
         var heartbeatResponseJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(heartbeatResponse);
@@ -68,7 +70,7 @@ class HeartbeatControllerTest {
     @Test
     void shouldGiveCMStatusAsDown() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
-                .timeStamp(Instant.now().toString())
+                .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                 .status(Status.DOWN)
                 //.error(Error.builder().code(ErrorCode.SERVICE_DOWN).message("Service Down").build())
                 .build();

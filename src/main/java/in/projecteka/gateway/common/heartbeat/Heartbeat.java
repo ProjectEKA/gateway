@@ -17,6 +17,8 @@ import java.net.SocketAddress;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.model.Error.serviceDownError;
@@ -33,17 +35,17 @@ public class Heartbeat {
         try {
             return (isRedisUp() && isRabbitMQUp() && isKeycloakUp())
                     ? Mono.just(HeartbeatResponse.builder()
-                    .timeStamp(Instant.now().toString())
+                    .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                     .status(Status.UP)
                     .build())
                     : Mono.just(HeartbeatResponse.builder()
-                    .timeStamp(Instant.now().toString())
+                    .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                     .status(Status.DOWN)
                     .error(serviceDownError("Service Down"))
                     .build());
         } catch (IOException | TimeoutException e) {
             return Mono.just(HeartbeatResponse.builder()
-                    .timeStamp(Instant.now().toString())
+                    .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                     .status(Status.DOWN)
                     .error(serviceDownError("Service Down"))
                     .build());
