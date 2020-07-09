@@ -606,13 +606,13 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "webclient.keepalive", havingValue = "false")
     public ClientHttpConnector clientHttpConnector() {
         return new ReactorClientHttpConnector(HttpClient.create(ConnectionProvider.newConnection()));
     }
 
     @Bean("customBuilder")
     public WebClient.Builder webClient(final ClientHttpConnector clientHttpConnector, ObjectMapper objectMapper) {
-        // Temp fix for TCL infra
         return WebClient
                 .builder()
                 .exchangeStrategies(exchangeStrategies(objectMapper))
