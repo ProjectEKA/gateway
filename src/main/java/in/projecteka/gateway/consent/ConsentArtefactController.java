@@ -20,7 +20,7 @@ import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-
+import static in.projecteka.gateway.common.Constants.API_CALLED;
 
 @RestController
 @AllArgsConstructor
@@ -37,14 +37,14 @@ public class ConsentArtefactController {
                 .map(Caller::getClientId)
                 .flatMap(clientId -> hipConsentNotifyRequestOrchestrator
                         .handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId)
-                        .subscriberContext(context -> context.put("apiCalled",V_1_CONSENTS_HIP_NOTIFY)));
+                        .subscriberContext(context -> context.put(API_CALLED,V_1_CONSENTS_HIP_NOTIFY)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_CONSENTS_HIP_ON_NOTIFY)
     public Mono<Void> consentOnNotifyToHIP(HttpEntity<String> requestEntity) {
         return hipConsentNotifyResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
-                        .subscriberContext(context -> context.put("apiCalled",V_1_CONSENTS_HIP_ON_NOTIFY));
+                        .subscriberContext(context -> context.put(API_CALLED,V_1_CONSENTS_HIP_ON_NOTIFY));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -55,6 +55,6 @@ public class ConsentArtefactController {
                 .map(Caller::getClientId)
                 .flatMap(clientId -> hiuConsentNotifyRequestOrchestrator
                         .handleThis(requestEntity, X_HIU_ID, X_CM_ID, clientId))
-                                .subscriberContext(context -> context.put("apiCalled",V_1_CONSENTS_HIU_NOTIFY));
+                                .subscriberContext(context -> context.put(API_CALLED,V_1_CONSENTS_HIU_NOTIFY));
     }
 }

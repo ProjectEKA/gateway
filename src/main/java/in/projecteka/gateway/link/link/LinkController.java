@@ -20,6 +20,7 @@ import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.API_CALLED;
 
 @RestController
 @AllArgsConstructor
@@ -37,14 +38,14 @@ public class LinkController {
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
                         linkInitRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId))
-                        .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_INIT));
+                .subscriberContext(context -> context.put(API_CALLED, V_1_LINKS_LINK_INIT));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_LINKS_LINK_ON_INIT)
     public Mono<Void> linkOnInit(HttpEntity<String> requestEntity) {
         return linkInitResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
-                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_ON_INIT));
+                .subscriberContext(context -> context.put(API_CALLED, V_1_LINKS_LINK_ON_INIT));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -55,13 +56,13 @@ public class LinkController {
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
                         linkConfirmRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId))
-                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_CONFIRM));
+                .subscriberContext(context -> context.put(API_CALLED, V_1_LINKS_LINK_CONFIRM));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(V_1_LINKS_LINK_ON_CONFIRM)
     public Mono<Void> linkOnConfirm(HttpEntity<String> requestEntity) {
         return linkConfirmResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
-                .subscriberContext(context -> context.put("apiCalled",V_1_LINKS_LINK_ON_CONFIRM));
+                .subscriberContext(context -> context.put(API_CALLED, V_1_LINKS_LINK_ON_CONFIRM));
     }
 }

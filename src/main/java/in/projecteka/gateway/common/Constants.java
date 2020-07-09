@@ -1,6 +1,7 @@
 package in.projecteka.gateway.common;
 
 public class Constants {
+    public static final String API_CALLED = "apiCalled";
     public static final String X_HIP_ID = "X-HIP-ID";
     public static final String X_HIU_ID = "X-HIU-ID";
     public static final String X_CM_ID = "X-CM-ID";

@@ -26,21 +26,21 @@ public class ResponseOrchestrator {
             apiCalled.append((String) context.get("apiCalled"));
             return validator.validateResponse(maybeResponse, routingKey);
         })
-                .doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey,apiCalled.toString()))
+                .doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey, apiCalled.toString()))
                 .then();
     }
 
     private void offloadThis(ValidatedResponse response, String routingKey, String apiCalled) {
         Mono.defer(() -> {
-            Map<String,String> nameMap = new HashMap<>();
-            nameMap.put(X_HIU_ID,"HIU");
-            nameMap.put(X_CM_ID,"CM");
-            nameMap.put(X_HIP_ID,"HIP");
+            Map<String, String> nameMap = new HashMap<>();
+            nameMap.put(X_HIU_ID, "HIU");
+            nameMap.put(X_CM_ID, "CM");
+            nameMap.put(X_HIP_ID, "HIP");
             var updatedJsonNode = updateRequestId(response.getDeSerializedJsonNode(), response.getCallerRequestId());
-                    logger.info("Passing the response back to",keyValue("requestId", response.getCallerRequestId())
+            logger.info("Passing the response back {} {} {} {}", keyValue("requestId", response.getCallerRequestId())
                     , keyValue("target", nameMap.get(routingKey))
                     , keyValue("targetId", response.getId())
-                    ,keyValue("apiCalled",apiCalled));
+                    , keyValue("apiCalled", apiCalled));
             return validatedResponseAction.execute(response.getId(), updatedJsonNode, routingKey);
         }).subscribe();
     }

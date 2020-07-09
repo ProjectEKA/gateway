@@ -59,7 +59,7 @@ class DiscoveryControllerTest {
     Authenticator authenticator;
 
     @Test
-    public void shouldFireAndForgetForDiscover() {
+    void shouldFireAndForgetForDiscover() {
         var token = string();
         var clientId = string();
         when(requestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
@@ -78,10 +78,10 @@ class DiscoveryControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForOnDiscover() {
+    void shouldFireAndForgetForOnDiscover() {
         var token = string();
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
-        when(discoveryResponseOrchestrator.processResponse(any(),eq(X_CM_ID))).thenReturn(Mono.empty());
+        when(discoveryResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(Mono.empty());
 
         webTestClient
                 .post()

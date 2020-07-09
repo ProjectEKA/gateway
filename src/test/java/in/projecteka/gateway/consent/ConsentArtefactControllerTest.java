@@ -63,7 +63,7 @@ public class ConsentArtefactControllerTest {
     ArgumentCaptor<JsonNode> jsonNodeArgumentCaptor;
 
     @Test
-    public void shouldFireAndForgetHIPConsentNotification() {
+    void shouldFireAndForgetHIPConsentNotification() {
         var token = string();
         var clientId = string();
         when(hipConsentNotifyRequestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId)))
@@ -83,7 +83,7 @@ public class ConsentArtefactControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetHIUConsentNotification() {
+    void shouldFireAndForgetHIUConsentNotification() {
         var clientId = string();
         var token = string();
         when(authenticator.verify(token))
@@ -103,11 +103,11 @@ public class ConsentArtefactControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForOnDiscover() {
+    void shouldFireAndForgetForOnDiscover() {
         var token = string();
 
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
-        when(hipConsentNotifyResponseOrchestrator.processResponse(any(),eq(X_CM_ID))).thenReturn(empty());
+        when(hipConsentNotifyResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(empty());
 
         webTestClient
                 .post()

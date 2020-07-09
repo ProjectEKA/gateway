@@ -101,7 +101,7 @@ class ConsentControllerTest {
     void shouldFireAndForgetForConsentRequestOnInit() {
         var token = string();
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-        when(consentResponseOrchestrator.processResponse(any(),eq(X_HIU_ID))).thenReturn(empty());
+        when(consentResponseOrchestrator.processResponse(any(), eq(X_HIU_ID))).thenReturn(empty());
 
         webTestClient
                 .post()
