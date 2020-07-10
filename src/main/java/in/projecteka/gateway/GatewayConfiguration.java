@@ -122,6 +122,7 @@ public class GatewayConfiguration {
     public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
         return new LoadingCacheAdapter(createMappingCacheForBridge(12));
     }
+    
     public LoadingCache<Pair<String,ServiceType>, String> createMappingCacheForBridge(int duration) {
         return CacheBuilder
                 .newBuilder()

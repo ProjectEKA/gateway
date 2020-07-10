@@ -8,9 +8,3 @@ services:
       - "9002:8000"
     environment:
       SERVICE_TIMEOUT: 5
-
-
-
-
-
-
