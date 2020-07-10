@@ -89,7 +89,7 @@ public class GatewayConfiguration {
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapter() {
-        return new LoadingCacheAdapter(createSessionCache(10));
+        return new LoadingCacheAdapter<>(createSessionCache(10));
     }
 
     public LoadingCache<String, String> createSessionCache(int duration) {
@@ -105,7 +105,7 @@ public class GatewayConfiguration {
 
     @Bean({"consentManagerMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings() {
-        return new LoadingCacheAdapter(createMappingCacheForCM(12));
+        return new LoadingCacheAdapter<>(createMappingCacheForCM(12));
     }
 
     public LoadingCache<String, String> createMappingCacheForCM(int duration) {
@@ -121,7 +121,7 @@ public class GatewayConfiguration {
 
     @Bean({"bridgeMappings"})
     public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
-        return new LoadingCacheAdapter(createMappingCacheForBridge(12));
+        return new LoadingCacheAdapter<>(createMappingCacheForBridge(12));
     }
 
     public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {

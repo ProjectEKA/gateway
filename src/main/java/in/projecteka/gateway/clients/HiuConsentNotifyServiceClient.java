@@ -7,8 +7,6 @@ import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
 public class HiuConsentNotifyServiceClient extends ServiceClient {

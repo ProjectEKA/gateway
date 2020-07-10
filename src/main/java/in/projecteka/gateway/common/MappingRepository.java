@@ -22,30 +22,22 @@ public class MappingRepository {
     private final PgPool dbClient;
 
     public Mono<String> cmHost(String cmId) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(SELECT_CM_MAPPING)
-                .execute(Tuple.of(cmId, true, false),
-                        handler -> {
-                            if (handler.failed()) {
-                                logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch CM host"));
-                                return;
-                            }
-                            var iterator = handler.result().iterator();
-                            if (!iterator.hasNext()) {
-                                monoSink.success();
-                                return;
-                            }
-                            monoSink.success(iterator.next().getString(0));
-                        }));
+        return select(SELECT_CM_MAPPING,Tuple.of(cmId, true, false), "Failed to fetch CM host");
     }
 
     public Mono<String> bridgeHost(Pair<String, ServiceType> bridge) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE_MAPPING)
-                .execute(Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false, true),
+        return select(SELECT_BRIDGE_MAPPING,
+                Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false, true),
+                "Failed to fetch Bridge host");
+    }
+
+    private Mono<String> select(String query, Tuple params, String errorMessage) {
+        return Mono.create(monoSink -> this.dbClient.preparedQuery(query)
+                .execute(params,
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch Bridge host"));
+                                monoSink.error(new DbOperationError(errorMessage));
                                 return;
                             }
                             var iterator = handler.result().iterator();
@@ -56,5 +48,4 @@ public class MappingRepository {
                             monoSink.success(iterator.next().getString(0));
                         }));
     }
-
 }
