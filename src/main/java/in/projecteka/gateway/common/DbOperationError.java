@@ -13,9 +13,8 @@ import static in.projecteka.gateway.clients.model.ErrorCode.DB_OPERATION_FAILED;
 public class DbOperationError extends Throwable {
     private final HttpStatus httpStatus;
     private final ErrorRepresentation error;
-    private final String errorMessage = "Failed to persist in database";
 
-    public DbOperationError() {
+    public DbOperationError(String errorMessage) {
         this.httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
         this.error = new ErrorRepresentation(new Error(DB_OPERATION_FAILED, errorMessage));
     }

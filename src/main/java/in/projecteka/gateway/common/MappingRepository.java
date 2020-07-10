@@ -27,7 +27,7 @@ public class MappingRepository {
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError());
+                                monoSink.error(new DbOperationError("Failed to fetch CM host"));
                                 return;
                             }
                             var iterator = handler.result().iterator();
@@ -45,7 +45,7 @@ public class MappingRepository {
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError());
+                                monoSink.error(new DbOperationError("Failed to fetch Bridge host"));
                                 return;
                             }
                             var iterator = handler.result().iterator();
