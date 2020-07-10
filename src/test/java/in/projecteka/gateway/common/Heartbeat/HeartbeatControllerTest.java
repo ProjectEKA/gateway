@@ -47,7 +47,7 @@ class HeartbeatControllerTest {
     }
 
     @Test
-    public void shouldGiveCMStatusAsUp() throws JsonProcessingException {
+    void shouldGiveCMStatusAsUp() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
                 .timeStamp(Instant.now().toString())
                 .status(Status.UP)
@@ -66,7 +66,7 @@ class HeartbeatControllerTest {
     }
 
     @Test
-    public void shouldGiveCMStatusAsDown() throws JsonProcessingException {
+    void shouldGiveCMStatusAsDown() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
                 .timeStamp(Instant.now().toString())
                 .status(Status.DOWN)

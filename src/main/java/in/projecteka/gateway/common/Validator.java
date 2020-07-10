@@ -11,19 +11,26 @@ import org.springframework.http.HttpEntity;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
+import static in.projecteka.gateway.clients.ClientError.tooManyRequests;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Serializer.deserializeRequestAsJsonNode;
 import static java.lang.String.format;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
+import static net.logstash.logback.argument.StructuredArguments.keyValue;
 import static org.springframework.util.StringUtils.hasText;
 import static reactor.core.publisher.Mono.defer;
 import static reactor.core.publisher.Mono.error;
@@ -39,13 +46,57 @@ public class Validator {
     BridgeRegistry bridgeRegistry;
     CMRegistry cmRegistry;
     CacheAdapter<String, String> requestIdMappings;
+    CacheAdapter<String, String> requestIdTimestampMappings;
+
+    private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, String clientId) {
+        return Serializer.from(maybeRequest)
+                .filter(request -> hasText((String) request.get(REQUEST_ID)))
+                .flatMap(request -> from((String) request.get(REQUEST_ID))
+                        .map(requestUUID -> just(new ValidatedRequest(requestUUID, request, clientId))))
+                .orElseGet(() -> {
+                    var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
+                    logger.error(errorMessage);
+                    return error(invalidRequest(errorMessage));
+                });
+    }
+
+    private static Optional<UUID> from(String requestId) {
+        try {
+            return of(UUID.fromString(requestId));
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return empty();
+    }
+
+    private static Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry,
+                                                                    CMRegistry cmRegistry,
+                                                                    String routingHeaderKey,
+                                                                    String clientId) {
+        if (routingHeaderKey.equals(X_HIP_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, HIP);
+        }
+        if (routingHeaderKey.equals(X_HIU_ID)) {
+            return bridgeRegistry.getConfigFor(clientId, HIU);
+        }
+        return cmRegistry.getConfigFor(clientId);
+    }
 
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
-        return validate(maybeRequest, routingKey, Validator::toRequest);
+        return validateReq(maybeRequest, routingKey, Validator::toRequest);
     }
 
     public Mono<ValidatedResponse> validateResponse(HttpEntity<String> maybeResponse, String routingKey) {
         return validate(maybeResponse, routingKey, this::toResponse);
+    }
+
+    private <T> Mono<T> validateReq(HttpEntity<String> maybeRequest,
+                                    String routingKey,
+                                    BiFunction<HttpEntity<String>, String, Mono<T>> to) {
+        return Mono.just(maybeRequest)
+                .filterWhen(this::isValidRequest)
+                .switchIfEmpty(error(tooManyRequests()))
+                .flatMap(val -> validate(maybeRequest, routingKey, to));
     }
 
     private <T> Mono<T> validate(HttpEntity<String> maybeRequest,
@@ -64,18 +115,6 @@ public class Validator {
                 .flatMap(id -> to.apply(maybeRequest, id));
     }
 
-    private static Mono<ValidatedRequest> toRequest(HttpEntity<String> maybeRequest, String clientId) {
-        return Serializer.from(maybeRequest)
-                .filter(request -> hasText((String) request.get(REQUEST_ID)))
-                .flatMap(request -> from((String) request.get(REQUEST_ID))
-                        .map(requestUUID -> just(new ValidatedRequest(requestUUID, request, clientId))))
-                .orElseGet(() -> {
-                    var errorMessage = format("Empty/Invalid %s found on the payload", REQUEST_ID);
-                    logger.error(errorMessage);
-                    return error(invalidRequest(errorMessage));
-                });
-    }
-
     private Mono<ValidatedResponse> toResponse(HttpEntity<String> maybeResponse, String clientId) {
         return deserializeRequestAsJsonNode(maybeResponse)
                 .filter(jsonNode -> !jsonNode.path("resp").path(REQUEST_ID).asText().isEmpty())
@@ -88,18 +127,21 @@ public class Validator {
                     return requestIdMappings.get(respRequestId)
                             .filter(StringUtils::hasText)
                             .switchIfEmpty(error(invalidRequest("No mapping found for resp.requestId on cache")))
-                            .map(callerRequestId -> new ValidatedResponse(clientId, callerRequestId, jsonNode));
+                            .map(callerRequestId -> {
+                                logger.info("Received a response {} {} {}", keyValue("requestId", callerRequestId),
+                                        keyValue("gatewayId", respRequestId),
+                                        keyValue("targetId", clientId));
+                                return new ValidatedResponse(clientId, callerRequestId, jsonNode);
+                            });
                 });
     }
 
-    private static Optional<UUID> from(String requestId) {
-        try {
-            return of(UUID.fromString(requestId));
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-        return empty();
+    private Mono<Boolean> isValidRequest(HttpEntity<String> maybeRequest) {
+        return isRequestIdPresent(maybeRequest)
+                .flatMap(result -> error(tooManyRequests()))
+                .then(isRequestIdValidInGivenTimestamp(maybeRequest));
     }
+
 
     private static Mono<String> getRegistryMapping(BridgeRegistry bridgeRegistry,
                                                    CMRegistry cmRegistry,
@@ -118,5 +160,43 @@ public class Validator {
         return cmRegistry.getHostFor(clientId)
                 .switchIfEmpty(Mono.empty())
                 .flatMap(host -> Mono.just(clientId));
+    }
+
+    private Mono<Boolean> isRequestIdPresent(HttpEntity<String> maybeRequest) {
+        return getValue(maybeRequest, REQUEST_ID)
+                .flatMap(requestId -> requestIdTimestampMappings.get(requestId))
+                .map(StringUtils::hasText);
+    }
+
+    private Mono<String> getValue(HttpEntity<String> maybeRequest, String key) {
+        return Serializer.from(maybeRequest)
+                .filter(request -> hasText((String) request.get(key)))
+                .flatMap(request -> of((String) request.get(key))
+                        .map(Mono::just))
+                .orElseGet(() -> {
+                    var errorMessage = "Invalid request";
+                    logger.error(errorMessage);
+                    return error(invalidRequest(errorMessage));
+                });
+    }
+
+    private Mono<Boolean> isRequestIdValidInGivenTimestamp(HttpEntity<String> maybeRequest) {
+        return getValue(maybeRequest, TIMESTAMP)
+                .map(timestamp -> isValidTimestamp(toDate(timestamp)));
+    }
+
+    private LocalDateTime toDate(String timestamp) {
+        DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .optionalStart().appendOffsetId()
+                .toFormatter();
+        return LocalDateTime.parse(timestamp, dateTimeFormatter);
+    }
+
+    private boolean isValidTimestamp(LocalDateTime timestamp) {
+        LocalDateTime currentTime = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime startTime = currentTime.minusMinutes(1);
+        LocalDateTime endTime = currentTime.plusMinutes(9);
+        return timestamp.isAfter(startTime) && timestamp.isBefore(endTime);
     }
 }

@@ -8,6 +8,7 @@ gateway:
     host: ${REDIS_HOST}
     port: 6379
     password: ${REDIS_PASSWORD}
+    expiry: ${REDIS_KEY_EXPIRY}
   # timeout in seconds
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
@@ -32,5 +33,5 @@ identity:
   url: ${KEYCLOAK_URL}
   realm: ${REALM}
   host: ${GATEWAY_HOST}
-
-
+webclient:
+  keepAlive: ${GATEWAY_KEEP_ALIVE:true}

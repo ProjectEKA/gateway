@@ -23,9 +23,11 @@ import static in.projecteka.gateway.clients.model.Error.serviceDownError;
 
 @AllArgsConstructor
 public class Heartbeat {
+    public static final String CACHE_METHOD_NAME = "guava";
     private final RabbitmqOptions rabbitmqOptions;
     private final IdentityProperties identityProperties;
     private final RedisOptions redisOptions;
+    private final CacheMethodProperty cacheMethod;
 
     public Mono<HeartbeatResponse> getStatus() {
         try {
@@ -58,6 +60,8 @@ public class Heartbeat {
     }
 
     private boolean isRedisUp() throws IOException {
+        if (cacheMethod.getMethodName().equals(CACHE_METHOD_NAME))
+            return true;
         return checkConnection(redisOptions.getHost(), redisOptions.getPort());
     }
 

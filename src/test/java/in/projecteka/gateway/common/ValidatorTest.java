@@ -20,8 +20,9 @@ import org.springframework.http.HttpHeaders;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
+import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -59,6 +61,13 @@ class ValidatorTest {
     @Mock
     CacheAdapter<String, String> requestIdMappings;
 
+
+    @Mock
+    CacheAdapter<String, String> requestIdTimestampMappings;
+
+    @Mock
+    YamlRegistryMapping cmConfig;
+
     static Stream<Arguments> bridgeConfigs() {
         return Stream.of(Arguments.of(X_HIP_ID, HIP), Arguments.of(X_HIU_ID, HIU));
     }
@@ -66,14 +75,19 @@ class ValidatorTest {
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
-        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings));
+        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings, requestIdTimestampMappings));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {X_CM_ID, X_HIP_ID, X_HIU_ID})
-    void returnErrorWhenHeaderIsNotPresent(String routingKey) {
+    void returnErrorWhenHeaderIsNotPresent(String routingKey) throws JsonProcessingException {
+        var requestId = UUID.randomUUID();
+        String timestamp = LocalDateTime.now().toString();
+        var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
+
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(httpHeaders.get(routingKey)).thenReturn(emptyList());
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
 
         StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
                 .verifyErrorSatisfies(throwable ->
@@ -82,8 +96,12 @@ class ValidatorTest {
 
     @ParameterizedTest
     @MethodSource("bridgeConfigs")
-    void returnErrorWhenNoMappingIsFoundForBridges(String routingKey, ServiceType serviceType) {
+    void returnErrorWhenNoMappingIsFoundForBridges(String routingKey) throws JsonProcessingException {
         var bridgeId = string();
+        var requestId = UUID.randomUUID();
+        String timestamp = LocalDateTime.now().toString();
+        var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
         when(bridgeRegistry.getHostFor(bridgeId, serviceType)).thenReturn(Mono.empty());
@@ -99,6 +117,11 @@ class ValidatorTest {
         var bridgeId = string();
         var url = string();
         Map<String, Object> requestBody = new HashMap<>();
+        var bridgeConfig = yamlRegistryMapping().build();
+        var requestId = UUID.randomUUID();
+        String timestamp = LocalDateTime.now().toString();
+        var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
@@ -143,12 +166,21 @@ class ValidatorTest {
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
         when(bridgeRegistry.getHostFor(bridgeId, serviceType)).thenReturn(Mono.just(url));
+        var bridgeConfig = yamlRegistryMapping().id(bridgeId).build();
+        String timestamp = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(2).toString();
+        var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
+        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
+        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
+        when(bridgeRegistry.getConfigFor(bridgeId, serviceType)).thenReturn(of(bridgeConfig));
+        when(requestIdTimestampMappings.get(requestId.toString())).thenReturn(Mono.empty());
+
 
         StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
-                .assertNext(validatedDiscoverRequest -> {
-                    assertThat(requestBody).isEqualTo(validatedDiscoverRequest.getDeSerializedRequest());
-                    assertThat(requestId).isEqualTo(validatedDiscoverRequest.getRequesterRequestId());
-                    assertThat(bridgeId).isEqualTo(validatedDiscoverRequest.getClientId());
+                .assertNext(validatedRequest -> {
+                    assertThat(requestBody).isEqualTo(validatedRequest.getDeSerializedRequest());
+                    assertThat(requestId).isEqualTo(validatedRequest.getRequesterRequestId());
+                    assertThat(bridgeId).isEqualTo(validatedRequest.getClientId());
                 })
                 .verifyComplete();
     }
@@ -199,11 +231,13 @@ class ValidatorTest {
         var testRequestId = string();
         var respNode = Map.of(REQUEST_ID, testRequestId);
         var body = Map.of("resp", respNode);
+        String requestId = UUID.randomUUID().toString();
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(body));
         when(httpHeaders.get(X_CM_ID)).thenReturn(Collections.singletonList(testCmId));
         when(cmRegistry.getHostFor(testCmId)).thenReturn(Mono.empty());
         when(requestIdMappings.get(testRequestId)).thenReturn(Mono.empty());
+        when(requestIdTimestampMappings.get(requestId)).thenReturn(Mono.empty());
 
         StepVerifier.create(validator.validateResponse(requestEntity, X_CM_ID))
                 .expectErrorSatisfies(throwable ->
