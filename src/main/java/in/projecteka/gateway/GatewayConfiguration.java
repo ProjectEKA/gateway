@@ -87,7 +87,7 @@ public class GatewayConfiguration {
     }
 
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
-    @Bean({"requestIdMappings"})
+    @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapter() {
         return new LoadingCacheAdapter(createSessionCache(10));
     }
@@ -114,7 +114,7 @@ public class GatewayConfiguration {
                 .expireAfterWrite(duration, TimeUnit.HOURS)
                 .build(new CacheLoader<>() {
                     public String load(String key) {
-                          return "";
+                        return "";
                     }
                 });
     }
@@ -123,13 +123,13 @@ public class GatewayConfiguration {
     public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
         return new LoadingCacheAdapter(createMappingCacheForBridge(12));
     }
-    
-    public LoadingCache<Pair<String,ServiceType>, String> createMappingCacheForBridge(int duration) {
+
+    public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
         return CacheBuilder
                 .newBuilder()
                 .expireAfterWrite(duration, TimeUnit.HOURS)
                 .build(new CacheLoader<>() {
-                    public String load(Pair<String,ServiceType> key) {
+                    public String load(Pair<String, ServiceType> key) {
                         return "";
                     }
                 });

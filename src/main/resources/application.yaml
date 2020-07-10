@@ -5,14 +5,13 @@ gateway:
   cacheMethod: ${CACHE_METHOD:guava}
   redis:
     #Will not be used if cacheMethod is guava
-    host: ${REDIS_HOST}
+    host: ${REDIS_HOST:localhost}
     port: 6379
-    password: ${REDIS_PASSWORD}
-    expiry: ${REDIS_KEY_EXPIRY}
+    password: ${REDIS_PASSWORD:password}
+    expiry: ${REDIS_KEY_EXPIRY:5}
   # timeout in seconds
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
-    registryPath: ${REGISTRY_PATH:registry-local.yaml}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
   db:
     host: ${POSTGRES_HOST}

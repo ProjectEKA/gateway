@@ -61,12 +61,8 @@ class ValidatorTest {
     @Mock
     CacheAdapter<String, String> requestIdMappings;
 
-
     @Mock
     CacheAdapter<String, String> requestIdTimestampMappings;
-
-    @Mock
-    YamlRegistryMapping cmConfig;
 
     static Stream<Arguments> bridgeConfigs() {
         return Stream.of(Arguments.of(X_HIP_ID, HIP), Arguments.of(X_HIU_ID, HIU));
@@ -96,7 +92,7 @@ class ValidatorTest {
 
     @ParameterizedTest
     @MethodSource("bridgeConfigs")
-    void returnErrorWhenNoMappingIsFoundForBridges(String routingKey) throws JsonProcessingException {
+    void returnErrorWhenNoMappingIsFoundForBridges(String routingKey, ServiceType serviceType) throws JsonProcessingException {
         var bridgeId = string();
         var requestId = UUID.randomUUID();
         String timestamp = LocalDateTime.now().toString();
@@ -116,8 +112,6 @@ class ValidatorTest {
     void returnErrorWhenNoRequestIdIsFound(String routingKey, ServiceType serviceType) throws JsonProcessingException {
         var bridgeId = string();
         var url = string();
-        Map<String, Object> requestBody = new HashMap<>();
-        var bridgeConfig = yamlRegistryMapping().build();
         var requestId = UUID.randomUUID();
         String timestamp = LocalDateTime.now().toString();
         var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
@@ -161,20 +155,17 @@ class ValidatorTest {
         var requestId = UUID.randomUUID();
         var bridgeId = string();
         var url = string();
-        var requestBody = Map.of(REQUEST_ID, requestId.toString());
-        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
-        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
-        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
-        when(bridgeRegistry.getHostFor(bridgeId, serviceType)).thenReturn(Mono.just(url));
-        var bridgeConfig = yamlRegistryMapping().id(bridgeId).build();
         String timestamp = LocalDateTime.now(ZoneOffset.UTC).plusMinutes(2).toString();
         var requestBody = Map.of(REQUEST_ID, requestId.toString(), TIMESTAMP, timestamp);
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
         when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
         when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
-        when(bridgeRegistry.getConfigFor(bridgeId, serviceType)).thenReturn(of(bridgeConfig));
+        when(bridgeRegistry.getHostFor(bridgeId, serviceType)).thenReturn(Mono.just(url));
+        when(requestEntity.getHeaders()).thenReturn(httpHeaders);
+        when(requestEntity.getBody()).thenReturn(OBJECT_MAPPER.writeValueAsString(requestBody));
+        when(httpHeaders.getFirst(routingKey)).thenReturn(bridgeId);
+        when(bridgeRegistry.getHostFor(bridgeId, serviceType)).thenReturn(Mono.just(url));
         when(requestIdTimestampMappings.get(requestId.toString())).thenReturn(Mono.empty());
-
 
         StepVerifier.create(validator.validateRequest(requestEntity, routingKey))
                 .assertNext(validatedRequest -> {

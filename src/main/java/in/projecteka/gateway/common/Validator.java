@@ -69,19 +69,6 @@ public class Validator {
         return empty();
     }
 
-    private static Optional<YamlRegistryMapping> getRegistryMapping(BridgeRegistry bridgeRegistry,
-                                                                    CMRegistry cmRegistry,
-                                                                    String routingHeaderKey,
-                                                                    String clientId) {
-        if (routingHeaderKey.equals(X_HIP_ID)) {
-            return bridgeRegistry.getConfigFor(clientId, HIP);
-        }
-        if (routingHeaderKey.equals(X_HIU_ID)) {
-            return bridgeRegistry.getConfigFor(clientId, HIU);
-        }
-        return cmRegistry.getConfigFor(clientId);
-    }
-
     public Mono<ValidatedRequest> validateRequest(HttpEntity<String> maybeRequest, String routingKey) {
         return validateReq(maybeRequest, routingKey, Validator::toRequest);
     }
