@@ -18,14 +18,11 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.HashMap;
-import java.util.Optional;
 
 import static in.projecteka.gateway.testcommon.TestBuilders.errorResult;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
-import static java.util.Optional.empty;
-import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -67,13 +64,13 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return empty();
+            protected Mono<String> getResponseUrl(String clientId) {
+                return Mono.empty();
             }
 
             @Override
-            protected Optional<String> getRequestUrl(String clientId) {
-                return of(url);
+            protected Mono<String> getRequestUrl(String clientId) {
+                return Mono.just(url);
             }
         };
 
@@ -96,13 +93,13 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return of(url);
+            protected Mono<String> getResponseUrl(String clientId) {
+                return Mono.just(url);
             }
 
             @Override
-            protected Optional<String> getRequestUrl(String clientId) {
-                return empty();
+            protected Mono<String> getRequestUrl(String clientId) {
+                return Mono.empty();
             }
         };
 
@@ -127,13 +124,13 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return of(url);
+            protected Mono<String> getResponseUrl(String clientId) {
+                return Mono.just(url);
             }
 
             @Override
-            protected Optional<String> getRequestUrl(String clientId) {
-                return empty();
+            protected Mono<String> getRequestUrl(String clientId) {
+                return Mono.empty();
             }
         };
 
@@ -159,13 +156,13 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return of(url);
+            protected Mono<String> getResponseUrl(String clientId) {
+                return Mono.just(url);
             }
 
             @Override
-            protected Optional<String> getRequestUrl(String clientId) {
-                return empty();
+            protected Mono<String> getRequestUrl(String clientId) {
+                return Mono.empty();
             }
         };
 
@@ -180,13 +177,13 @@ class ServiceClientTest {
     void returnErrorIfUnableToFindAHostForAClient() {
         var serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, identityService) {
             @Override
-            protected Optional<String> getResponseUrl(String clientId) {
-                return empty();
+            protected Mono<String> getResponseUrl(String clientId) {
+                return Mono.empty();
             }
 
             @Override
-            protected Optional<String> getRequestUrl(String clientId) {
-                return empty();
+            protected Mono<String> getRequestUrl(String clientId) {
+                return Mono.empty();
             }
         };
         StepVerifier.create(serviceClient.notifyError(string(), string(), errorResult().build())).verifyError(ClientError.class);

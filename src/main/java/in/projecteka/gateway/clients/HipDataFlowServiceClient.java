@@ -7,9 +7,6 @@ import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.util.Map;
-import java.util.Optional;
-
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 
 public class HipDataFlowServiceClient extends ServiceClient {
@@ -30,12 +27,12 @@ public class HipDataFlowServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Optional<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId) {
         return cmRegistry.getHostFor(clientId).map(host -> host + RESPONSE_ROUTE);
     }
 
     @Override
-    protected Optional<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId) {
         return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + REQUEST_ROUTE);
     }
 }
