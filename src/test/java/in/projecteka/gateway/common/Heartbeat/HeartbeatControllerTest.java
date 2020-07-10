@@ -48,7 +48,7 @@ class HeartbeatControllerTest {
     }
 
     @Test
-    void shouldGiveCMStatusAsUp() throws JsonProcessingException {
+    void shouldGiveGatewayStatusAsUp() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
                 .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                 .status(Status.UP)
@@ -67,7 +67,7 @@ class HeartbeatControllerTest {
     }
 
     @Test
-    void shouldGiveCMStatusAsDown() throws JsonProcessingException {
+    void shouldGiveGatewayStatusAsDown() throws JsonProcessingException {
         var heartbeatResponse = HeartbeatResponse.builder()
                 .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
                 .status(Status.DOWN)
