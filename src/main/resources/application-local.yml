@@ -17,7 +17,7 @@ spring:
     password: guest
 identity:
   clientId: gateway
-  clientSecret: ${CLIENT_SECRET}
+  clientSecret: 770c6667-8405-4339-8d0c-43be8a10fd1a
   url: http://localhost:9001/auth
   realm: central-registry
   host: ${HOST:http://localhost:8000}
