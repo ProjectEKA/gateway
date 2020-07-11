@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -68,7 +69,7 @@ class DiscoveryControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/care-contexts/discover")
+                .uri(Constants.PATH_CARE_CONTEXTS_DISCOVER)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -85,7 +86,7 @@ class DiscoveryControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/care-contexts/on-discover")
+                .uri(Constants.PATH_CARE_CONTEXTS_ON_DISCOVER)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")

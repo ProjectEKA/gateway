@@ -1,5 +1,6 @@
 package in.projecteka.gateway.clients;
 
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -11,8 +12,6 @@ import java.util.Optional;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 
 public class LinkInitServiceClient extends ServiceClient {
-    private static final String REQUEST_ROUTE = "/v1/links/link/init";
-    private static final String RESPONSE_ROUTE = "/v1/links/link/on-init";
     private final CMRegistry cmRegistry;
     private final BridgeRegistry bridgeRegistry;
 
@@ -28,11 +27,11 @@ public class LinkInitServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + RESPONSE_ROUTE);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_LINK_ON_INIT);
     }
 
     @Override
     protected Optional<String> getRequestUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + REQUEST_ROUTE);
+        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + Constants.PATH_LINK_INIT);
     }
 }

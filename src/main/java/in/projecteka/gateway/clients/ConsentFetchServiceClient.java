@@ -1,5 +1,6 @@
 package in.projecteka.gateway.clients;
 
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -11,8 +12,6 @@ import java.util.Optional;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
 public class ConsentFetchServiceClient extends ServiceClient {
-    private static final String REQUEST_ROUTE = "/v1/consents/fetch";
-    private static final String RESPONSE_ROUTE = "/v1/consents/on-fetch";
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
 
@@ -28,11 +27,11 @@ public class ConsentFetchServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_CONSENTS_ON_FETCH);
     }
 
     @Override
     protected Optional<String> getRequestUrl(String clientId) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + REQUEST_ROUTE);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_CONSENTS_FETCH);
     }
 }

@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.V_1_CERTS;
-import static in.projecteka.gateway.common.Constants.V_1_SESSIONS;
-import static in.projecteka.gateway.common.Constants.V_1_WELL_KNOWN_OPENID_CONFIGURATION;
+import static in.projecteka.gateway.common.Constants.PATH_CERTS;
+import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
+import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @RestController
@@ -25,18 +25,18 @@ public class SessionController {
     private final IdentityService identityService;
     private final IdentityProperties centralRegistryProperties;
 
-    @PostMapping(V_1_SESSIONS)
+    @PostMapping(PATH_SESSIONS)
     public Mono<Session> with(@RequestBody SessionRequest session) {
         logger.info("Session request received {}", keyValue("clientId", session.getClientId()));
         return identityService.getTokenFor(session.getClientId(), session.getClientSecret());
     }
 
-    @GetMapping(V_1_WELL_KNOWN_OPENID_CONFIGURATION)
+    @GetMapping(PATH_WELL_KNOWN_OPENID_CONFIGURATION)
     public Mono<JsonNode> configuration() {
         return identityService.configuration(centralRegistryProperties.getHost());
     }
 
-    @GetMapping(V_1_CERTS)
+    @GetMapping(PATH_CERTS)
     public Mono<JsonNode> certs() {
         return identityService.certs();
     }

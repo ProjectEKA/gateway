@@ -1,13 +1,12 @@
 package in.projecteka.gateway.clients;
 
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
-import java.util.Map;
 import java.util.Optional;
 
 import static in.projecteka.gateway.registry.ServiceType.HIU;
@@ -16,8 +15,6 @@ public class DataFlowRequestServiceClient extends ServiceClient {
 
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
-    private static final String REQUEST_ROUTE = "/v1/health-information/request";
-    private static final String RESPONSE_ROUTE = "/v1/health-information/hiu/on-request";
 
     public DataFlowRequestServiceClient(ServiceOptions serviceOptions,
                                         WebClient.Builder webClientBuilder,
@@ -31,11 +28,11 @@ public class DataFlowRequestServiceClient extends ServiceClient {
 
     @Override
     protected Optional<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.CALLBACK_PATH_HIU_HEALTH_INFORMATION_REQUEST);
     }
 
     @Override
     protected Optional<String> getRequestUrl(String clientId) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + REQUEST_ROUTE);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.ROUTE_PATH_CM_HEALTH_INFORMATION_REQUEST);
     }
 }
