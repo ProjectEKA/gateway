@@ -6,8 +6,7 @@ import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
@@ -27,12 +26,12 @@ public class DataFlowRequestServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Optional<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId) {
         return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.CALLBACK_PATH_HIU_HEALTH_INFORMATION_REQUEST);
     }
 
     @Override
-    protected Optional<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId) {
         return cmRegistry.getHostFor(clientId).map(host -> host + Constants.ROUTE_PATH_CM_HEALTH_INFORMATION_REQUEST);
     }
 }

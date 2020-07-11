@@ -12,3 +12,11 @@ identity:
   url: http://localhost:9001/auth
   realm: central-registry
   host: ${HOST:http://localhost:8000}
+gateway:
+  db:
+    host: localhost
+    port: 5432
+    schema: gateway
+    user: postgres
+    password: password
+    poolSize: 5

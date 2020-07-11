@@ -5,8 +5,7 @@ import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.CMRegistry;
 import org.springframework.web.reactive.function.client.WebClient;
-
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 public class HealthInfoNotificationServiceClient extends ServiceClient {
 
@@ -20,12 +19,12 @@ public class HealthInfoNotificationServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Optional<String> getResponseUrl(String clientId) {
-        return Optional.empty();
+    protected Mono<String> getResponseUrl(String clientId) {
+        return Mono.empty();
     }
 
     @Override
-    protected Optional<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId) {
         return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_HEALTH_INFORMATION_NOTIFY);
     }
 }

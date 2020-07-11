@@ -12,3 +12,10 @@ gateway:
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     registryPath: ${REGISTRY_PATH:registry-local.yaml}
+  db:
+    host: localhost
+    port: 5432
+    schema: gateway_test
+    user: dummy
+    password: dummy_pwd
+    poolSize: 5
