@@ -7,8 +7,6 @@ db_password="password"
 
 export PGPASSWORD=$db_password
 
-psql -h $db_host -U $db_user $database
-
 psql -d $database -h $db_host -U $db_user -c "INSERT INTO public.consent_manager (name, url, cm_id, suffix, active, date_created,
  date_modified, blocklisted, license, licensing_authority)
   VALUES ('', 'http://localhost:9000', 'ncg', 'ncg', 'true', now(), now(), 'false', '', '')"
