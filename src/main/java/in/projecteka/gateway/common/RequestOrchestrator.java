@@ -36,11 +36,15 @@ public class RequestOrchestrator<T extends ServiceClient> {
                                  String sourceRoutingKey,
                                  String clientId) {
         StringBuilder apiCalled = new StringBuilder("");
-        return Mono.subscriberContext().flatMap(context -> {
-            apiCalled.append((String) context.get("apiCalled"));
-            return validator.validateRequest(maybeRequest, targetRoutingKey);
-        })
-                .doOnSuccess(request -> offloadThis(request, targetRoutingKey, sourceRoutingKey, clientId, apiCalled.toString()))
+        return Mono.subscriberContext()
+                .flatMap(context -> {
+                    apiCalled.append((String) context.get("apiCalled"));
+                    return validator.validateRequest(maybeRequest, targetRoutingKey);
+                }).doOnSuccess(request -> offloadThis(request,
+                        targetRoutingKey,
+                        sourceRoutingKey,
+                        clientId,
+                        apiCalled.toString()))
                 .then();
     }
 
