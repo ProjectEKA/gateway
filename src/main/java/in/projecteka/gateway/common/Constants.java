@@ -22,7 +22,7 @@ public class Constants {
     };
 
     // APIs
-    public static final String CURRENT_VERSION = "/v1";
+    public static final String CURRENT_VERSION = "/v0.5";
     public static final String PATH_CARE_CONTEXTS_ON_DISCOVER = CURRENT_VERSION + "/care-contexts/on-discover";
     public static final String PATH_CARE_CONTEXTS_DISCOVER = CURRENT_VERSION + "/care-contexts/discover";
     public static final String PATH_LINK_INIT = CURRENT_VERSION + "/links/link/init";
