@@ -1,0 +1,128 @@
+openapi: 3.0.0
+info:
+  title: Gateway Internal
+  description: Gateway is the hub that routes/orchestrates the interaction between consent managers and API bridges.
+  version: 1.0.0
+servers:
+  - url: https://ncg-dev.projecteka.in/gateway
+    description: Dev
+tags:
+  - name: registration
+paths:
+  /internal/cm:
+    post:
+      tags:
+        - registration
+      summary: Creation of CM service entries in DB by admin.
+      description: This API is to create CM service entries in database.
+      parameters:
+        - $ref: "#/components/parameters/authorization"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CMRegistrationRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/CMRegistrationRequest'
+      responses:
+        '200':
+          description: CM Service entries added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientResponse'
+        '400':
+          description: >
+            Invalid request, required attributes not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: >
+            **Causes:**
+              * Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >
+            **Causes:**
+              * Downstream system(s) is down.
+              * Unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  parameters:
+    authorization:
+      name: Authorization
+      in: header
+      required: true
+      description: Access token which was issued after successful login with gateway auth server.
+      schema:
+        type: string
+  schemas:
+    CMRegistrationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        cm_id:
+          type: string
+        suffix:
+          type: string
+        active:
+          type: boolean
+        blocklisted:
+          type: boolean
+        license:
+          type: string
+        licensing_authority:
+          type: string
+      xml:
+        name: CMRegistrationRequest
+    ClientResponse:
+      type: object
+      properties:
+        client_key:
+          type: string
+        client_secret:
+          type: string
+      xml:
+        name: ClientResponse
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+      xml:
+        name: ErrorResponse
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          enum: [1000, 10001]
+        message:
+          type: string
+      xml:
+        name: Error
+
+
+
+  
