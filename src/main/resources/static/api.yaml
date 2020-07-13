@@ -10,7 +10,7 @@ tags:
   - name: registration
 paths:
   /internal/cm:
-    post:
+    put:
       tags:
         - registration
       summary: Creation of CM service entries in DB by admin.
@@ -94,6 +94,10 @@ components:
           type: string
         licensing_authority:
           type: string
+      required:
+        - "url"
+        - "cm_id"
+        - "suffix"
       xml:
         name: CMRegistrationRequest
     ClientResponse:
@@ -122,7 +126,3 @@ components:
           type: string
       xml:
         name: Error
-
-
-
-  
