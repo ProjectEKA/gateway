@@ -38,6 +38,8 @@ import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.RegistryRepository;
+import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -675,6 +677,11 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    public RegistryService register(RegistryRepository registryRepository) {
+        return new RegistryService(registryRepository);
+    }
+
+    @Bean
     @ConditionalOnProperty(value = "webclient.keepalive", havingValue = "false")
     public ClientHttpConnector clientHttpConnector() {
         return new ReactorClientHttpConnector(HttpClient.create(ConnectionProvider.newConnection()));
@@ -715,5 +722,10 @@ public class GatewayConfiguration {
     @Bean
     public MappingRepository mappingRepository(PgPool pgPool) {
         return new MappingRepository(pgPool);
+    }
+
+    @Bean
+    public RegistryRepository registryRepository(PgPool pgPool) {
+        return new RegistryRepository(pgPool);
     }
 }
