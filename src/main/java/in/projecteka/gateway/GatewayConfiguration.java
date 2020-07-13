@@ -71,7 +71,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 public class GatewayConfiguration {
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
-    @Bean({"requestIdMappings"})
+    @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
         RedisClient redisClient = getRedisClient(redisOptions);
         return new RedisCacheAdapter(redisClient, redisOptions.getExpiry());
