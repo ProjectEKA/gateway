@@ -7,6 +7,7 @@ import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
@@ -29,8 +30,8 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -104,7 +105,7 @@ class DataflowControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/health-information/cm/request")
+                .uri(Constants.PATH_HEALTH_INFORMATION_CM_REQUEST)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -122,7 +123,7 @@ class DataflowControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/health-information/cm/on-request")
+                .uri(Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
@@ -142,7 +143,7 @@ class DataflowControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/health-information/hip/request")
+                .uri(Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -162,7 +163,7 @@ class DataflowControllerTest {
 
         webTestClient
                 .post()
-                .uri(V_1_HEALTH_INFORMATION_NOTIFY)
+                .uri(PATH_HEALTH_INFORMATION_NOTIFY)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -192,7 +193,7 @@ class DataflowControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/health-information/hip/on-request")
+                .uri(Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

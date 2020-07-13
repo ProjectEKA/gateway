@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -72,7 +73,7 @@ public class LinkControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/links/link/init")
+                .uri(Constants.PATH_LINK_INIT)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
@@ -90,7 +91,7 @@ public class LinkControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/links/link/on-init")
+                .uri(Constants.PATH_LINK_ON_INIT)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
@@ -109,7 +110,7 @@ public class LinkControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/links/link/confirm")
+                .uri(Constants.PATH_LINK_CONFIRM)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

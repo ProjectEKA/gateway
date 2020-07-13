@@ -24,8 +24,8 @@ psql -d $database -h $db_host -U $db_user -c "INSERT INTO public.bridge (name, u
 
 
 psql -d $database -h $db_host -U $db_user -c "INSERT INTO public.bridge_service (bridge_id, type, register_time,
- date_created, date_modified, active) VALUES ('10000005', 'HIP', now(), now(), now(), 'true')"
+ date_created, date_modified, active, service_id) VALUES ('10000005', 'HIP', now(), now(), now(), 'true', '10000005')"
 psql -d $database -h $db_host -U $db_user -c "INSERT INTO public.bridge_service (bridge_id, type, register_time,
- date_created, date_modified, active) VALUES ('10000004', 'HIP', now(), now(), now(), 'true')"
+ date_created, date_modified, active, service_id) VALUES ('10000004', 'HIP', now(), now(), now(), 'true', '10000004')"
 psql -d $database -h $db_host -U $db_user -c "INSERT INTO public.bridge_service (bridge_id, type, register_time,
- date_created, date_modified, active) VALUES ('10000002', 'HIU', now(), now(), now(), 'true')"
+ date_created, date_modified, active, service_id) VALUES ('10000002', 'HIU', now(), now(), now(), 'true', '10000002')"
