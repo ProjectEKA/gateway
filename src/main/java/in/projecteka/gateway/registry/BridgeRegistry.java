@@ -1,21 +1,22 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.common.MappingRepository;
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import lombok.AllArgsConstructor;
-
-import java.util.Optional;
+import org.springframework.data.util.Pair;
+import org.springframework.security.web.util.UrlUtils;
+import org.springframework.util.StringUtils;
+import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
 public class BridgeRegistry {
-    YamlRegistry yamlRegistry;
+    private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
+    private final MappingRepository mappingRepository;
 
-    public Optional<YamlRegistryMapping> getConfigFor(String id, ServiceType serviceType) {
-        return yamlRegistry.getBridges().stream()
-                .filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id))
-                .filter(yamlRegistryMapping -> yamlRegistryMapping.getServesAs().contains(serviceType))
-                .findFirst();
-    }
-
-    public Optional<String> getHostFor(String id, ServiceType serviceType) {
-        return getConfigFor(id, serviceType).map(YamlRegistryMapping::getHost);
+    public Mono<String> getHostFor(String id, ServiceType serviceType) {
+        return bridgeMappings.get(Pair.of(id, serviceType))
+                .switchIfEmpty(mappingRepository.bridgeHost(Pair.of(id, serviceType))
+                        .filter(url -> StringUtils.hasText(url) && UrlUtils.isAbsoluteUrl(url))
+                        .flatMap(url -> bridgeMappings.put(Pair.of(id, serviceType), url).thenReturn(url)));
     }
 }
