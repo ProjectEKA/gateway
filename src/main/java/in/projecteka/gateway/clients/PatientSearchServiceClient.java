@@ -1,5 +1,6 @@
 package in.projecteka.gateway.clients;
 
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
@@ -10,9 +11,6 @@ import reactor.core.publisher.Mono;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
 public class PatientSearchServiceClient extends ServiceClient {
-    private static final String REQUEST_ROUTE = "/v1/patients/find";
-    private static final String RESPONSE_ROUTE = "/v1/patients/on-find";
-
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
 
@@ -28,11 +26,11 @@ public class PatientSearchServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + RESPONSE_ROUTE);
+        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_PATIENTS_ON_FIND);
     }
 
     @Override
     protected Mono<String> getRequestUrl(String clientId) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + REQUEST_ROUTE);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_PATIENTS_FIND);
     }
 }

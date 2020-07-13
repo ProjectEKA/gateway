@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import org.junit.jupiter.api.Test;
@@ -73,7 +74,7 @@ public class ConsentArtefactControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consents/hip/notify")
+                .uri(Constants.PATH_CONSENTS_HIP_NOTIFY)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -93,7 +94,7 @@ public class ConsentArtefactControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consents/hiu/notify")
+                .uri(Constants.PATH_CONSENTS_HIU_NOTIFY)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -111,7 +112,7 @@ public class ConsentArtefactControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consents/hip/on-notify")
+                .uri(Constants.PATH_CONSENTS_HIP_ON_NOTIFY)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")

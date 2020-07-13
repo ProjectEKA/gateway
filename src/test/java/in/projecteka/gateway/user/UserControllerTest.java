@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponseAction;
@@ -80,7 +81,7 @@ class UserControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/patients/find")
+                .uri(Constants.PATH_PATIENTS_FIND)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -96,7 +97,7 @@ class UserControllerTest {
         when(patientSearchResponseOrchestrator.processResponse(any(),eq(X_HIU_ID))).thenReturn(empty());
         webTestClient
                 .post()
-                .uri("/v1/patients/on-find")
+                .uri(Constants.PATH_PATIENTS_ON_FIND)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
