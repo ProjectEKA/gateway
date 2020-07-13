@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
+import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_DISCOVER;
-import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
@@ -30,22 +30,22 @@ public class DiscoveryController {
     ResponseOrchestrator discoveryResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(V_1_CARE_CONTEXTS_DISCOVER)
+    @PostMapping(PATH_CARE_CONTEXTS_DISCOVER)
     public Mono<Void> discoverCareContext(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
                         discoveryRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId)
-                                .subscriberContext(context -> context.put(API_CALLED, V_1_CARE_CONTEXTS_DISCOVER)));
+                                .subscriberContext(context -> context.put(API_CALLED, PATH_CARE_CONTEXTS_DISCOVER)));
 
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(V_1_CARE_CONTEXTS_ON_DISCOVER)
+    @PostMapping(PATH_CARE_CONTEXTS_ON_DISCOVER)
     public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
         logger.debug("Request from hip: {}", keyValue("discoveryResponse", requestEntity.getBody()));
         return discoveryResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
-                .subscriberContext(context -> context.put(API_CALLED, V_1_CARE_CONTEXTS_ON_DISCOVER));
+                .subscriberContext(context -> context.put(API_CALLED, PATH_CARE_CONTEXTS_ON_DISCOVER));
     }
 }

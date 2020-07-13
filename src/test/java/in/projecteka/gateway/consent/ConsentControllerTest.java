@@ -7,12 +7,12 @@ import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.ValidatedResponse;
 import in.projecteka.gateway.common.ValidatedResponseAction;
 import in.projecteka.gateway.common.Validator;
-import org.json.JSONException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -88,7 +88,7 @@ class ConsentControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consent-requests/init")
+                .uri(Constants.PATH_CONSENT_REQUESTS_INIT)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -105,7 +105,7 @@ class ConsentControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consent-requests/on-init")
+                .uri(Constants.PATH_CONSENT_REQUESTS_ON_INIT)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -124,7 +124,7 @@ class ConsentControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consents/fetch")
+                .uri(Constants.PATH_CONSENTS_FETCH)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -155,7 +155,7 @@ class ConsentControllerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/consents/on-fetch")
+                .uri(Constants.PATH_CONSENTS_ON_FETCH)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue(body)
