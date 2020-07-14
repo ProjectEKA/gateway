@@ -2,6 +2,7 @@ package in.projecteka.gateway.common.Heartbeat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.TestBuilders;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
@@ -58,7 +59,7 @@ class HeartbeatControllerTest {
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri("/v1/heartbeat")
+                .uri(Constants.PATH_HEARTBEAT)
                 .exchange()
                 .expectStatus()
                 .isOk()
@@ -78,7 +79,7 @@ class HeartbeatControllerTest {
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri("/v1/heartbeat")
+                .uri(Constants.PATH_HEARTBEAT)
                 .exchange()
                 .expectStatus()
                 .isOk()

@@ -1,21 +1,21 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.common.MappingRepository;
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import lombok.AllArgsConstructor;
-
-import java.util.Optional;
+import org.springframework.security.web.util.UrlUtils;
+import org.springframework.util.StringUtils;
+import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
 public class CMRegistry {
-    YamlRegistry yamlRegistry;
+    private final CacheAdapter<String, String> consentManagerMappings;
+    private final MappingRepository mappingRepository;
 
-    public Optional<YamlRegistryMapping> getConfigFor(String id) {
-        return yamlRegistry.getConsentManagers()
-                .stream()
-                .filter(yamlRegistryMapping -> yamlRegistryMapping.getId().equals(id))
-                .findFirst();
-    }
-
-    public Optional<String> getHostFor(String id) {
-        return getConfigFor(id).map(YamlRegistryMapping::getHost);
+    public Mono<String> getHostFor(String id) {
+        return consentManagerMappings.get(id)
+                .switchIfEmpty(mappingRepository.cmHost(id)
+                        .filter(url -> StringUtils.hasText(url) && UrlUtils.isAbsoluteUrl(url))
+                        .flatMap(url -> consentManagerMappings.put(id, url).thenReturn(url)));
     }
 }

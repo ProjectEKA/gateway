@@ -3,6 +3,7 @@ package in.projecteka.gateway;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.Authenticator;
+import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +41,7 @@ class SecurityConfigurationEnablerTest {
     void return401UnAuthorized() {
         webTestClient
                 .post()
-                .uri("/v1/patients/find")
+                .uri(Constants.PATH_PATIENTS_FIND)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
                 .exchange()
@@ -56,7 +57,7 @@ class SecurityConfigurationEnablerTest {
 
         webTestClient
                 .post()
-                .uri("/v1/patients/find")
+                .uri(Constants.PATH_PATIENTS_FIND)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")

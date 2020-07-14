@@ -2,7 +2,6 @@ package in.projecteka.gateway;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -23,6 +22,7 @@ import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
+import in.projecteka.gateway.common.MappingRepository;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.RetryableValidatedRequestAction;
@@ -38,9 +38,12 @@ import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
-import in.projecteka.gateway.registry.YamlRegistry;
+import in.projecteka.gateway.registry.ServiceType;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import io.vertx.pgclient.PgConnectOptions;
+import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.PoolOptions;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -49,6 +52,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.util.Pair;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
@@ -58,8 +62,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
@@ -70,8 +72,9 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
+
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
-    @Bean({"requestIdMappings"})
+    @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
         RedisClient redisClient = getRedisClient(redisOptions);
         return new RedisCacheAdapter(redisClient, redisOptions.getExpiry());
@@ -87,9 +90,9 @@ public class GatewayConfiguration {
     }
 
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
-    @Bean({"requestIdMappings"})
+    @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapter() {
-        return new LoadingCacheAdapter(createSessionCache(10));
+        return new LoadingCacheAdapter<>(createSessionCache(10));
     }
 
     public LoadingCache<String, String> createSessionCache(int duration) {
@@ -103,20 +106,47 @@ public class GatewayConfiguration {
                 });
     }
 
-    @Bean
-    public YamlRegistry createYamlRegistry(ServiceOptions serviceOptions) throws IOException {
-        ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
-        return objectMapper.readValue(new File(serviceOptions.getRegistryPath()), YamlRegistry.class);
+    @Bean({"consentManagerMappings"})
+    public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings() {
+        return new LoadingCacheAdapter<>(createMappingCacheForCM(12));
+    }
+
+    public LoadingCache<String, String> createMappingCacheForCM(int duration) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.HOURS)
+                .build(new CacheLoader<>() {
+                    public String load(String key) {
+                        return "";
+                    }
+                });
+    }
+
+    @Bean({"bridgeMappings"})
+    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
+        return new LoadingCacheAdapter<>(createMappingCacheForBridge(12));
+    }
+
+    public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.HOURS)
+                .build(new CacheLoader<>() {
+                    public String load(Pair<String, ServiceType> key) {
+                        return "";
+                    }
+                });
     }
 
     @Bean
-    public CMRegistry cmRegistry(YamlRegistry yamlRegistry) {
-        return new CMRegistry(yamlRegistry);
+    public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings, MappingRepository mappingRepository) {
+        return new CMRegistry(consentManagerMappings, mappingRepository);
     }
 
     @Bean
-    public BridgeRegistry bridgeRegistry(YamlRegistry yamlRegistry) {
-        return new BridgeRegistry(yamlRegistry);
+    public BridgeRegistry bridgeRegistry(CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                         MappingRepository mappingRepository) {
+        return new BridgeRegistry(bridgeMappings, mappingRepository);
     }
 
     @Bean
@@ -667,5 +697,23 @@ public class GatewayConfiguration {
                     configurer.defaultCodecs().jackson2JsonEncoder(encoder);
                     configurer.defaultCodecs().jackson2JsonDecoder(decoder);
                 }).build();
+    }
+
+    @Bean
+    public PgPool pgPool(DbOptions dbOptions) {
+        PgConnectOptions connectOptions = new PgConnectOptions()
+                .setPort(dbOptions.getPort())
+                .setHost(dbOptions.getHost())
+                .setDatabase(dbOptions.getSchema())
+                .setUser(dbOptions.getUser())
+                .setPassword(dbOptions.getPassword());
+        PoolOptions poolOptions = new PoolOptions()
+                .setMaxSize(dbOptions.getPoolSize());
+        return PgPool.pool(connectOptions, poolOptions);
+    }
+
+    @Bean
+    public MappingRepository mappingRepository(PgPool pgPool) {
+        return new MappingRepository(pgPool);
     }
 }

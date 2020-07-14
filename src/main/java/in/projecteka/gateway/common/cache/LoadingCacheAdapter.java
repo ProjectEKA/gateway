@@ -1,23 +1,18 @@
 package in.projecteka.gateway.common.cache;
-
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.exception.CacheNotAccessibleException;
 import reactor.core.publisher.Mono;
-
 import java.util.concurrent.ExecutionException;
-
-public class LoadingCacheAdapter implements CacheAdapter<String, String> {
-    private final LoadingCache<String, String> loadingCache;
-
-    public LoadingCacheAdapter(LoadingCache<String, String> loadingCache) {
+public class LoadingCacheAdapter<K, V> implements CacheAdapter<K, V> {
+    private final LoadingCache<K, V> loadingCache;
+    public LoadingCacheAdapter(LoadingCache<K, V> loadingCache) {
         this.loadingCache = loadingCache;
     }
-
     @Override
-    public Mono<String> get(String key) {
+    public Mono<V> get(K key) {
         try {
-            String value = loadingCache.get(key);
-            if (!value.isEmpty()) {
+            V value = loadingCache.get(key);
+            if (value != null && !value.equals("")) {
                 return Mono.just(value);
             }
             return Mono.empty();
@@ -25,11 +20,9 @@ public class LoadingCacheAdapter implements CacheAdapter<String, String> {
             return Mono.error(new CacheNotAccessibleException("cache.not.accessible"));
         }
     }
-
     @Override
-    public Mono<Void> put(String key, String value) {
+    public Mono<Void> put(K key, V value) {
         loadingCache.put(key, value);
         return Mono.empty();
     }
-
 }

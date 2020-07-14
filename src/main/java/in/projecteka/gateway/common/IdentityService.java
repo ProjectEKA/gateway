@@ -28,7 +28,8 @@ public class IdentityService {
     }
 
     public Mono<JsonNode> configuration(String host) {
-        return Mono.fromCallable(() -> new ObjectMapper().readTree(format("{\"jwks_uri\": \"%s/v1/certs\"}", host)));
+        return Mono.fromCallable(() -> new ObjectMapper().readTree(
+                format("{\"jwks_uri\": \"%s" + Constants.CURRENT_VERSION + "/certs\"}", host)));
     }
 
     public Mono<JsonNode> certs() {

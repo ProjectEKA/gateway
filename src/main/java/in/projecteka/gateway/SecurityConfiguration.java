@@ -26,30 +26,30 @@ import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 
-import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_DISCOVER;
-import static in.projecteka.gateway.common.Constants.V_1_CARE_CONTEXTS_ON_DISCOVER;
-import static in.projecteka.gateway.common.Constants.V_1_CERTS;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_FETCH;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_NOTIFY;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIP_ON_NOTIFY;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_HIU_NOTIFY;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENTS_ON_FETCH;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_INIT;
-import static in.projecteka.gateway.common.Constants.V_1_CONSENT_REQUESTS_ON_INIT;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_CM_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_HIP_REQUEST;
-import static in.projecteka.gateway.common.Constants.V_1_HEALTH_INFORMATION_NOTIFY;
-import static in.projecteka.gateway.common.Constants.V_1_HEARTBEAT;
-import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_CONFIRM;
-import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_INIT;
-import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_CONFIRM;
-import static in.projecteka.gateway.common.Constants.V_1_LINKS_LINK_ON_INIT;
-import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_FIND;
-import static in.projecteka.gateway.common.Constants.V_1_PATIENTS_ON_FIND;
-import static in.projecteka.gateway.common.Constants.V_1_SESSIONS;
-import static in.projecteka.gateway.common.Constants.V_1_WELL_KNOWN_OPENID_CONFIGURATION;
+import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
+import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
+import static in.projecteka.gateway.common.Constants.PATH_CERTS;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_FETCH;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_ON_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
+import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
+import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
+import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -61,40 +61,40 @@ import static org.springframework.util.StringUtils.hasText;
 public class SecurityConfiguration {
 
     protected static final String[] HIU_APIS = new String[]{
-            V_1_CONSENT_REQUESTS_INIT,
-            V_1_CONSENTS_FETCH,
-            V_1_PATIENTS_FIND,
-            V_1_HEALTH_INFORMATION_CM_REQUEST
+            PATH_CONSENT_REQUESTS_INIT,
+            PATH_CONSENTS_FETCH,
+            PATH_PATIENTS_FIND,
+            PATH_HEALTH_INFORMATION_CM_REQUEST
     };
     protected static final String[] HIP_APIS = new String[]{
-            V_1_CARE_CONTEXTS_ON_DISCOVER,
-            V_1_LINKS_LINK_ON_INIT,
-            V_1_LINKS_LINK_ON_CONFIRM,
-            V_1_CONSENTS_HIP_ON_NOTIFY,
-            V_1_HEALTH_INFORMATION_HIP_ON_REQUEST
+            PATH_CARE_CONTEXTS_ON_DISCOVER,
+            PATH_LINK_ON_INIT,
+            PATH_LINK_ON_CONFIRM,
+            PATH_CONSENTS_HIP_ON_NOTIFY,
+            PATH_HEALTH_INFORMATION_HIP_ON_REQUEST
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
-            V_1_HEALTH_INFORMATION_NOTIFY
+            PATH_HEALTH_INFORMATION_NOTIFY
     };
 
     protected static final String[] CM_APIS = new String[]{
-            V_1_CARE_CONTEXTS_DISCOVER,
-            V_1_LINKS_LINK_INIT,
-            V_1_LINKS_LINK_CONFIRM,
-            V_1_CONSENTS_ON_FETCH,
-            V_1_CONSENTS_HIP_NOTIFY,
-            V_1_CONSENTS_HIU_NOTIFY,
-            V_1_CONSENT_REQUESTS_ON_INIT,
-            V_1_PATIENTS_ON_FIND,
-            V_1_HEALTH_INFORMATION_HIP_REQUEST,
-            V_1_HEALTH_INFORMATION_CM_ON_REQUEST
+            PATH_CARE_CONTEXTS_DISCOVER,
+            PATH_LINK_INIT,
+            PATH_LINK_CONFIRM,
+            PATH_CONSENTS_ON_FETCH,
+            PATH_CONSENTS_HIP_NOTIFY,
+            PATH_CONSENTS_HIU_NOTIFY,
+            PATH_CONSENT_REQUESTS_ON_INIT,
+            PATH_PATIENTS_ON_FIND,
+            PATH_HEALTH_INFORMATION_HIP_REQUEST,
+            PATH_HEALTH_INFORMATION_CM_ON_REQUEST
     };
     protected static final String[] ALLOW_LIST_APIS = {
-            V_1_CERTS,
-            V_1_WELL_KNOWN_OPENID_CONFIGURATION,
-            V_1_SESSIONS,
-            V_1_HEARTBEAT
+            PATH_CERTS,
+            PATH_WELL_KNOWN_OPENID_CONFIGURATION,
+            PATH_SESSIONS,
+            PATH_HEARTBEAT
     };
 
     @Bean
