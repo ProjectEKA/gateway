@@ -45,10 +45,10 @@ public class MappingControllerTest {
     @Test
     void shouldGiveUrls() throws JsonProcessingException {
         List<String> urls=List.of("http://localhost:9052","http://localhost:8001","http://localhost:8003");
-        Bridge bridgeUrls = Bridge.builder().bridgeUrls(urls).build();
+        Path pathUrls = Path.builder().bridgeUrls(urls).build();
 
-        var bridgeUrlsJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(bridgeUrls);
-        when(mappingService.getUrl()).thenReturn(Mono.just(bridgeUrls));
+        var bridgeUrlsJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(pathUrls);
+        when(mappingService.getAllUrls()).thenReturn(Mono.just(pathUrls));
 
         webTestClient.get()
                 .uri("/v1/getBridgeUrls")

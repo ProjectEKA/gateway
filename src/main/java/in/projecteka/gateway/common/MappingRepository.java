@@ -53,13 +53,13 @@ public class MappingRepository {
                         }));
     }
 
-    public Flux<String> selectbridgeUrls() {
+    public Flux<String> selectBridgeUrls() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGEURLS)
                 .execute(
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                fluxSink.error(new DbOperationError("failed to get Urls"));
+                                fluxSink.error(new DbOperationError("Failed to get bridge urls"));
                             } else {
                                 RowSet<Row> results = handler.result();
                                 for (Row row : results) {
