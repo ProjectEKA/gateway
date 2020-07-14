@@ -38,6 +38,7 @@ import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.MappingService;
 import in.projecteka.gateway.registry.ServiceType;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -147,6 +148,11 @@ public class GatewayConfiguration {
     public BridgeRegistry bridgeRegistry(CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
                                          MappingRepository mappingRepository) {
         return new BridgeRegistry(bridgeMappings, mappingRepository);
+    }
+
+    @Bean
+    public MappingService mappingService(MappingRepository mappingRepository) {
+        return new MappingService(mappingRepository);
     }
 
     @Bean
