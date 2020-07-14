@@ -18,12 +18,12 @@ public class ResponseOrchestrator {
     private static final Logger logger = LoggerFactory.getLogger(ResponseOrchestrator.class);
 
     public Mono<Void> processResponse(HttpEntity<String> maybeResponse, String routingKey) {
-        StringBuilder apiCalled = new StringBuilder("");
-        return Mono.subscriberContext().flatMap(context -> {
-            apiCalled.append((String) context.get("apiCalled"));
-            return validator.validateResponse(maybeResponse, routingKey);
-        })
-                .doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey, apiCalled.toString()))
+        StringBuilder apiCalled = new StringBuilder();
+        return Mono.subscriberContext()
+                .flatMap(context -> {
+                    apiCalled.append((String) context.get("apiCalled"));
+                    return validator.validateResponse(maybeResponse, routingKey);
+                }).doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey, apiCalled.toString()))
                 .then();
     }
 
