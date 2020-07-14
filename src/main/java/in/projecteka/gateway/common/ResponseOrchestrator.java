@@ -10,7 +10,6 @@ import static in.projecteka.gateway.common.Constants.nameMap;
 import static in.projecteka.gateway.common.Utils.updateRequestId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
-
 @AllArgsConstructor
 public class ResponseOrchestrator {
     Validator validator;
@@ -19,10 +18,11 @@ public class ResponseOrchestrator {
 
     public Mono<Void> processResponse(HttpEntity<String> maybeResponse, String routingKey) {
         StringBuilder apiCalled = new StringBuilder("");
-        return Mono.subscriberContext().flatMap(context -> {
-            apiCalled.append((String) context.get("apiCalled"));
-            return validator.validateResponse(maybeResponse, routingKey);
-        })
+        return Mono.subscriberContext()
+                .flatMap(context -> {
+                    apiCalled.append((String) context.get("apiCalled"));
+                    return validator.validateResponse(maybeResponse, routingKey);
+                })
                 .doOnSuccess(validatedResponse -> offloadThis(validatedResponse, routingKey, apiCalled.toString()))
                 .then();
     }
@@ -34,6 +34,8 @@ public class ResponseOrchestrator {
                     , keyValue("target", nameMap.get(routingKey))
                     , keyValue("targetId", response.getId())
                     , keyValue("apiCalled", apiCalled));
+            // temp
+            logger.info("Response body {}", updatedJsonNode);
             return validatedResponseAction.execute(response.getId(), updatedJsonNode, routingKey);
         }).subscribe();
     }
