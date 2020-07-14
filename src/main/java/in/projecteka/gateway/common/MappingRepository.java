@@ -53,7 +53,7 @@ public class MappingRepository {
                         }));
     }
 
-    public Flux<String> selectbridgeUrls() {
+    public Flux<String> selectBridgeUrls() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGEURLS)
                 .execute(
                         handler -> {
