@@ -1,6 +1,6 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.registry.Model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
