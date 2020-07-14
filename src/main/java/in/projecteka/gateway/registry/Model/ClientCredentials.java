@@ -1,8 +1,8 @@
 package in.projecteka.gateway.registry.Model;
 
-import lombok.Data;
+import lombok.Value;
 
-@Data
+@Value
 public class ClientCredentials {
     String clientKey;
     String clientSecret;

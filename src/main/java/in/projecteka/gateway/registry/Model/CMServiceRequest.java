@@ -1,11 +1,11 @@
 package in.projecteka.gateway.registry.Model;
 
-import lombok.Data;
+import lombok.Value;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Data
+@Value
 public class CMServiceRequest {
     UUID id;
     String name;
