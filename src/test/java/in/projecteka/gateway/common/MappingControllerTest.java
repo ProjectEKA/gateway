@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "6000")
-public class MappingControllerTest {
+class MappingControllerTest {
     @Autowired
     private WebTestClient webTestClient;
 

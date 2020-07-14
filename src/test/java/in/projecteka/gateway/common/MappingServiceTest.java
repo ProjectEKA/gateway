@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "6000")
-public class MappingServiceTest {
+class MappingServiceTest {
     @SuppressWarnings("unused")
     @MockBean(name = "centralRegistryJWKSet")
     private JWKSet centralRegistryJWKSet;
