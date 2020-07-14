@@ -12,7 +12,7 @@ public class MappingController {
 
     private MappingService mappingService;
 
-    @GetMapping("/v1/getBridgeUrls")
+    @GetMapping(Constants.GET_BRIDGE_URLS)
     public Mono<Path> bridgeUrlsController() {
         return mappingService.getAllUrls();
 
