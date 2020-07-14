@@ -1,6 +1,8 @@
 package in.projecteka.gateway;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -62,6 +64,7 @@ import reactor.netty.resources.ConnectionProvider;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
 import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
 import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -148,7 +151,10 @@ public class GatewayConfiguration {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                .configure(WRITE_DATES_AS_TIMESTAMPS, false);
     }
 
     @Bean("discoveryServiceClient")
