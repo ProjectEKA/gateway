@@ -10,8 +10,8 @@ public class MappingService {
     private MappingRepository mappingRepository;
 
     public Mono<Service> fetchDependentServiceUrls() {
-        return mappingRepository.selectBridgeUrls().collectList()
-                .flatMap(bridgeProperties -> mappingRepository.selectConsentManagerUrls().collectList()
+        return mappingRepository.selectBridgeProperties().collectList()
+                .flatMap(bridgeProperties -> mappingRepository.selectConsentManagerProperties().collectList()
                         .flatMap(consentManagerProperties ->
                             Mono.just(Service.builder()
                                     .bridgeProperties(bridgeProperties)

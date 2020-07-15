@@ -1,8 +1,9 @@
 package in.projecteka.gateway.common;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.common.model.Path;
+import in.projecteka.gateway.common.model.BridgeProperties;
+import in.projecteka.gateway.common.model.ConsentManagerProperties;
+import in.projecteka.gateway.common.model.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
@@ -42,14 +44,32 @@ class MappingServiceTest {
     }
 
     @Test
-    void shouldGiveUrls() throws JsonProcessingException {
-        Flux<String> bridgeUrls = Flux.just("http://localhost:9052", "http://localhost:8001", "http://localhost:8003");
-        when(mappingRepository.selectBridgeUrls()).thenReturn(bridgeUrls);
+    void shouldDependentSystemUrls(){
+        Flux<BridgeProperties> bridgePropertiesFlux = Flux.just(BridgeProperties
+                        .builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build(),
+                BridgeProperties
+                        .builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build());
+        Flux<ConsentManagerProperties> consentManagerPropertiesFlux = Flux.just(ConsentManagerProperties.builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build());
+        when(mappingRepository.selectBridgeProperties()).thenReturn(bridgePropertiesFlux);
+        when(mappingRepository.selectConsentManagerProperties()).thenReturn(consentManagerPropertiesFlux);
 
-        Mono<Path> allUrls = mappingService.getAllUrls();
+        Mono<Service> allUrls = mappingService.fetchDependentServiceUrls();
 
-        assertThat(allUrls.block().getBridgeUrls())
-                .hasSize(3)
-                .contains("http://localhost:9052", "http://localhost:8001", "http://localhost:8003");
+        assertThat(allUrls.block().getBridgeProperties())
+                .hasSize(2);
+        assertThat(allUrls.block().getConsentManagerProperties())
+                .hasSize(1);
     }
 }

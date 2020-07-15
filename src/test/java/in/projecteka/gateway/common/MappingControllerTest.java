@@ -2,6 +2,8 @@ package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.common.model.BridgeProperties;
+import in.projecteka.gateway.common.model.ConsentManagerProperties;
 import in.projecteka.gateway.common.model.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
@@ -43,19 +46,44 @@ class MappingControllerTest {
     }
 
     @Test
-    void shouldGiveUrls() throws JsonProcessingException {
-        List<String> urls=List.of("http://localhost:9052","http://localhost:8001","http://localhost:8003");
-        Path pathUrls = Path.builder().bridgeUrls(urls).build();
+    void shouldGiveDependentSystemUrls() throws JsonProcessingException {
+        List<BridgeProperties> bridgePropertiesList = List.of(BridgeProperties
+                        .builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build(),
+                BridgeProperties
+                        .builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build());
+        List<ConsentManagerProperties> consentManagerPropertiesList = List.of(ConsentManagerProperties.builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build(),
+                ConsentManagerProperties.builder()
+                        .name(string())
+                        .id(string())
+                        .url(string())
+                        .build());
+        Service serviceUrls = Service.builder()
+                .bridgeProperties(bridgePropertiesList)
+                .consentManagerProperties(consentManagerPropertiesList)
+                .build();
 
-        var bridgeUrlsJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(pathUrls);
-        when(mappingService.getAllUrls()).thenReturn(Mono.just(pathUrls));
+        var bridgeUrlsJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(serviceUrls);
+        when(mappingService.fetchDependentServiceUrls()).thenReturn(Mono.just(serviceUrls));
 
         webTestClient.get()
-                .uri(Constants.GET_BRIDGE_URLS)
+                .uri(Constants.PATH_SERVICE_URLS)
                 .exchange()
                 .expectStatus()
                 .isOk()
                 .expectBody()
                 .json(bridgeUrlsJson);
     }
+
 }

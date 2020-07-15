@@ -55,7 +55,7 @@ public class MappingRepository {
                         }));
     }
 
-    public Flux<BridgeProperties> selectBridgeUrls() {
+    public Flux<BridgeProperties> selectBridgeProperties() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGE_PROPERTIES)
                 .execute(
                         handler -> {
@@ -77,7 +77,7 @@ public class MappingRepository {
                 ));
     }
 
-    public Flux<ConsentManagerProperties> selectConsentManagerUrls() {
+    public Flux<ConsentManagerProperties> selectConsentManagerProperties() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_CM_PROPERTIES)
                 .execute(
                         handler -> {
