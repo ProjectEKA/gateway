@@ -1,7 +1,6 @@
 package in.projecteka.gateway.common;
 
-import in.projecteka.gateway.common.model.BridgeProperties;
-import in.projecteka.gateway.common.model.ConsentManagerProperties;
+import in.projecteka.gateway.common.model.ServiceProperties;
 import in.projecteka.gateway.registry.ServiceType;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -55,7 +54,7 @@ public class MappingRepository {
                         }));
     }
 
-    public Flux<BridgeProperties> selectBridgeProperties() {
+    public Flux<ServiceProperties> selectBridgeProperties() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGE_PROPERTIES)
                 .execute(
                         handler -> {
@@ -65,7 +64,7 @@ public class MappingRepository {
                             } else {
                                 RowSet<Row> results = handler.result();
                                 for (Row row : results) {
-                                    fluxSink.next(BridgeProperties.builder()
+                                    fluxSink.next(ServiceProperties.builder()
                                             .name(row.getString(0))
                                             .id(row.getString(1))
                                             .url(row.getString(2))
@@ -77,7 +76,7 @@ public class MappingRepository {
                 ));
     }
 
-    public Flux<ConsentManagerProperties> selectConsentManagerProperties() {
+    public Flux<ServiceProperties> selectConsentManagerProperties() {
         return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_CM_PROPERTIES)
                 .execute(
                         handler -> {
@@ -87,7 +86,7 @@ public class MappingRepository {
                             } else {
                                 RowSet<Row> results = handler.result();
                                 for (Row row : results) {
-                                    fluxSink.next(ConsentManagerProperties.builder()
+                                    fluxSink.next(ServiceProperties.builder()
                                             .name(row.getString(0))
                                             .id(row.getString(1))
                                             .url(row.getString(2))

@@ -2,8 +2,7 @@ package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.common.model.BridgeProperties;
-import in.projecteka.gateway.common.model.ConsentManagerProperties;
+import in.projecteka.gateway.common.model.ServiceProperties;
 import in.projecteka.gateway.common.model.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,30 +46,30 @@ class MappingControllerTest {
 
     @Test
     void shouldGiveDependentSystemUrls() throws JsonProcessingException {
-        List<BridgeProperties> bridgePropertiesList = List.of(BridgeProperties
+        List<ServiceProperties> servicePropertiesList = List.of(ServiceProperties
                         .builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build(),
-                BridgeProperties
+                ServiceProperties
                         .builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build());
-        List<ConsentManagerProperties> consentManagerPropertiesList = List.of(ConsentManagerProperties.builder()
+        List<ServiceProperties> consentManagerPropertiesList = List.of(ServiceProperties.builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build(),
-                ConsentManagerProperties.builder()
+                ServiceProperties.builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build());
         Service serviceUrls = Service.builder()
-                .bridgeProperties(bridgePropertiesList)
+                .bridgeProperties(servicePropertiesList)
                 .consentManagerProperties(consentManagerPropertiesList)
                 .build();
 

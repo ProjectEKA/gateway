@@ -1,8 +1,7 @@
 package in.projecteka.gateway.common;
 
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.common.model.BridgeProperties;
-import in.projecteka.gateway.common.model.ConsentManagerProperties;
+import in.projecteka.gateway.common.model.ServiceProperties;
 import in.projecteka.gateway.common.model.Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,19 +44,19 @@ class MappingServiceTest {
 
     @Test
     void shouldDependentSystemUrls(){
-        Flux<BridgeProperties> bridgePropertiesFlux = Flux.just(BridgeProperties
+        Flux<ServiceProperties> bridgePropertiesFlux = Flux.just(ServiceProperties
                         .builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build(),
-                BridgeProperties
+                ServiceProperties
                         .builder()
                         .name(string())
                         .id(string())
                         .url(string())
                         .build());
-        Flux<ConsentManagerProperties> consentManagerPropertiesFlux = Flux.just(ConsentManagerProperties.builder()
+        Flux<ServiceProperties> consentManagerPropertiesFlux = Flux.just(ServiceProperties.builder()
                         .name(string())
                         .id(string())
                         .url(string())

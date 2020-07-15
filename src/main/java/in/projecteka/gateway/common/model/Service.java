@@ -8,6 +8,6 @@ import java.util.List;
 @Builder
 @Value
 public class Service {
-    private List<BridgeProperties> bridgeProperties;
-    private List<ConsentManagerProperties> consentManagerProperties;
+    private List<ServiceProperties> bridgeProperties;
+    private List<ServiceProperties> consentManagerProperties;
 }
