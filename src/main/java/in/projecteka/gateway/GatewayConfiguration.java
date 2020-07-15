@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
@@ -31,11 +33,13 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
-import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.RegistryRepository;
+import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -48,11 +52,16 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.web.ResourceProperties;
+import org.springframework.boot.web.reactive.error.ErrorAttributes;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.util.Pair;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -709,5 +718,41 @@ public class GatewayConfiguration {
     @Bean
     public MappingRepository mappingRepository(PgPool pgPool) {
         return new MappingRepository(pgPool);
+    }
+
+    @Bean
+    public AdminServiceClient adminClientRegistryClient(@Qualifier("customBuilder") WebClient.Builder builder,
+                                                        IdentityProperties identityProperties,
+                                                        IdentityService identityService) {
+        return new AdminServiceClient(builder,
+                identityProperties.getUrl(),
+                identityProperties.getRealm(),
+                identityService::tokenForAdmin);
+    }
+
+    @Bean
+    public RegistryRepository registryRepository(PgPool pgPool) {
+        return new RegistryRepository(pgPool);
+    }
+
+    @Bean
+    public RegistryService registryService(RegistryRepository registryRepository,
+                                           CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                           AdminServiceClient adminServiceClient) {
+        return new RegistryService(registryRepository, bridgeMappings, adminServiceClient);
+    }
+
+    @Bean
+    // This exception handler needs to be given highest priority compared to DefaultErrorWebExceptionHandler, hence order = -2.
+    @Order(-2)
+    public ClientErrorExceptionHandler clientErrorExceptionHandler(ErrorAttributes errorAttributes,
+                                                                   ResourceProperties resourceProperties,
+                                                                   ApplicationContext applicationContext,
+                                                                   ServerCodecConfigurer serverCodecConfigurer) {
+
+        ClientErrorExceptionHandler clientErrorExceptionHandler = new ClientErrorExceptionHandler(errorAttributes,
+                resourceProperties, applicationContext);
+        clientErrorExceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
+        return clientErrorExceptionHandler;
     }
 }

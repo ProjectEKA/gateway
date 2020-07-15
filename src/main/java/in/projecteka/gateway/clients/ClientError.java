@@ -5,6 +5,7 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_SERVICE_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
@@ -46,5 +47,10 @@ public class ClientError extends Throwable {
 
     public static ClientError unknownUnAuthorizedError(String message) {
         return new ClientError(UNAUTHORIZED, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+    }
+
+    public static ClientError invalidBridgeServiceRequest(String message) {
+        return new ClientError(BAD_REQUEST,
+                new ErrorRepresentation(new Error(INVALID_BRIDGE_SERVICE_REQUEST, message)));
     }
 }

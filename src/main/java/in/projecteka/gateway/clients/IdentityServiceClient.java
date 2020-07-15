@@ -19,22 +19,20 @@ import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError
 
 public class IdentityServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(IdentityServiceClient.class);
-    private final WebClient.Builder webClientBuilder;
+    private final WebClient webClient;
     private final String realm;
-
-    public IdentityServiceClient(WebClient.Builder webClientBuilder, String baseUrl, String realm) {
-        this.realm = realm;
-        this.webClientBuilder = webClientBuilder.baseUrl(baseUrl);
-    }
-
 
     public Mono<Session> getTokenFor(String clientId, String clientSecret) {
         return getToken(loginRequestWith(clientId, clientSecret));
     }
 
+    public IdentityServiceClient(WebClient.Builder webClientBuilder, String baseUrl, String realm) {
+        this.realm = realm;
+        this.webClient = webClientBuilder.baseUrl(baseUrl).build();
+    }
+
     private Mono<Session> getToken(MultiValueMap<String, String> formData) {
-        return webClientBuilder.build()
-                .post()
+        return webClient.post()
                 .uri(uriBuilder ->
                         uriBuilder.path("/realms/{realm}/protocol/openid-connect/token").build(Map.of("realm", realm)))
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
@@ -55,8 +53,7 @@ public class IdentityServiceClient {
     }
 
     public Mono<JsonNode> certs() {
-        return webClientBuilder.build()
-                .get()
+        return webClient.get()
                 .uri(uriBuilder ->
                         uriBuilder.path("/realms/{realm}/protocol/openid-connect/certs").build(Map.of("realm", realm)))
                 .accept(MediaType.APPLICATION_JSON)
@@ -75,6 +72,14 @@ public class IdentityServiceClient {
         formData.add("client_id", clientId);
         formData.add("client_secret", clientSecret);
         return formData;
+    }
+
+    public Mono<Session> getUserToken(String clientId, String clientSecret, String username, String password) {
+        var formData = loginRequestWith(clientId, clientSecret);
+        formData.add("username", username);
+        formData.add("password", password);
+        formData.set("grant_type", "password");
+        return getToken(formData);
     }
 }
 
