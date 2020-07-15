@@ -3,7 +3,6 @@ package in.projecteka.gateway.clients;
 import in.projecteka.gateway.clients.model.ClientRepresentation;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
-import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -20,7 +19,6 @@ import java.util.function.Supplier;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
 
-@AllArgsConstructor
 public class AdminServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(AdminServiceClient.class);
 

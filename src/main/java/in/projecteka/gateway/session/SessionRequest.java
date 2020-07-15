@@ -10,4 +10,6 @@ import lombok.Value;
 public class SessionRequest {
     String clientId;
     String clientSecret;
+    String userName;
+    String password;
 }
