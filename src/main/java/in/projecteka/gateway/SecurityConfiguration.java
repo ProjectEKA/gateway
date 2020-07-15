@@ -50,7 +50,8 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
-import static in.projecteka.gateway.common.Constants.GET_BRIDGE_URLS;
+import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_MANAGER_URLS;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -96,7 +97,8 @@ public class SecurityConfiguration {
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
             PATH_HEARTBEAT,
-            GET_BRIDGE_URLS
+            PATH_SERVICE_URLS,
+            PATH_CONSENT_MANAGER_URLS
     };
 
     @Bean

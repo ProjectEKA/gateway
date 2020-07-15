@@ -1,5 +1,7 @@
 package in.projecteka.gateway.common;
 
+import in.projecteka.gateway.common.model.BridgeProperties;
+import in.projecteka.gateway.common.model.ConsentManagerProperties;
 import in.projecteka.gateway.registry.ServiceType;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
@@ -21,8 +23,8 @@ public class MappingRepository {
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.service_id = $1 AND bridge_service.type = $2 " +
             "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
-    private static final String SELECT_BRIDGEURLS = "select url from bridge";
-
+    private static final String SELECT_BRIDGE_PROPERTIES = "select name, bridge_id, url from bridge";
+    private static final String SELECT_CM_PROPERTIES = "select name, cm_id, url from consent_manager";
     private final PgPool dbClient;
 
     public Mono<String> cmHost(String cmId) {
@@ -53,8 +55,8 @@ public class MappingRepository {
                         }));
     }
 
-    public Flux<String> selectBridgeUrls() {
-        return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGEURLS)
+    public Flux<BridgeProperties> selectBridgeUrls() {
+        return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGE_PROPERTIES)
                 .execute(
                         handler -> {
                             if (handler.failed()) {
@@ -63,7 +65,33 @@ public class MappingRepository {
                             } else {
                                 RowSet<Row> results = handler.result();
                                 for (Row row : results) {
-                                    fluxSink.next(row.getString(0));
+                                    fluxSink.next(BridgeProperties.builder()
+                                            .name(row.getString(0))
+                                            .id(row.getString(1))
+                                            .url(row.getString(2))
+                                            .build());
+                                }
+                            }
+                            fluxSink.complete();
+                        }
+                ));
+    }
+
+    public Flux<ConsentManagerProperties> selectConsentManagerUrls() {
+        return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_CM_PROPERTIES)
+                .execute(
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                fluxSink.error(new DbOperationError("Failed to get consent manager urls"));
+                            } else {
+                                RowSet<Row> results = handler.result();
+                                for (Row row : results) {
+                                    fluxSink.next(ConsentManagerProperties.builder()
+                                            .name(row.getString(0))
+                                            .id(row.getString(1))
+                                            .url(row.getString(2))
+                                            .build());
                                 }
                             }
                             fluxSink.complete();

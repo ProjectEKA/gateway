@@ -1,6 +1,6 @@
 package in.projecteka.gateway.common;
 
-import in.projecteka.gateway.common.model.Path;
+import in.projecteka.gateway.common.model.Service;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -9,8 +9,13 @@ public class MappingService {
 
     private MappingRepository mappingRepository;
 
-    public Mono<Path> getAllUrls() {
+    public Mono<Service> fetchDependentServiceUrls() {
         return mappingRepository.selectBridgeUrls().collectList()
-                .flatMap(bridgeUrls -> Mono.just(Path.builder().bridgeUrls(bridgeUrls).build()));
+                .flatMap(bridgeProperties -> mappingRepository.selectConsentManagerUrls().collectList()
+                        .flatMap(consentManagerProperties ->
+                            Mono.just(Service.builder()
+                                    .bridgeProperties(bridgeProperties)
+                                    .consentManagerProperties(consentManagerProperties)
+                                    .build())));
     }
 }
