@@ -25,4 +25,10 @@ public class LoadingCacheAdapter<K, V> implements CacheAdapter<K, V> {
         loadingCache.put(key, value);
         return Mono.empty();
     }
+
+    @Override
+    public Mono<Void> invalidate(K key) {
+        loadingCache.invalidate(key);
+        return Mono.empty();
+    }
 }

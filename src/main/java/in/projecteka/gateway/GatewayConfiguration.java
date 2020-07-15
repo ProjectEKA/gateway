@@ -677,8 +677,9 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public RegistryService register(RegistryRepository registryRepository) {
-        return new RegistryService(registryRepository);
+    public RegistryService register(RegistryRepository registryRepository,
+                                    CacheAdapter<String, String> consentManagerMappings) {
+        return new RegistryService(registryRepository, consentManagerMappings);
     }
 
     @Bean
