@@ -15,11 +15,11 @@ gateway:
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
   db:
     host: ${POSTGRES_HOST}
-    port: 5432
+    port: ${POSTGREST_PORT:5432}
     schema: ${GATEWAY_DB_NAME}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    poolSize: 5
+    poolSize: ${POOL_SIZE:5}
 spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}
