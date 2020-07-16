@@ -71,7 +71,10 @@ class ValidatorTest {
     @BeforeEach
     void init() {
         MockitoAnnotations.initMocks(this);
-        validator = Mockito.spy(new Validator(bridgeRegistry, cmRegistry, requestIdMappings, requestIdTimestampMappings));
+        validator = Mockito.spy(new Validator(bridgeRegistry,
+                cmRegistry,
+                requestIdMappings,
+                new RedundantRequestValidator(requestIdTimestampMappings, null)));
     }
 
     @ParameterizedTest
@@ -133,7 +136,7 @@ class ValidatorTest {
     @MethodSource("bridgeConfigs")
     void returnErrorWhenNoRequestIdIsInvalidUUID(String routingKey, ServiceType serviceType)
             throws JsonProcessingException {
-        var requestBody = Map.of(REQUEST_ID, string());
+        var requestBody = Map.of(REQUEST_ID, string(), TIMESTAMP, string());
         var bridgeId = string();
         var url = string();
         when(requestEntity.getHeaders()).thenReturn(httpHeaders);
