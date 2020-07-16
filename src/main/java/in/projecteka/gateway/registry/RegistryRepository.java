@@ -25,10 +25,10 @@ public class RegistryRepository {
     private static final String SELECT_BRIDGE_SERVICE = "SELECT * FROM bridge_service " +
             "WHERE service_id = $1 AND type = $2";
     private static final String INSERT_BRIDGE_SERVICE_ENTRY = "INSERT INTO " +
-            "bridge_service (bridge_id, type, active, service_id) VALUES ($1, $2, $3, $4)";
+            "bridge_service (bridge_id, type, active, service_id, name) VALUES ($1, $2, $3, $4, $5)";
     private static final String UPDATE_BRIDGE_SERVICE_ENTRY = "UPDATE bridge_service SET bridge_id = $1, active = $2, " +
-            "date_modified = timezone('utc'::text, now()) " +
-            "WHERE service_id = $3 AND type = $4";
+            "name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
+            "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND bridge_service.service_id = $5 AND bridge_service.type = $6";
 
     private final PgPool dbClient;
 
@@ -71,7 +71,7 @@ public class RegistryRepository {
     }
 
     public Mono<Boolean> ifPresent(String serviceId, ServiceType type) {
-        return  select(SELECT_BRIDGE_SERVICE,
+        return select(SELECT_BRIDGE_SERVICE,
                 Tuple.of(serviceId, type.toString()),
                 "Failed to fetch bridge service");
     }
@@ -79,7 +79,7 @@ public class RegistryRepository {
     public Mono<Void> insertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(INSERT_BRIDGE_SERVICE_ENTRY)
                 .execute(Tuple.of(bridgeId, request.getType().toString(), request.isActive(),
-                        request.getId()),
+                        request.getId(), request.getName()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -92,7 +92,8 @@ public class RegistryRepository {
 
     public Mono<Void> updateBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_BRIDGE_SERVICE_ENTRY)
-                .execute(Tuple.of(bridgeId, request.isActive(), request.getId(), request.getType().toString()),
+                .execute(Tuple.of(bridgeId, request.isActive(), request.getName(), true,
+                        request.getId(), request.getType().toString()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());

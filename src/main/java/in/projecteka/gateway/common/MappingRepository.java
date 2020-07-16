@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 public class MappingRepository {
     private static final Logger logger = LoggerFactory.getLogger(MappingRepository.class);
     private static final String SELECT_CM_MAPPING = "SELECT url FROM consent_manager" +
-            " WHERE cm_id = $1 AND active = $2 AND blocklisted = $3";
+            " WHERE suffix = $1 AND active = $2 AND blocklisted = $3";
     private static final String SELECT_BRIDGE_MAPPING = "SELECT bridge.url FROM bridge " +
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.service_id = $1 AND bridge_service.type = $2 " +

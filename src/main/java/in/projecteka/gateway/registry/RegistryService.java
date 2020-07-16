@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static reactor.core.publisher.Mono.empty;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -20,12 +21,16 @@ public class RegistryService {
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
 
+    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     public Mono<Void> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
                 .flatMap(result -> result
-                        ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
-                        : registryRepository.insertBridgeEntry(bridgeRegistryRequest))
-                .then(adminServiceClient.createClient(bridgeRegistryRequest.getId()));
+                       ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
+                        .then(bridgeRegistryRequest.isActive()
+                                ? empty()
+                                : adminServiceClient.deleteClient(bridgeRegistryRequest.getId()))
+                       : registryRepository.insertBridgeEntry(bridgeRegistryRequest)
+                      .then(adminServiceClient.createClient(bridgeRegistryRequest.getId())));
     }
 
     public Mono<Void> populateBridgeServicesEntries(String bridgeId, List<BridgeServiceRequest> bridgeServicesRequest) {

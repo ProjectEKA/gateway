@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static in.projecteka.gateway.clients.ClientError.clientAlredyExists;
+import static in.projecteka.gateway.clients.ClientError.notFound;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
 
@@ -73,6 +75,12 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
                                         }))
+                        .onStatus(httpStatus -> httpStatus.value() == 409,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(clientAlredyExists(keyCloakError.getErrorMessage()));
+                                        }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
                             return Mono.error(unableToConnect());
@@ -97,6 +105,12 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
                                         }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                        }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
                             return Mono.error(unableToConnect());
@@ -119,6 +133,12 @@ public class AdminServiceClient {
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                        }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
@@ -146,6 +166,12 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
                                         }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                        }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
                             return Mono.error(unableToConnect());
@@ -154,4 +180,33 @@ public class AdminServiceClient {
                 .then();
     }
 
+    public Mono<Void> deleteClient(String id) {
+        return tokenGenerator.get()
+                .flatMap(token -> webClient
+                        .delete()
+                        .uri(uriBuilder ->
+                                uriBuilder.path("/admin/realms/{realm}/clients/{id}")
+                                        .build(Map.of("realm", realm, "id", id)))
+                        .header(HttpHeaders.AUTHORIZATION, token)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.value() == 401,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                        }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                        }))
+                        .onStatus(HttpStatus::isError, clientResponse -> {
+                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            return Mono.error(unableToConnect());
+                        })
+                        .toBodilessEntity())
+                .then();
+    }
 }
