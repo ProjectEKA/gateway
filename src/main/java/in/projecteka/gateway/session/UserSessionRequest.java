@@ -7,7 +7,7 @@ import lombok.Value;
 @Value
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SessionRequest {
-    String clientId;
-    String clientSecret;
+public class UserSessionRequest {
+    String userName;
+    String password;
 }

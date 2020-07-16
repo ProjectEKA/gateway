@@ -33,21 +33,7 @@ public class RegistryRepository {
     private final PgPool dbClient;
 
     public Mono<Boolean> ifPresent(String bridgeId) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE_ID)
-                .execute(Tuple.of(bridgeId),
-                        handler -> {
-                            if (handler.failed()) {
-                                logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch bridge id"));
-                                return;
-                            }
-                            var iterator = handler.result().iterator();
-                            if (!iterator.hasNext()) {
-                                monoSink.success(false);
-                                return;
-                            }
-                            monoSink.success(true);
-                        }));
+        return select(SELECT_BRIDGE_ID, Tuple.of(bridgeId), "Failed to fetch bridge id");
     }
 
     public Mono<Void> insertBridgeEntry(BridgeRegistryRequest request) {
@@ -79,39 +65,15 @@ public class RegistryRepository {
     }
 
     public Mono<Boolean> ifPresent(String serviceId, ServiceType type, boolean active) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_ACTIVE_BRIDGE_SERVICE)
-                .execute(Tuple.of(serviceId, type.toString(), active),
-                        handler -> {
-                            if (handler.failed()) {
-                                logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch active bridge service"));
-                                return;
-                            }
-                            var iterator = handler.result().iterator();
-                            if (!iterator.hasNext()) {
-                                monoSink.success(false);
-                                return;
-                            }
-                            monoSink.success(true);
-                        }));
+        return select(SELECT_ACTIVE_BRIDGE_SERVICE,
+                Tuple.of(serviceId, type.toString(), active),
+                "Failed to fetch active bridge service");
     }
 
     public Mono<Boolean> ifPresent(String serviceId, ServiceType type) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE_SERVICE)
-                .execute(Tuple.of(serviceId, type.toString()),
-                        handler -> {
-                            if (handler.failed()) {
-                                logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch bridge service"));
-                                return;
-                            }
-                            var iterator = handler.result().iterator();
-                            if (!iterator.hasNext()) {
-                                monoSink.success(false);
-                                return;
-                            }
-                            monoSink.success(true);
-                        }));
+        return  select(SELECT_BRIDGE_SERVICE,
+                Tuple.of(serviceId, type.toString()),
+                "Failed to fetch bridge service");
     }
 
     public Mono<Void> insertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
@@ -138,6 +100,24 @@ public class RegistryRepository {
                                 return;
                             }
                             monoSink.success();
+                        }));
+    }
+
+    private Mono<Boolean> select(String query, Tuple params, String errorMessage) {
+        return Mono.create(monoSink -> this.dbClient.preparedQuery(query)
+                .execute(params,
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError(errorMessage));
+                                return;
+                            }
+                            var iterator = handler.result().iterator();
+                            if (!iterator.hasNext()) {
+                                monoSink.success(false);
+                                return;
+                            }
+                            monoSink.success(true);
                         }));
     }
 }

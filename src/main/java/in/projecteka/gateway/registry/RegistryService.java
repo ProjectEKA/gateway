@@ -34,20 +34,32 @@ public class RegistryService {
                         ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive())
                         .flatMap(result -> result
                                 ? Mono.error(invalidBridgeServiceRequest("Duplicate entry/Can't be serviced by multiple bridges"))
-                                : populateBridgeServiceEntry(bridgeId, request))
+                                : populateBridgeServiceEntryAndAddRole(bridgeId, request))
                         : populateBridgeServiceEntry(bridgeId, request)).then();
     }
 
     private Mono<Void> populateBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
+        return upsertBridgeServiceEntry(bridgeId, request);
+    }
+
+    private Mono<Void> populateBridgeServiceEntryAndAddRole(String bridgeId, BridgeServiceRequest request) {
+        return upsertBridgeServiceEntry(bridgeId, request)
+                .then(addRole(bridgeId, request.getType().toString()));
+    }
+
+    private Mono<Void> upsertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
         return registryRepository.ifPresent(request.getId(), request.getType())
                 .flatMap(result -> result
                         ? registryRepository.updateBridgeServiceEntry(bridgeId, request)
-                        : registryRepository.insertBridgeServiceEntry(bridgeId, request))
-                .then(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType())))
-                .then(adminServiceClient.getServiceAccount(bridgeId)
-                        .flatMap(serviceAccount -> adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())
-                                .flatMap(realmRoles -> ifPresent(request.getType().toString(), realmRoles)
-                                        .flatMap(realmRole -> adminServiceClient.assignRoleToClient(List.of(realmRole), serviceAccount.getId())))));
+                        .then(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType())))
+                        : registryRepository.insertBridgeServiceEntry(bridgeId, request));
+    }
+
+    private Mono<Void> addRole(String bridgeId, String type) {
+        return adminServiceClient.getServiceAccount(bridgeId)
+                .flatMap(serviceAccount -> adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())
+                        .flatMap(realmRoles -> ifPresent(type, realmRoles)
+                                .flatMap(realmRole -> adminServiceClient.assignRoleToClient(List.of(realmRole), serviceAccount.getId()))));
     }
 
     private Mono<RealmRole> ifPresent(String type, List<RealmRole> realmRoles) {
