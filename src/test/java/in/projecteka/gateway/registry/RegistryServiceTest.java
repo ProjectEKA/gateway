@@ -1,24 +1,19 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.registry.model.CMServiceRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Qualifier;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.test.StepVerifier;
 
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-
 
 class RegistryServiceTest {
 
