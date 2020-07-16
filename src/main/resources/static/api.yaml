@@ -63,6 +63,109 @@ paths:
             application/xml:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /internal/bridges:
+    post:
+      tags:
+        - registration
+      summary: creation of bridge entry in DB by admin
+      description: >
+        This API is meant for creating bridge entry in database.
+      parameters:
+        - $ref: "#/components/parameters/authorization"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BridgeRegistrationRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/BridgeRegistrationRequest'
+      responses:
+        '200':
+          description: Bridge entry added successfully
+        '400':
+          description: >
+            Invalid request, required attributes not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: >
+            **Causes:**
+              * Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >
+            **Causes:**
+              * Downstream system(s) is down.
+              * Unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /internal/bridges/{bridgeId}/services:
+      post:
+        tags:
+          - registration
+        summary: creation of bridge services entries in DB by admin
+        description: >
+          This API is meant for creating bridge services entries in database.
+        parameters:
+          - $ref: "#/components/parameters/authorization"
+          - $ref: "#/components/parameters/bridgeId"
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BridgeServiceRequest'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/BridgeServiceRequest'
+        responses:
+          '200':
+            description: Bridge Services entries added successfully
+          '400':
+            description: >
+              Invalid request, required attributes not provided
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: >
+              **Causes:**
+                * Unauthorized request
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+              application/xml:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: >
+              **Causes:**
+                * Downstream system(s) is down.
+                * Unhandled exceptions.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+              application/xml:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
 components:
   parameters:
     authorization:
@@ -70,6 +173,12 @@ components:
       in: header
       required: true
       description: Access token which was issued after successful login with gateway auth server.
+      schema:
+        type: string
+    bridgeId:
+      name: bridgeId
+      in: path
+      required: true
       schema:
         type: string
   schemas:
@@ -100,6 +209,43 @@ components:
         - "suffix"
       xml:
         name: CMRegistrationRequest
+    BridgeRegistrationRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        url:
+          type: string
+        active:
+          type: boolean
+        blocklisted:
+          type: boolean
+      xml:
+        name: BridgeRegistrationRequest
+    BridgeServiceRequest:
+      type: array
+      items:
+        $ref: '#/components/schemas/BridgeService'
+      xml:
+        name: BridgeServiceRequest
+    BridgeService:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/ServiceType'
+        active:
+          type: boolean
+      xml:
+        name: BridgeServiceRequest
+    ServiceType:
+      type: string
+      enum: [HIP, HIU]
     ClientResponse:
       type: object
       properties:
