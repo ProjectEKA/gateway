@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 
 import static java.lang.String.format;
@@ -50,7 +51,12 @@ public class RedundantRequestValidator {
     }
 
     private LocalDateTime toDate(String timestamp) {
-        return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
+                .append(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                .optionalStart()
+                .appendOffsetId()
+                .toFormatter();
+        return LocalDateTime.parse(timestamp, dateTimeFormatter);
     }
 
     private boolean isValidTimestamp(LocalDateTime timestamp) {
