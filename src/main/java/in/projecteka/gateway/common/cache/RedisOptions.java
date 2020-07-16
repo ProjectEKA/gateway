@@ -16,4 +16,5 @@ public class RedisOptions {
     private final int port;
     private final String password;
     private final int expiry;
+    private final String rootNamespace;
 }
