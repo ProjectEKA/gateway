@@ -33,5 +33,7 @@ identity:
   url: ${KEYCLOAK_URL}
   realm: ${REALM}
   host: ${GATEWAY_HOST}
+  userName: ${GATEWAY_ADMIN_USER}
+  password: ${GATEWAY_ADMIN_PASSWORD}
 webclient:
   keepAlive: ${GATEWAY_KEEP_ALIVE:true}
