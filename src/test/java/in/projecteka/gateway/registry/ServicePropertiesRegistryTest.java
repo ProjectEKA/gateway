@@ -15,7 +15,7 @@ import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-class BridgeRegistryTest {
+class ServicePropertiesRegistryTest {
 
     @Mock
     CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;

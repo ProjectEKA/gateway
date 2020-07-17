@@ -1,0 +1,84 @@
+package in.projecteka.gateway.registry;
+
+import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.common.AdminAuthenticator;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.BodyInserters;
+import reactor.core.publisher.Mono;
+
+import java.util.List;
+
+import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
+import static in.projecteka.gateway.common.Role.ADMIN;
+import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
+import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.testcommon.TestBuilders.caller;
+import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static reactor.core.publisher.Mono.just;
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureWebTestClient
+class RegistryControllerTest {
+
+    @Autowired
+    WebTestClient webTestClient;
+
+    @MockBean(name = "centralRegistryJWKSet")
+    JWKSet jwkSet;
+
+    @MockBean
+    AdminAuthenticator adminAuthenticator;
+
+    @MockBean
+    RegistryService registryService;
+
+    @Test
+    void shouldPopulateBridgeEntryAndCreateClient() {
+        var token = string();
+        var clientId = string();
+        var bridgeRegistryRequest = bridgeRegistryRequest().build();
+        var caller = caller().clientId(clientId).roles(List.of(ADMIN)).build();
+        when(adminAuthenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.populateBridgeEntry(bridgeRegistryRequest)).thenReturn(Mono.empty());
+
+        webTestClient
+                .put()
+                .uri(INTERNAL_BRIDGES)
+                .header(AUTHORIZATION, token)
+                .body(BodyInserters.fromValue(bridgeRegistryRequest))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
+    @Test
+    void shouldPopulateBridgeServicesEntriesAndAddRoles() {
+        var token = string();
+        var clientId = string();
+        var bridgeId = string();
+        var bridgeServiceRequest = bridgeServiceRequest().build();
+        var caller = caller().clientId(clientId).roles(List.of(ADMIN)).build();
+        when(adminAuthenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.populateBridgeServicesEntries(bridgeId, List.of(bridgeServiceRequest))).thenReturn(Mono.empty());
+
+        webTestClient
+                .put()
+                .uri(INTERNAL_BRIDGES)
+                .header(AUTHORIZATION, token)
+                .attribute("bridgeId", bridgeId)
+                .bodyValue(BodyInserters.fromValue(List.of(bridgeServiceRequest)))
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+}

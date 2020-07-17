@@ -46,8 +46,6 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
 
     @Override
     public Mono<Void> invalidate(String key) {
-        RedisReactiveCommands<String, String> redisCommands = statefulConnection.reactive();
-        return redisCommands.expire(key, 0L).then();
+        return null;
     }
-
 }

@@ -2,6 +2,7 @@ package in.projecteka.gateway;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.IdentityProperties;
+import in.projecteka.gateway.common.AdminAuthenticator;
 import in.projecteka.gateway.common.Authenticator;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,6 +19,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.context.ServerSecurityContextRepository;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -25,7 +27,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.List;
 
+import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CERTS;
@@ -50,6 +55,9 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
+import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
+import static in.projecteka.gateway.common.Constants.USER_SESSION;
+import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
@@ -90,11 +98,19 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST
     };
+
     protected static final String[] ALLOW_LIST_APIS = {
             PATH_CERTS,
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
-            PATH_HEARTBEAT
+            PATH_HEARTBEAT,
+            PATH_SERVICE_URLS,
+            USER_SESSION
+    };
+
+    protected static final String[] INTERNAL_APIS = {
+            INTERNAL_BRIDGES,
+            INTERNAL_BRIDGES_BRIDGE_ID_SERVICES
     };
 
     @Bean
@@ -109,6 +125,8 @@ public class SecurityConfiguration {
                 .logout().disable()
                 .authorizeExchange()
                 .pathMatchers(ALLOW_LIST_APIS).permitAll().and()
+                .authorizeExchange()
+                .pathMatchers(INTERNAL_APIS).hasAnyRole(ADMIN.name()).and()
                 .authorizeExchange()
                 .pathMatchers(CM_APIS).hasAnyRole(CM.name())
                 .pathMatchers(HIU_HIP_APIS).hasAnyRole(HIU.name(), HIP.name())
@@ -138,13 +156,22 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SecurityContextRepository contextRepository(Authenticator authenticator) {
-        return new SecurityContextRepository(authenticator);
+    public AdminAuthenticator adminServiceTokenVerifier(
+            @Qualifier("centralRegistryJWKSet") JWKSet jwkSet,
+            IdentityProperties identityProperties) {
+        return new AdminAuthenticator(jwkSet, identityProperties.getClientId());
+    }
+
+    @Bean
+    public SecurityContextRepository contextRepository(Authenticator authenticator,
+                                                       AdminAuthenticator adminAuthenticator) {
+        return new SecurityContextRepository(authenticator, adminAuthenticator);
     }
 
     @AllArgsConstructor
     private static class SecurityContextRepository implements ServerSecurityContextRepository {
         private final Authenticator authenticator;
+        private final AdminAuthenticator adminAuthenticator;
 
         @Override
         public Mono<Void> save(ServerWebExchange exchange, SecurityContext context) {
@@ -156,6 +183,9 @@ public class SecurityConfiguration {
             var token = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
             if (!hasText(token)) {
                 return Mono.empty();
+            }
+            if (isAdminAuthenticatedOnlyRequest(exchange.getRequest().getPath().toString())) {
+                return checkGateway(token);
             }
             return checkCentralRegistry(token);
         }
@@ -170,6 +200,25 @@ public class SecurityConfiguration {
                         return new UsernamePasswordAuthenticationToken(caller, token, authorities);
                     })
                     .map(SecurityContextImpl::new);
+        }
+
+        private Mono<SecurityContext> checkGateway(String token) {
+            return adminAuthenticator.verify(token)
+                    .map(caller -> {
+                        var authorities = caller.getRoles()
+                                .stream()
+                                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name().toUpperCase()))
+                                .collect(toList());
+                        return new UsernamePasswordAuthenticationToken(caller, token, authorities);
+                    })
+                    .map(SecurityContextImpl::new);
+        }
+
+        private boolean isAdminAuthenticatedOnlyRequest(String url) {
+            AntPathMatcher antPathMatcher = new AntPathMatcher();
+            return List.of(INTERNAL_APIS)
+                    .stream()
+                    .anyMatch(pattern -> antPathMatcher.matchStart(pattern, url));
         }
     }
 

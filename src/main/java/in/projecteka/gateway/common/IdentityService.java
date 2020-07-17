@@ -35,4 +35,12 @@ public class IdentityService {
     public Mono<JsonNode> certs() {
         return identityServiceClient.certs();
     }
+
+    public Mono<String> tokenForAdmin() {
+        return identityServiceClient.getUserToken(properties.getClientId(),
+                properties.getClientSecret(),
+                properties.getUserName(),
+                properties.getPassword())
+                .map(session -> format("%s %s", session.getTokenType(), session.getAccessToken()));
+    }
 }
