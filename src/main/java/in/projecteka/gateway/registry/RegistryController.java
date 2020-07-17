@@ -1,7 +1,7 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.registry.Model.BridgeRegistryRequest;
-import in.projecteka.gateway.registry.Model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;

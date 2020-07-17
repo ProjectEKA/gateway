@@ -28,7 +28,7 @@ import static reactor.core.publisher.Mono.just;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-public class RegistryControllerTest {
+class RegistryControllerTest {
 
     @Autowired
     WebTestClient webTestClient;

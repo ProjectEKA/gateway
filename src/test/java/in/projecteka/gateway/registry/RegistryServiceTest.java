@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
 
-public class RegistryServiceTest {
+class RegistryServiceTest {
 
     @Mock
     RegistryRepository registryRepository;

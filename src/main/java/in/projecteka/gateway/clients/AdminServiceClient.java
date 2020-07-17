@@ -23,6 +23,8 @@ import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError
 
 public class AdminServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(AdminServiceClient.class);
+    private static final String REALM = "realm";
+    private static final String errorMessage = "Something went wrong";
 
     private static final ClientRepresentation.ClientRepresentationBuilder clientRepresentation
             = ClientRepresentation.builder()
@@ -63,7 +65,7 @@ public class AdminServiceClient {
                 .flatMap(token -> webClient
                         .post()
                         .uri(uriBuilder ->
-                                uriBuilder.path("/admin/realms/{realm}/clients").build(Map.of("realm", realm)))
+                                uriBuilder.path("/admin/realms/{realm}/clients").build(Map.of(REALM, realm)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -82,7 +84,7 @@ public class AdminServiceClient {
                                             return Mono.error(clientAlredyExists(keyCloakError.getErrorMessage()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
-                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            logger.error(clientResponse.statusCode().toString(), errorMessage);
                             return Mono.error(unableToConnect());
                         })
                         .toBodilessEntity())
@@ -95,7 +97,7 @@ public class AdminServiceClient {
                         .get()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/clients/{id}/service-account-user")
-                                        .build(Map.of("realm", realm, "id", id)))
+                                        .build(Map.of(REALM, realm, "id", id)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -112,7 +114,7 @@ public class AdminServiceClient {
                                             return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
-                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            logger.error(clientResponse.statusCode().toString(), errorMessage);
                             return Mono.error(unableToConnect());
                         })
                         .bodyToMono(ServiceAccount.class));
@@ -124,7 +126,7 @@ public class AdminServiceClient {
                         .get()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/users/{serviceAccountId}/role-mappings/realm/available")
-                                        .build(Map.of("realm", realm, "serviceAccountId", serviceAccountId)))
+                                        .build(Map.of(REALM, realm, "serviceAccountId", serviceAccountId)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -141,7 +143,7 @@ public class AdminServiceClient {
                                             return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
-                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            logger.error(clientResponse.statusCode().toString(), errorMessage);
                             return Mono.error(unableToConnect());
                         })
                         .bodyToFlux(RealmRole.class)
@@ -154,7 +156,7 @@ public class AdminServiceClient {
                         .post()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/users/{serviceAccountId}/role-mappings/realm")
-                                        .build(Map.of("realm", realm, "serviceAccountId", serviceAccountId)))
+                                        .build(Map.of(REALM, realm, "serviceAccountId", serviceAccountId)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -173,7 +175,7 @@ public class AdminServiceClient {
                                             return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
-                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            logger.error(clientResponse.statusCode().toString(), errorMessage);
                             return Mono.error(unableToConnect());
                         })
                         .toBodilessEntity())
@@ -186,7 +188,7 @@ public class AdminServiceClient {
                         .delete()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/clients/{id}")
-                                        .build(Map.of("realm", realm, "id", id)))
+                                        .build(Map.of(REALM, realm, "id", id)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -203,7 +205,7 @@ public class AdminServiceClient {
                                             return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
-                            logger.error(clientResponse.statusCode().toString(), "Something went wrong");
+                            logger.error(clientResponse.statusCode().toString(), errorMessage);
                             return Mono.error(unableToConnect());
                         })
                         .toBodilessEntity())

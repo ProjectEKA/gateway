@@ -5,8 +5,8 @@ import in.projecteka.gateway.clients.model.ServiceAccount;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
-import in.projecteka.gateway.registry.Model.BridgeRegistryRequest;
-import in.projecteka.gateway.registry.Model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import org.jeasy.random.EasyRandom;
 
 public class TestBuilders {

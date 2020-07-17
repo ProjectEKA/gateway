@@ -3,8 +3,8 @@ package in.projecteka.gateway.registry;
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.registry.Model.BridgeRegistryRequest;
-import in.projecteka.gateway.registry.Model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
 import reactor.core.publisher.Flux;
@@ -24,7 +24,7 @@ public class RegistryService {
     @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     public Mono<Void> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
-                .flatMap(result -> result
+                .flatMap(result -> Boolean.TRUE.equals(result)
                         ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
                         .then(bridgeRegistryRequest.isActive()
                                 ? adminServiceClient.createClient(bridgeRegistryRequest.getId())
@@ -39,7 +39,7 @@ public class RegistryService {
         return Flux.fromIterable(bridgeServicesRequest)
                 .flatMap(request -> request.isActive()
                         ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive())
-                        .flatMap(result -> result
+                        .flatMap(result -> Boolean.TRUE.equals(result)
                                 ? Mono.error(invalidBridgeServiceRequest())
                                 : populateBridgeServiceEntryAndAddRole(bridgeId, request))
                         : populateBridgeServiceEntry(bridgeId, request)).then();
@@ -56,7 +56,7 @@ public class RegistryService {
 
     private Mono<Void> upsertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
         return registryRepository.ifPresent(request.getId(), request.getType())
-                .flatMap(result -> result
+                .flatMap(result -> Boolean.TRUE.equals(result)
                         ? registryRepository.updateBridgeServiceEntry(bridgeId, request)
                         .then(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType())))
                         : registryRepository.insertBridgeServiceEntry(bridgeId, request));

@@ -1,9 +1,8 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.common.DbOperationError;
-import in.projecteka.gateway.common.MappingRepository;
-import in.projecteka.gateway.registry.Model.BridgeRegistryRequest;
-import in.projecteka.gateway.registry.Model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Tuple;
 import lombok.AllArgsConstructor;
@@ -13,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 @AllArgsConstructor
 public class RegistryRepository {
-    private static final Logger logger = LoggerFactory.getLogger(MappingRepository.class);
+    private static final Logger logger = LoggerFactory.getLogger(RegistryRepository.class);
     private static final String SELECT_BRIDGE_ID = "SELECT bridge_id FROM bridge WHERE bridge_id = $1";
     private static final String INSERT_BRIDGE_ENTRY = "INSERT INTO " +
             "bridge (name, url, bridge_id, active, blocklisted) VALUES ($1, $2, $3, $4, $5)";

@@ -1,4 +1,4 @@
-package in.projecteka.gateway.registry.Model;
+package in.projecteka.gateway.registry.model;
 
 import in.projecteka.gateway.registry.ServiceType;
 import lombok.Builder;
