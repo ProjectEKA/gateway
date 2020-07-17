@@ -67,6 +67,7 @@ public class RegistryServiceTest {
         var bridgeId = request.getId();
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(true));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
+        when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
 
         var producer = registryService.populateBridgeEntry(request);
         StepVerifier.create(producer)
@@ -74,6 +75,7 @@ public class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).updateBridgeEntry(request);
+        verify(adminServiceClient).createClient(bridgeId);
     }
 
     @Test
