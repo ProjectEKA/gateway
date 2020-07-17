@@ -100,7 +100,7 @@ class SecurityConfigurationEnablerTest {
         when(registryService.populateBridgeEntry(any())).thenReturn(Mono.empty());
 
         webTestClient
-                .post()
+                .put()
                 .uri(Constants.INTERNAL_BRIDGES)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)

@@ -51,7 +51,8 @@ public class RegistryControllerTest {
         when(adminAuthenticator.verify(token)).thenReturn(just(caller));
         when(registryService.populateBridgeEntry(bridgeRegistryRequest)).thenReturn(Mono.empty());
 
-        webTestClient.post()
+        webTestClient
+                .put()
                 .uri(INTERNAL_BRIDGES)
                 .header(AUTHORIZATION, token)
                 .body(BodyInserters.fromValue(bridgeRegistryRequest))
@@ -70,7 +71,8 @@ public class RegistryControllerTest {
         when(adminAuthenticator.verify(token)).thenReturn(just(caller));
         when(registryService.populateBridgeServicesEntries(bridgeId, List.of(bridgeServiceRequest))).thenReturn(Mono.empty());
 
-        webTestClient.post()
+        webTestClient
+                .put()
                 .uri(INTERNAL_BRIDGES)
                 .header(AUTHORIZATION, token)
                 .attribute("bridgeId", bridgeId)
