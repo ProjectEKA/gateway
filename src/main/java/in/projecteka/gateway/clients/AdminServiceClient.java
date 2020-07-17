@@ -109,7 +109,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                            return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
@@ -138,7 +138,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                            return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
@@ -170,7 +170,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                            return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
@@ -200,7 +200,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(notFound(keyCloakError.getErrorMessage()));
+                                            return Mono.error(notFound(keyCloakError.getError()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), "Something went wrong");
