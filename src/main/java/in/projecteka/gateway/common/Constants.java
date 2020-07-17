@@ -51,6 +51,7 @@ public class Constants {
     public static final String ROUTE_PATH_CM_HEALTH_INFORMATION_REQUEST = CURRENT_VERSION + "/health-information/request";
     public static final String CALLBACK_PATH_HIU_HEALTH_INFORMATION_REQUEST = CURRENT_VERSION + "/health-information/hiu/on-request";
     public static final String CALLBACK_PATH_CM_HEALTH_INFORMATION_REQUEST = CURRENT_VERSION + "/health-information/on-request";
+    public static final String PATH_SERVICE_URLS = CURRENT_VERSION + "/service-properties";
     public static final String INTERNAL_BRIDGES = "/internal/bridges";
     public static final String INTERNAL_BRIDGES_BRIDGE_ID_SERVICES = "/internal/bridges/{bridgeId}/services";
     public static final String USER_SESSION = "/user/sessions";

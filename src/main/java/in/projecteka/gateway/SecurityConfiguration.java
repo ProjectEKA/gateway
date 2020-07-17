@@ -55,6 +55,7 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
+import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
@@ -103,6 +104,7 @@ public class SecurityConfiguration {
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
             PATH_HEARTBEAT,
+            PATH_SERVICE_URLS,
             USER_SESSION
     };
 

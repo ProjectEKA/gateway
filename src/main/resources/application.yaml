@@ -9,17 +9,18 @@ gateway:
     port: 6379
     password: ${REDIS_PASSWORD:password}
     expiry: ${REDIS_KEY_EXPIRY:5}
+    rootNamespace: ${ROOT_NAMESPACE:gateway}
   # timeout in seconds
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
   db:
     host: ${POSTGRES_HOST}
-    port: 5432
+    port: ${POSTGRES_PORT:5432}
     schema: ${GATEWAY_DB_NAME}
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
-    poolSize: 5
+    poolSize: ${POOL_SIZE:5}
 spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}
