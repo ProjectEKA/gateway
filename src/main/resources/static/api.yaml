@@ -64,7 +64,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /internal/bridges:
-    post:
+    put:
       tags:
         - registration
       summary: creation of bridge entry in DB by admin
@@ -83,7 +83,7 @@ paths:
               $ref: '#/components/schemas/BridgeRegistrationRequest'
       responses:
         '200':
-          description: Bridge entry added successfully
+          description: Bridge entry created/updated successfully
         '400':
           description: >
             Invalid request, required attributes not provided
@@ -115,7 +115,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   /internal/bridges/{bridgeId}/services:
-      post:
+      put:
         tags:
           - registration
         summary: creation of bridge services entries in DB by admin
@@ -135,7 +135,7 @@ paths:
                 $ref: '#/components/schemas/BridgeServiceRequest'
         responses:
           '200':
-            description: Bridge Services entries added successfully
+            description: Bridge Services entries created/updated successfully
           '400':
             description: >
               Invalid request, required attributes not provided
