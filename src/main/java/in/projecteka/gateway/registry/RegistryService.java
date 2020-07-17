@@ -38,7 +38,7 @@ public class RegistryService {
                 .flatMap(request -> request.isActive()
                         ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive())
                         .flatMap(result -> result
-                                ? Mono.error(invalidBridgeServiceRequest("Duplicate entry/Can't be serviced by multiple bridges"))
+                                ? Mono.error(invalidBridgeServiceRequest())
                                 : populateBridgeServiceEntryAndAddRole(bridgeId, request))
                         : populateBridgeServiceEntry(bridgeId, request)).then();
     }
