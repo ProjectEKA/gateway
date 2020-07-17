@@ -80,7 +80,7 @@ public class AdminAuthenticator {
         return ((JSONArray) clientObject.get("roles"))
                 .stream()
                 .map(Object::toString)
-                .map(mayBeRole -> Role.valOfIgnoreCase(mayBeRole).orElse(null))
+                .map(mayBeRole -> Role.isAdmin(mayBeRole).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(toList());
     }

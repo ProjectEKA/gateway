@@ -20,7 +20,7 @@ public enum Role {
                 : Optional.ofNullable(hip.getOrDefault(mayBeRole.toLowerCase(), null));
     }
 
-    public static Optional<Role> valOfIgnoreCase(String mayBeRole) {
+    public static Optional<Role> isAdmin(String mayBeRole) {
         return  mayBeRole == null
                 ? Optional.empty()
                 : mayBeRole.equalsIgnoreCase(ADMIN.name()) ? Optional.of(ADMIN) : Optional.empty();
