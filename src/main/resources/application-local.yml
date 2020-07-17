@@ -12,6 +12,8 @@ identity:
   url: http://localhost:9001/auth
   realm: central-registry
   host: ${HOST:http://localhost:8000}
+  userName: admin-user
+  password: welcome
 gateway:
   db:
     host: localhost
