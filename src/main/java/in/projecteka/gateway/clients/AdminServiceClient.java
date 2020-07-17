@@ -23,7 +23,7 @@ import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError
 
 public class AdminServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(AdminServiceClient.class);
-    private static final String REALM = "realm";
+    private static final String realmName = "realm";
     private static final String errorMessage = "Something went wrong";
 
     private static final ClientRepresentation.ClientRepresentationBuilder clientRepresentation
@@ -65,7 +65,7 @@ public class AdminServiceClient {
                 .flatMap(token -> webClient
                         .post()
                         .uri(uriBuilder ->
-                                uriBuilder.path("/admin/realms/{realm}/clients").build(Map.of(REALM, realm)))
+                                uriBuilder.path("/admin/realms/{realm}/clients").build(Map.of(realmName, realm)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -97,7 +97,7 @@ public class AdminServiceClient {
                         .get()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/clients/{id}/service-account-user")
-                                        .build(Map.of(REALM, realm, "id", id)))
+                                        .build(Map.of(realmName, realm, "id", id)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -126,7 +126,7 @@ public class AdminServiceClient {
                         .get()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/users/{serviceAccountId}/role-mappings/realm/available")
-                                        .build(Map.of(REALM, realm, "serviceAccountId", serviceAccountId)))
+                                        .build(Map.of(realmName, realm, "serviceAccountId", serviceAccountId)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -156,7 +156,7 @@ public class AdminServiceClient {
                         .post()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/users/{serviceAccountId}/role-mappings/realm")
-                                        .build(Map.of(REALM, realm, "serviceAccountId", serviceAccountId)))
+                                        .build(Map.of(realmName, realm, "serviceAccountId", serviceAccountId)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
@@ -188,7 +188,7 @@ public class AdminServiceClient {
                         .delete()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/clients/{id}")
-                                        .build(Map.of(REALM, realm, "id", id)))
+                                        .build(Map.of(realmName, realm, "id", id)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
