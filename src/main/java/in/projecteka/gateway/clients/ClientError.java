@@ -5,6 +5,7 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_REGISTRY_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_SERVICE_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
@@ -57,6 +58,12 @@ public class ClientError extends Throwable {
 
     public static ClientError notFound(String message) {
         return new ClientError(NOT_FOUND, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+    }
+
+    public static ClientError invalidBridgeRegistryRequest() {
+        return new ClientError(BAD_REQUEST,
+                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
+                        "can't register an inactive bridge")));
     }
 
     public static ClientError invalidBridgeServiceRequest() {

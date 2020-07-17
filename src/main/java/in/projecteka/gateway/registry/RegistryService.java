@@ -12,8 +12,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
-import static reactor.core.publisher.Mono.empty;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -25,12 +25,14 @@ public class RegistryService {
     public Mono<Void> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
                 .flatMap(result -> result
-                       ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
+                        ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
                         .then(bridgeRegistryRequest.isActive()
-                                ? empty()
+                                ? adminServiceClient.createClient(bridgeRegistryRequest.getId())
                                 : adminServiceClient.deleteClient(bridgeRegistryRequest.getId()))
-                       : registryRepository.insertBridgeEntry(bridgeRegistryRequest)
-                      .then(adminServiceClient.createClient(bridgeRegistryRequest.getId())));
+                        : bridgeRegistryRequest.isActive()
+                        ? registryRepository.insertBridgeEntry(bridgeRegistryRequest)
+                        .then(adminServiceClient.createClient(bridgeRegistryRequest.getId()))
+                        : Mono.error(invalidBridgeRegistryRequest()));
     }
 
     public Mono<Void> populateBridgeServicesEntries(String bridgeId, List<BridgeServiceRequest> bridgeServicesRequest) {
