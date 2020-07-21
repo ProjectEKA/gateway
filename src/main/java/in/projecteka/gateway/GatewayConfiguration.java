@@ -6,21 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import in.projecteka.gateway.clients.AdminServiceClient;
-import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
-import in.projecteka.gateway.clients.ConsentFetchServiceClient;
-import in.projecteka.gateway.clients.ConsentRequestServiceClient;
-import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
-import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.HipDataFlowServiceClient;
-import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.IdentityProperties;
-import in.projecteka.gateway.clients.IdentityServiceClient;
-import in.projecteka.gateway.clients.LinkConfirmServiceClient;
-import in.projecteka.gateway.clients.LinkInitServiceClient;
-import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.*;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
@@ -765,6 +751,48 @@ public class GatewayConfiguration {
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
                                            AdminServiceClient adminServiceClient) {
         return new RegistryService(registryRepository, bridgeMappings, adminServiceClient);
+    }
+
+    @Bean("userAuthenticatorClient")
+    public UserAuthenticatorClient userAuthenticatorClient(ServiceOptions serviceOptions,
+                                                          @Qualifier("customBuilder") WebClient.Builder builder,
+                                                          CMRegistry cmRegistry,
+                                                          IdentityService identityService,
+                                                          BridgeRegistry bridgeRegistry) {
+        return new UserAuthenticatorClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("userAuthenticationRequestAction")
+    public DefaultValidatedRequestAction<UserAuthenticatorClient> userAuthenticationRequestAction(
+            UserAuthenticatorClient userAuthenticatorClient) {
+        return new DefaultValidatedRequestAction<>(userAuthenticatorClient);
+    }
+
+    @Bean("userAuthenticationRequestOrchestrator")
+    public RequestOrchestrator<UserAuthenticatorClient> userAuthenticationRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            UserAuthenticatorClient userAuthenticatorClient,
+            DefaultValidatedRequestAction<UserAuthenticatorClient> userAuthenticationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                userAuthenticatorClient,
+                userAuthenticationRequestAction);
+    }
+
+    @Bean("userAuthenticationResponseAction")
+    public DefaultValidatedResponseAction<UserAuthenticatorClient> userAuthenticationResponseAction(
+            UserAuthenticatorClient userAuthenticatorClient) {
+        return new DefaultValidatedResponseAction<>(userAuthenticatorClient);
+    }
+
+    @Bean("userAuthenticationResponseOrchestrator")
+    public ResponseOrchestrator userAuthenticationResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<UserAuthenticatorClient> userAuthenticationResponseAction) {
+        return new ResponseOrchestrator(validator, userAuthenticationResponseAction);
     }
 
     @Bean
