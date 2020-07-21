@@ -2,6 +2,9 @@ package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.common.cache.CacheAdapter;
+import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.KeycloakClientCredentials;
+import in.projecteka.gateway.registry.model.KeycloakClientSecret;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -56,36 +59,91 @@ class RegistryServiceTest {
     }
 
     @Test
-    void shouldInsertCMEntryIfItDoesNotExist() {
-        var request = cmServiceRequest().build();
+    void shouldInsertCMEntryIfItDoesNotExistAndCreateClient() {
+        var request = cmServiceRequest().isActive(true).build();
+        var cmEntry = CMEntry.builder().isExists(false).build();
+        var clientSecret = KeycloakClientSecret.builder().build();
+        var keyCloakCreds = KeycloakClientCredentials.builder()
+                .key(request.getSuffix())
+                .secret(clientSecret.getValue())
+                .build();
+        var serviceAccount = serviceAccount().build();
+        var realmRoles = List.of(realmRole().name("CM").build());
 
-        when(registryRepository.getCMEntryCount(request.getCmSuffix())).thenReturn(Mono.just(0));
+        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.createCMEntry(request)).thenReturn(Mono.empty());
+        when(adminServiceClient.createClient(request.getSuffix())).thenReturn(Mono.empty());
+        when(adminServiceClient.getServiceAccount(request.getSuffix())).thenReturn(just(serviceAccount));
+        when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
+        when(adminServiceClient.assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId()))
+                .thenReturn(empty());
+        when(adminServiceClient.getClientSecret(request.getSuffix())).thenReturn(Mono.just(clientSecret));
 
-        StepVerifier.create(registryService.populateCMEntry(request)).verifyComplete();
 
-        verify(registryRepository, times(1)).getCMEntryCount(request.getCmSuffix());
-        verify(registryRepository, times(1)).createCMEntry(request);
+        StepVerifier.create(registryService.populateCMEntry(request)).expectNext(keyCloakCreds).verifyComplete();
+
+        verify(registryRepository).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository).createCMEntry(request);
+        verify(adminServiceClient).createClient(request.getSuffix());
+        verify(adminServiceClient).getServiceAccount(request.getSuffix());
+        verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());
+        verify(adminServiceClient).assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId());
+        verify(adminServiceClient).getClientSecret(request.getSuffix());
     }
 
     @Test
     void shouldUpdateCMEntryIfItExists() {
-        var request = cmServiceRequest().build();
+        var request = cmServiceRequest().isActive(true).build();
+        var cmEntry = CMEntry.builder().isExists(true).isActive(true).build();
 
-        when(registryRepository.getCMEntryCount(request.getCmSuffix())).thenReturn(Mono.just(1));
+        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
-        when(consentManagerMappings.invalidate(request.getCmSuffix())).thenReturn(Mono.empty());
+        when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
 
         StepVerifier.create(registryService.populateCMEntry(request)).verifyComplete();
 
-        verify(registryRepository, times(1)).getCMEntryCount(request.getCmSuffix());
+        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
         verify(registryRepository, times(1)).updateCMEntry(request);
-        verify(consentManagerMappings).invalidate(request.getCmSuffix());
+        verify(consentManagerMappings).invalidate(request.getSuffix());
+    }
+
+    @Test
+    void shouldUpdateCMEntryIfItExistsAndCreateClientIfItIsNotActiveBefore() {
+        var request = cmServiceRequest().isActive(true).build();
+        var cmEntry = CMEntry.builder().isExists(true).isActive(false).build();
+        var clientSecret = KeycloakClientSecret.builder().build();
+        var keyCloakCreds = KeycloakClientCredentials.builder()
+                .key(request.getSuffix())
+                .secret(clientSecret.getValue())
+                .build();
+        var serviceAccount = serviceAccount().build();
+        var realmRoles = List.of(realmRole().name("CM").build());
+
+        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
+        when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
+        when(adminServiceClient.createClient(request.getSuffix())).thenReturn(Mono.empty());
+        when(adminServiceClient.getServiceAccount(request.getSuffix())).thenReturn(just(serviceAccount));
+        when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
+        when(adminServiceClient.assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId()))
+                .thenReturn(empty());
+        when(adminServiceClient.getClientSecret(request.getSuffix())).thenReturn(Mono.just(clientSecret));
+
+        StepVerifier.create(registryService.populateCMEntry(request)).expectNext(keyCloakCreds).verifyComplete();
+
+        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository, times(1)).updateCMEntry(request);
+        verify(consentManagerMappings).invalidate(request.getSuffix());
+        verify(adminServiceClient).createClient(request.getSuffix());
+        verify(adminServiceClient).getServiceAccount(request.getSuffix());
+        verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());
+        verify(adminServiceClient).assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId());
+        verify(adminServiceClient).getClientSecret(request.getSuffix());
     }
 
     @Test
     void shouldCreateBridgeEntryAndClientInKeyCloak() {
-        var request = bridgeRegistryRequest().build();
+        var request = bridgeRegistryRequest().active(true).build();
         var bridgeId = request.getId();
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(false));
         when(registryRepository.insertBridgeEntry(request)).thenReturn(empty());

@@ -1,10 +1,12 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.common.DbOperationError;
+import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -14,15 +16,15 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class RegistryRepository {
     private static final Logger logger = LoggerFactory.getLogger(RegistryRepository.class);
-    private static final String GET_CM_ENTRY_COUNT =
-            "SELECT COUNT(*) FROM consent_manager where suffix = $1";
+
+    private static final String SELECT_CM = "SELECT * FROM consent_manager where suffix = $1";
     private static final String CREATE_CM_ENTRY =
             "INSERT INTO consent_manager (name, url, cm_id, suffix, active, blocklisted, license, licensing_authority)"
-                    + "VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+                    + "VALUES ($1, $2, $3, $3, $4, $5, '', '')";
     private static final String UPDATE_CM_ENTRY =
-            "UPDATE consent_manager SET name = $1, url = $2, active = $3, blocklisted = $4, license = $5," +
-                    " licensing_authority = $6, date_modified = timezone('utc'::text, now()) " +
-                    "WHERE consent_manager.suffix = $7";
+            "UPDATE consent_manager SET name = $1, url = $2, active = $3, blocklisted = $4," +
+                    " date_modified = timezone('utc'::text, now()) " +
+                    "WHERE consent_manager.suffix = $5";
 
     private static final String SELECT_BRIDGE_ID = "SELECT bridge_id FROM bridge WHERE bridge_id = $1";
     private static final String INSERT_BRIDGE_ENTRY = "INSERT INTO " +
@@ -43,24 +45,34 @@ public class RegistryRepository {
 
     private final PgPool dbClient;
 
-    public Mono<Integer> getCMEntryCount(String cmSuffix) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(GET_CM_ENTRY_COUNT)
-                .execute(Tuple.of(cmSuffix), counter -> {
-                    if (counter.failed()) {
-                        logger.error(counter.cause().getMessage(), counter.cause());
-                        monoSink.error(new DbOperationError("Failed to get CM entry"));
+    public Mono<CMEntry> getActiveStatusIfPresent(String suffix) {
+        return Mono.create(monoSink -> dbClient.preparedQuery(SELECT_CM)
+                .execute(Tuple.of(suffix), handler -> {
+                    if (handler.failed()) {
+                        logger.error(handler.cause().getMessage(), handler.cause());
+                        monoSink.error(new DbOperationError("Failed to get the CM entry"));
                         return;
                     }
-                    Integer count = counter.result().iterator().next().getInteger("count");
-                    monoSink.success(count);
+                    var iterator = handler.result().iterator();
+                    if (!iterator.hasNext()) {
+                        monoSink.success(CMEntry.builder().isExists(false).build());
+                        return;
+                    }
+                    monoSink.success(cmEntryFrom(iterator.next()));
                 }));
+    }
+
+    private CMEntry cmEntryFrom(Row row) {
+        return CMEntry.builder()
+                .isExists(true)
+                .isActive(row.getBoolean("active"))
+                .build();
     }
 
     public Mono<Void> createCMEntry(CMServiceRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(CREATE_CM_ENTRY)
-                .execute(Tuple.of(request.getName(), request.getUrl(),
-                        request.getConsentManagerId(), request.getCmSuffix(), request.getIsActive(),
-                        request.getIsBlocklisted(), request.getLicense(), request.getLicenseAuthority()),
+                .execute(Tuple.of(request.getName(), request.getUrl(), request.getSuffix(),
+                        request.getIsActive(), request.getIsBlocklisted()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -74,8 +86,7 @@ public class RegistryRepository {
     public Mono<Void> updateCMEntry(CMServiceRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_CM_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(), request.getIsActive(),
-                        request.getIsBlocklisted(), request.getLicense(), request.getLicenseAuthority()
-                        , request.getCmSuffix()),
+                        request.getIsBlocklisted(), request.getSuffix()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());

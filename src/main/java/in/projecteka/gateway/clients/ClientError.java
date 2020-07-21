@@ -66,6 +66,14 @@ public class ClientError extends Throwable {
                         "can't register an inactive bridge")));
     }
 
+    public static ClientError invalidCMRegistryRequest() {
+        return new ClientError(BAD_REQUEST,
+                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
+                        "can't register an inactive consent_manager")));
+    }
+
+
+
     public static ClientError invalidBridgeServiceRequest() {
         return new ClientError(BAD_REQUEST,
                 new ErrorRepresentation(new Error(INVALID_BRIDGE_SERVICE_REQUEST,

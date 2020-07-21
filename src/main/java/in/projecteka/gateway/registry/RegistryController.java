@@ -1,6 +1,7 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.KeycloakClientCredentials;
 import lombok.AllArgsConstructor;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
@@ -22,7 +23,7 @@ public class RegistryController {
     private final RegistryService registryService;
 
     @PutMapping("/internal/cm")
-    public Mono<Void> cmServiceEntries(@RequestBody CMServiceRequest cmServiceRequest) {
+    public Mono<KeycloakClientCredentials> cmServiceEntries(@RequestBody CMServiceRequest cmServiceRequest) {
         return registryService.populateCMEntry(cmServiceRequest);
     }
 
