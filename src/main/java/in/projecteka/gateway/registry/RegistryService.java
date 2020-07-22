@@ -45,17 +45,17 @@ public class RegistryService {
     }
 
     private Mono<ClientResponse> createCMEntry(CMServiceRequest request) {
-        if (request.getIsActive())
+        if (Boolean.TRUE.equals(request.getIsActive()))
             return registryRepository.createCMEntry(request)
                     .then(createClientAndAddRole(request.getSuffix()));
         return Mono.error(invalidCMRegistryRequest());
     }
 
     private Mono<ClientResponse> updateClients(CMEntry oldCMEntry, CMServiceRequest newCMEntry) {
-        if (oldCMEntry.isActive() == newCMEntry.getIsActive()) {
+        if (Boolean.compare(oldCMEntry.isActive(), newCMEntry.getIsActive()) == 0) {
             return Mono.empty();
         }
-        if (newCMEntry.getIsActive()) {
+        if (Boolean.TRUE.equals(newCMEntry.getIsActive())) {
             return createClientAndAddRole(newCMEntry.getSuffix());
         }
         return adminServiceClient.deleteClient(newCMEntry.getSuffix()).then(Mono.empty());

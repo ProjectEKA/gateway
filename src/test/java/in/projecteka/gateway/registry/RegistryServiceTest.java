@@ -146,6 +146,24 @@ class RegistryServiceTest {
     }
 
     @Test
+    void shouldDeleteClientIfItExistsAndIsNotActive() {
+        var request = cmServiceRequest().isActive(false).build();
+        var cmEntry = CMEntry.builder().isExists(true).isActive(true).build();
+
+        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
+        when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
+        when(adminServiceClient.deleteClient(request.getSuffix())).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.populateCMEntry(request)).verifyComplete();
+
+        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository, times(1)).updateCMEntry(request);
+        verify(consentManagerMappings).invalidate(request.getSuffix());
+        verify(adminServiceClient).deleteClient(request.getSuffix());
+    }
+
+    @Test
     void shouldCreateBridgeEntryAndClientInKeyCloak() {
         var request = bridgeRegistryRequest().active(true).build();
         var bridgeId = request.getId();
