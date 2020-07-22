@@ -13,6 +13,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.test.StepVerifier;
 
+import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -24,8 +27,6 @@ import org.springframework.data.util.Pair;
 
 import java.util.List;
 
-import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
-import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
 import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
@@ -74,7 +75,7 @@ class RegistryServiceTest {
         var serviceAccount = serviceAccount().build();
         var realmRoles = List.of(realmRole().name("CM").build());
 
-        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.getCMEntryIfActive(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.createCMEntry(request)).thenReturn(Mono.empty());
         when(adminServiceClient.createClient(request.getSuffix())).thenReturn(Mono.empty());
         when(adminServiceClient.getServiceAccount(request.getSuffix())).thenReturn(just(serviceAccount));
@@ -86,7 +87,7 @@ class RegistryServiceTest {
 
         StepVerifier.create(registryService.populateCMEntry(request)).expectNext(keyCloakCreds).verifyComplete();
 
-        verify(registryRepository).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository).getCMEntryIfActive(request.getSuffix());
         verify(registryRepository).createCMEntry(request);
         verify(adminServiceClient).createClient(request.getSuffix());
         verify(adminServiceClient).getServiceAccount(request.getSuffix());
@@ -96,17 +97,31 @@ class RegistryServiceTest {
     }
 
     @Test
+    void shouldThrowErrorAndNotCreateCMEntryWhenActiveIsFalse() {
+        var request = cmServiceRequest().isActive(false).build();
+        var cmEntry = CMEntry.builder().isExists(false).build();
+
+        when(registryRepository.getCMEntryIfActive(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+
+        StepVerifier.create(registryService.populateCMEntry(request))
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(invalidCMRegistryRequest()));
+
+        verify(registryRepository).getCMEntryIfActive(request.getSuffix());
+    }
+
+    @Test
     void shouldUpdateCMEntryIfItExists() {
         var request = cmServiceRequest().isActive(true).build();
         var cmEntry = CMEntry.builder().isExists(true).isActive(true).build();
 
-        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.getCMEntryIfActive(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
         when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
 
         StepVerifier.create(registryService.populateCMEntry(request)).verifyComplete();
 
-        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository, times(1)).getCMEntryIfActive(request.getSuffix());
         verify(registryRepository, times(1)).updateCMEntry(request);
         verify(consentManagerMappings).invalidate(request.getSuffix());
     }
@@ -123,7 +138,7 @@ class RegistryServiceTest {
         var serviceAccount = serviceAccount().build();
         var realmRoles = List.of(realmRole().name("CM").build());
 
-        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.getCMEntryIfActive(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
         when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
         when(adminServiceClient.createClient(request.getSuffix())).thenReturn(Mono.empty());
@@ -135,7 +150,7 @@ class RegistryServiceTest {
 
         StepVerifier.create(registryService.populateCMEntry(request)).expectNext(keyCloakCreds).verifyComplete();
 
-        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository, times(1)).getCMEntryIfActive(request.getSuffix());
         verify(registryRepository, times(1)).updateCMEntry(request);
         verify(consentManagerMappings).invalidate(request.getSuffix());
         verify(adminServiceClient).createClient(request.getSuffix());
@@ -150,14 +165,14 @@ class RegistryServiceTest {
         var request = cmServiceRequest().isActive(false).build();
         var cmEntry = CMEntry.builder().isExists(true).isActive(true).build();
 
-        when(registryRepository.getActiveStatusIfPresent(request.getSuffix())).thenReturn(Mono.just(cmEntry));
+        when(registryRepository.getCMEntryIfActive(request.getSuffix())).thenReturn(Mono.just(cmEntry));
         when(registryRepository.updateCMEntry(request)).thenReturn(Mono.create(MonoSink::success));
         when(consentManagerMappings.invalidate(request.getSuffix())).thenReturn(Mono.empty());
         when(adminServiceClient.deleteClient(request.getSuffix())).thenReturn(Mono.empty());
 
         StepVerifier.create(registryService.populateCMEntry(request)).verifyComplete();
 
-        verify(registryRepository, times(1)).getActiveStatusIfPresent(request.getSuffix());
+        verify(registryRepository, times(1)).getCMEntryIfActive(request.getSuffix());
         verify(registryRepository, times(1)).updateCMEntry(request);
         verify(consentManagerMappings).invalidate(request.getSuffix());
         verify(adminServiceClient).deleteClient(request.getSuffix());

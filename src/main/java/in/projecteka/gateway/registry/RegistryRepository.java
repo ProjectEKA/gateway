@@ -68,7 +68,7 @@ public class RegistryRepository {
                         }));
     }
 
-    public Mono<CMEntry> getActiveStatusIfPresent(String suffix) {
+    public Mono<CMEntry> getCMEntryIfActive(String suffix) {
         return Mono.create(monoSink -> dbClient.preparedQuery(SELECT_CM)
                 .execute(Tuple.of(suffix), handler -> {
                     if (handler.failed()) {

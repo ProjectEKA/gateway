@@ -31,7 +31,7 @@ public class RegistryService {
     private final AdminServiceClient adminServiceClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
-        return registryRepository.getActiveStatusIfPresent(request.getSuffix())
+        return registryRepository.getCMEntryIfActive(request.getSuffix())
                 .flatMap(cmEntry -> cmEntry.isExists()
                         ? updateCMEntry(cmEntry, request)
                         : createCMEntry(request)
