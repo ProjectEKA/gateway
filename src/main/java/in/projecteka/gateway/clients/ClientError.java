@@ -52,7 +52,7 @@ public class ClientError extends Throwable {
         return new ClientError(UNAUTHORIZED, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
-    public static ClientError clientAlredyExists(String message) {
+    public static ClientError clientAlreadyExists(String message) {
         return new ClientError(CONFLICT, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
