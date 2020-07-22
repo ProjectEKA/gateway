@@ -1,6 +1,7 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -14,6 +15,8 @@ import java.util.List;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
+import static reactor.core.publisher.Mono.empty;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -21,18 +24,29 @@ public class RegistryService {
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
 
-    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
-    public Mono<Void> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
+    public Mono<ClientResponse> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
-                .flatMap(result -> Boolean.TRUE.equals(result)
+                .flatMap(res -> !res.equals(NOT_EXISTS.name())
                         ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
-                        .then(bridgeRegistryRequest.isActive()
-                                ? adminServiceClient.createClient(bridgeRegistryRequest.getId())
-                                : adminServiceClient.deleteClient(bridgeRegistryRequest.getId()))
+                        .thenReturn(res)
+                        .flatMap(result -> Boolean.parseBoolean(result) != bridgeRegistryRequest.isActive()
+                                ? bridgeRegistryRequest.isActive()
+                                ? createClient(bridgeRegistryRequest.getId())
+                                : adminServiceClient.deleteClient(bridgeRegistryRequest.getId()).then(empty())
+                                : empty())
                         : bridgeRegistryRequest.isActive()
                         ? registryRepository.insertBridgeEntry(bridgeRegistryRequest)
-                        .then(adminServiceClient.createClient(bridgeRegistryRequest.getId()))
+                        .then(createClient(bridgeRegistryRequest.getId()))
                         : Mono.error(invalidBridgeRegistryRequest()));
+    }
+
+    private Mono<ClientResponse> createClient(String bridgeId) {
+        return adminServiceClient.createClient(bridgeId)
+                .then(adminServiceClient.getClientSecret(bridgeId)
+                        .map(clientSecret -> ClientResponse.builder()
+                                .id(bridgeId)
+                                .secret(clientSecret.getValue())
+                                .build()));
     }
 
     public Mono<Void> populateBridgeServicesEntries(String bridgeId, List<BridgeServiceRequest> bridgeServicesRequest) {
@@ -62,8 +76,8 @@ public class RegistryService {
                         : registryRepository.insertBridgeServiceEntry(bridgeId, request));
     }
 
-    private Mono<Void> addRole(String bridgeId, String type) {
-        return adminServiceClient.getServiceAccount(bridgeId)
+    private Mono<Void> addRole(String clientId, String type) {
+        return adminServiceClient.getServiceAccount(clientId)
                 .flatMap(serviceAccount -> adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())
                         .flatMap(realmRoles -> ifPresent(type, realmRoles)
                                 .flatMap(realmRole -> adminServiceClient.assignRoleToClient(List.of(realmRole), serviceAccount.getId()))));
