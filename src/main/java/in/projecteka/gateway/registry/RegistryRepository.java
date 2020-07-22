@@ -10,10 +10,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
+
+
 @AllArgsConstructor
 public class RegistryRepository {
     private static final Logger logger = LoggerFactory.getLogger(RegistryRepository.class);
-    private static final String SELECT_BRIDGE_ID = "SELECT bridge_id FROM bridge WHERE bridge_id = $1";
+
+    private static final String SELECT_BRIDGE = "SELECT active FROM bridge WHERE bridge_id = $1";
     private static final String INSERT_BRIDGE_ENTRY = "INSERT INTO " +
             "bridge (name, url, bridge_id, active, blocklisted) VALUES ($1, $2, $3, $4, $5)";
     private static final String UPDATE_BRIDGE_ENTRY = "UPDATE bridge SET name = $1, url = $2, active = $3, " +
@@ -25,14 +29,29 @@ public class RegistryRepository {
             "WHERE service_id = $1 AND type = $2";
     private static final String INSERT_BRIDGE_SERVICE_ENTRY = "INSERT INTO " +
             "bridge_service (bridge_id, type, active, service_id, name) VALUES ($1, $2, $3, $4, $5)";
-    private static final String UPDATE_BRIDGE_SERVICE_ENTRY = "UPDATE bridge_service SET bridge_id = $1, active = $2, " +
-            "name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
-            "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND bridge_service.service_id = $5 AND bridge_service.type = $6";
+    private static final String UPDATE_BRIDGE_SERVICE_ENTRY = "UPDATE bridge_service SET bridge_id = $1, " +
+            "active = $2, name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
+            "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND " +
+            "bridge_service.service_id = $5 AND bridge_service.type = $6";
 
     private final PgPool dbClient;
 
-    public Mono<Boolean> ifPresent(String bridgeId) {
-        return select(SELECT_BRIDGE_ID, Tuple.of(bridgeId), "Failed to fetch bridge id");
+    public Mono<String> ifPresent(String bridgeId) {
+        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE)
+                .execute(Tuple.of(bridgeId),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to fetch bridge"));
+                                return;
+                            }
+                            var iterator = handler.result().iterator();
+                            if (!iterator.hasNext()) {
+                                monoSink.success(NOT_EXISTS.name());
+                                return;
+                            }
+                            monoSink.success(iterator.next().getBoolean(0).toString());
+                        }));
     }
 
     public Mono<Void> insertBridgeEntry(BridgeRegistryRequest request) {

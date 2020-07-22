@@ -1,6 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.clients.model.ClientRepresentation;
+import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
 import org.slf4j.Logger;
@@ -211,4 +212,36 @@ public class AdminServiceClient {
                         .toBodilessEntity())
                 .then();
     }
+
+    public Mono<ClientSecret> getClientSecret(String clientId) {
+        return tokenGenerator.get()
+                .flatMap(token -> webClient
+                        .get()
+                        .uri(uriBuilder ->
+                                uriBuilder.path("/admin/realms/{realm}/clients/{client_id}/client-secret")
+                                        .build(Map.of(REALM_NAME, realm, "client_id", clientId)))
+                        .header(HttpHeaders.AUTHORIZATION, token)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .retrieve()
+                        .onStatus(httpStatus -> httpStatus.value() == 401,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                        }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getError()));
+                                        }))
+                        .onStatus(HttpStatus::isError, clientResponse -> {
+                            logger.error(clientResponse.statusCode().toString(), ERROR_MESSAGE);
+                            return Mono.error(unableToConnect());
+                        })
+                        .bodyToMono(ClientSecret.class)
+                );
+    }
+
 }
+

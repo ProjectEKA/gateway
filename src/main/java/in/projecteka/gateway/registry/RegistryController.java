@@ -1,5 +1,6 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,7 @@ public class RegistryController {
     private final RegistryService registryService;
 
     @PutMapping(INTERNAL_BRIDGES)
-    public Mono<Void> bridgeEntry(@RequestBody BridgeRegistryRequest bridgeRegistryRequest) {
+    public Mono<ClientResponse> bridgeEntry(@RequestBody BridgeRegistryRequest bridgeRegistryRequest) {
         return registryService.populateBridgeEntry(bridgeRegistryRequest);
     }
 

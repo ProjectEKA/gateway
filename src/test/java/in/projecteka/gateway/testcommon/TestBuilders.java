@@ -2,6 +2,7 @@ package in.projecteka.gateway.testcommon;
 
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
+import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
@@ -43,5 +44,9 @@ public class TestBuilders {
 
     public static RealmRole.RealmRoleBuilder realmRole() {
         return easyRandom.nextObject(RealmRole.RealmRoleBuilder.class);
+    }
+
+    public static ClientSecret.ClientSecretBuilder clientSecret() {
+        return easyRandom.nextObject(ClientSecret.ClientSecretBuilder.class);
     }
 }
