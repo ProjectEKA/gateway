@@ -57,6 +57,8 @@ import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
+import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
@@ -79,7 +81,8 @@ public class SecurityConfiguration {
             PATH_LINK_ON_INIT,
             PATH_LINK_ON_CONFIRM,
             PATH_CONSENTS_HIP_ON_NOTIFY,
-            PATH_HEALTH_INFORMATION_HIP_ON_REQUEST
+            PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
+            PATH_ADD_CARE_CONTEXTS
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
@@ -96,7 +99,8 @@ public class SecurityConfiguration {
             PATH_CONSENT_REQUESTS_ON_INIT,
             PATH_PATIENTS_ON_FIND,
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
-            PATH_HEALTH_INFORMATION_CM_ON_REQUEST
+            PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
+            PATH_ON_ADD_CARE_CONTEXTS
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
