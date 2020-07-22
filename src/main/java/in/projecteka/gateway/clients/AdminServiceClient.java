@@ -1,10 +1,9 @@
 package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.clients.model.ClientRepresentation;
+import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
-import in.projecteka.gateway.registry.model.KeycloakClientCredentials;
-import in.projecteka.gateway.registry.model.KeycloakClientSecret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -26,7 +25,6 @@ import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError
 public class AdminServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(AdminServiceClient.class);
     private static final String REALM_NAME = "realm";
-    private static final String CLIENT_ID = "client_id";
     private static final String ERROR_MESSAGE = "Something went wrong";
 
     private static final ClientRepresentation.ClientRepresentationBuilder clientRepresentation
@@ -215,13 +213,13 @@ public class AdminServiceClient {
                 .then();
     }
 
-    public Mono<KeycloakClientSecret> getClientSecret(String clientId) {
+    public Mono<ClientSecret> getClientSecret(String clientId) {
         return tokenGenerator.get()
                 .flatMap(token -> webClient
                         .get()
                         .uri(uriBuilder ->
                                 uriBuilder.path("/admin/realms/{realm}/clients/{client_id}/client-secret")
-                                        .build(Map.of(REALM_NAME, realm, CLIENT_ID, clientId)))
+                                        .build(Map.of(REALM_NAME, realm, "client_id", clientId)))
                         .header(HttpHeaders.AUTHORIZATION, token)
                         .accept(MediaType.APPLICATION_JSON)
                         .retrieve()
@@ -231,11 +229,19 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
                                         }))
+                        .onStatus(httpStatus -> httpStatus.value() == 404,
+                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                        .flatMap(keyCloakError -> {
+                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            return Mono.error(notFound(keyCloakError.getError()));
+                                        }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), ERROR_MESSAGE);
                             return Mono.error(unableToConnect());
                         })
-                        .bodyToMono(KeycloakClientSecret.class)
+                        .bodyToMono(ClientSecret.class)
                 );
     }
+
 }
+

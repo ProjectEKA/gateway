@@ -1,11 +1,11 @@
-package in.projecteka.gateway.registry.model;
+package in.projecteka.gateway.clients.model;
 
 import lombok.Builder;
 import lombok.Value;
 
 @Value
 @Builder
-public class KeycloakClientSecret {
+public class ClientSecret {
     String type;
     String value;
 }

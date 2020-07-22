@@ -1,10 +1,10 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.model.ClientResponse;
+import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.CMEntry;
-import in.projecteka.gateway.registry.model.KeycloakClientCredentials;
-import in.projecteka.gateway.registry.model.KeycloakClientSecret;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -18,18 +18,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+
 import org.mockito.Mockito;
 import org.springframework.data.util.Pair;
 
 import java.util.List;
 
+import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
 import static in.projecteka.gateway.registry.TestBuilders.string;
+import static in.projecteka.gateway.testcommon.TestBuilders.clientSecret;
 import static org.assertj.core.api.Assertions.assertThat;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
@@ -62,9 +66,9 @@ class RegistryServiceTest {
     void shouldInsertCMEntryIfItDoesNotExistAndCreateClient() {
         var request = cmServiceRequest().isActive(true).build();
         var cmEntry = CMEntry.builder().isExists(false).build();
-        var clientSecret = KeycloakClientSecret.builder().build();
-        var keyCloakCreds = KeycloakClientCredentials.builder()
-                .key(request.getSuffix())
+        var clientSecret = ClientSecret.builder().build();
+        var keyCloakCreds = ClientResponse.builder()
+                .id(request.getSuffix())
                 .secret(clientSecret.getValue())
                 .build();
         var serviceAccount = serviceAccount().build();
@@ -111,9 +115,9 @@ class RegistryServiceTest {
     void shouldUpdateCMEntryIfItExistsAndCreateClientIfItIsNotActiveBefore() {
         var request = cmServiceRequest().isActive(true).build();
         var cmEntry = CMEntry.builder().isExists(true).isActive(false).build();
-        var clientSecret = KeycloakClientSecret.builder().build();
-        var keyCloakCreds = KeycloakClientCredentials.builder()
-                .key(request.getSuffix())
+        var clientSecret = ClientSecret.builder().build();
+        var keyCloakCreds = ClientResponse.builder()
+                .id(request.getSuffix())
                 .secret(clientSecret.getValue())
                 .build();
         var serviceAccount = serviceAccount().build();
@@ -145,41 +149,43 @@ class RegistryServiceTest {
     void shouldCreateBridgeEntryAndClientInKeyCloak() {
         var request = bridgeRegistryRequest().active(true).build();
         var bridgeId = request.getId();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(false));
+        var clientSecret = clientSecret().build();
+        var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(NOT_EXISTS.name()));
         when(registryRepository.insertBridgeEntry(request)).thenReturn(empty());
         when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
 
         var producer = registryService.populateBridgeEntry(request);
         StepVerifier.create(producer)
+                .expectNext(clientResponse)
                 .verifyComplete();
 
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).insertBridgeEntry(request);
         verify(adminServiceClient).createClient(bridgeId);
+        verify(adminServiceClient).getClientSecret(bridgeId);
     }
 
     @Test
-    void shouldUpdateBridgeEntryWhenBridgeIsActive() {
-        var request = bridgeRegistryRequest().active(true).build();
+    void shouldThrowInvalidBridgeRegistryRequestErrorWhenAnInactiveBridgeRegisters() {
+        var request = bridgeRegistryRequest().active(false).build();
         var bridgeId = request.getId();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(true));
-        when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
-        when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(NOT_EXISTS.name()));
 
         var producer = registryService.populateBridgeEntry(request);
         StepVerifier.create(producer)
-                .verifyComplete();
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(invalidBridgeRegistryRequest()));
 
         verify(registryRepository).ifPresent(bridgeId);
-        verify(registryRepository).updateBridgeEntry(request);
-        verify(adminServiceClient).createClient(bridgeId);
     }
 
     @Test
-    void shouldUpdateBridgeEntryAndDeleteClientInKeyCloakWhenBridgeIsInactive() {
+    void shouldUpdateBridgeEntryAndDeleteClientInKeyCloakWhenBridgeSetToInactive() {
         var request = bridgeRegistryRequest().active(false).build();
         var bridgeId = request.getId();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(true));
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just("true"));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
         when(adminServiceClient.deleteClient(bridgeId)).thenReturn(empty());
 
@@ -190,6 +196,28 @@ class RegistryServiceTest {
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).updateBridgeEntry(request);
         verify(adminServiceClient).deleteClient(bridgeId);
+    }
+
+    @Test
+    void shouldUpdateBridgeEntryAndCreateClientInKeyCloakWhenBridgeSetToActive() {
+        var request = bridgeRegistryRequest().active(true).build();
+        var bridgeId = request.getId();
+        var clientSecret = clientSecret().build();
+        var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just("false"));
+        when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
+        when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
+
+        var producer = registryService.populateBridgeEntry(request);
+        StepVerifier.create(producer)
+                .expectNext(clientResponse)
+                .verifyComplete();
+
+        verify(registryRepository).ifPresent(bridgeId);
+        verify(registryRepository).updateBridgeEntry(request);
+        verify(adminServiceClient).createClient(bridgeId);
+        verify(adminServiceClient).getClientSecret(bridgeId);
     }
 
     @Test
