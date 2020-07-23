@@ -17,8 +17,8 @@ import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Role.ADMIN;
-import static in.projecteka.gateway.testcommon.TestBuilders.bridgeRegistryRequest;
-import static in.projecteka.gateway.testcommon.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
+import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.Mockito.when;

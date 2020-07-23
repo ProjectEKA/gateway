@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static in.projecteka.gateway.clients.ClientError.clientAlredyExists;
+import static in.projecteka.gateway.clients.ClientError.clientAlreadyExists;
 import static in.projecteka.gateway.clients.ClientError.notFound;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
@@ -82,7 +82,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(clientAlredyExists(keyCloakError.getErrorMessage()));
+                                            return Mono.error(clientAlreadyExists(keyCloakError.getErrorMessage()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
                             logger.error(clientResponse.statusCode().toString(), ERROR_MESSAGE);

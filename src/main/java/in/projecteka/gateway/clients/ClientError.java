@@ -52,7 +52,7 @@ public class ClientError extends Throwable {
         return new ClientError(UNAUTHORIZED, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
-    public static ClientError clientAlredyExists(String message) {
+    public static ClientError clientAlreadyExists(String message) {
         return new ClientError(CONFLICT, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
@@ -65,6 +65,14 @@ public class ClientError extends Throwable {
                 new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
                         "can't register an inactive bridge")));
     }
+
+    public static ClientError invalidCMRegistryRequest() {
+        return new ClientError(BAD_REQUEST,
+                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
+                        "can't register an inactive consent_manager")));
+    }
+
+
 
     public static ClientError invalidBridgeServiceRequest() {
         return new ClientError(BAD_REQUEST,

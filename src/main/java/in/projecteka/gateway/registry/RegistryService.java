@@ -1,29 +1,79 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.common.cache.CacheAdapter;
+import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
+import lombok.AllArgsConstructor;
+
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
-import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
-import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
 import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
 import static reactor.core.publisher.Mono.empty;
 
 @AllArgsConstructor
 public class RegistryService {
+    private static final String CM_REALM_ROLE = "CM";
     private final RegistryRepository registryRepository;
+    private final CacheAdapter<String, String> consentManagerMappings;
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
 
+    public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
+        return registryRepository.getCMEntryIfActive(request.getSuffix())
+                .flatMap(cmEntry -> cmEntry.isExists()
+                        ? updateCMEntry(cmEntry, request)
+                        : createCMEntry(request)
+                );
+    }
+
+    private Mono<ClientResponse> updateCMEntry(CMEntry cmEntry, CMServiceRequest request) {
+        return registryRepository.updateCMEntry(request)
+                .then(consentManagerMappings.invalidate(request.getSuffix()))
+                .then(updateClients(cmEntry, request));
+    }
+
+    private Mono<ClientResponse> createCMEntry(CMServiceRequest request) {
+        if (Boolean.TRUE.equals(request.getIsActive()))
+            return registryRepository.createCMEntry(request)
+                    .then(createClientAndAddRole(request.getSuffix()));
+        return Mono.error(invalidCMRegistryRequest());
+    }
+
+    private Mono<ClientResponse> updateClients(CMEntry oldCMEntry, CMServiceRequest newCMEntry) {
+        if (Boolean.compare(oldCMEntry.isActive(), newCMEntry.getIsActive()) == 0) {
+            return Mono.empty();
+        }
+        if (Boolean.TRUE.equals(newCMEntry.getIsActive())) {
+            return createClientAndAddRole(newCMEntry.getSuffix());
+        }
+        return adminServiceClient.deleteClient(newCMEntry.getSuffix()).then(Mono.empty());
+    }
+
+    private Mono<ClientResponse> createClientAndAddRole(String suffix) {
+        return adminServiceClient.createClient(suffix)
+                .then(addRole(suffix, CM_REALM_ROLE))
+                .then(adminServiceClient.getClientSecret(suffix))
+                .map(keycloakClientSecret ->
+                        ClientResponse.builder()
+                                .id(suffix)
+                                .secret(keycloakClientSecret.getValue())
+                                .build());
+    }
+
+
+    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     public Mono<ClientResponse> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
                 .flatMap(res -> !res.equals(NOT_EXISTS.name())
