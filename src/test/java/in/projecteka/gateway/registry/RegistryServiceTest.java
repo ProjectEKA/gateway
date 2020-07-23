@@ -159,7 +159,7 @@ class RegistryServiceTest {
     void shouldThrowInvalidBridgeServiceRequest() {
         var request = bridgeServiceRequest().active(true).build();
         var bridgeId = string();
-        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive()))
+        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(true));
 
         var producer = registryService.populateBridgeServicesEntries(bridgeId, List.of(request));
@@ -167,7 +167,7 @@ class RegistryServiceTest {
                 .verifyErrorSatisfies(throwable ->
                         assertThat(throwable).isEqualToComparingFieldByField(invalidBridgeServiceRequest()));
 
-        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive());
+        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
 
     }
 
@@ -177,7 +177,7 @@ class RegistryServiceTest {
         var bridgeId = string();
         var serviceAccount = serviceAccount().build();
         var realmRoles = List.of(realmRole().name("HIP").build(), realmRole().name("HIU").build());
-        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive()))
+        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifPresent(request.getId(), request.getType())).thenReturn(just(false));
         when(registryRepository.insertBridgeServiceEntry(bridgeId, request)).thenReturn(empty());
@@ -190,7 +190,7 @@ class RegistryServiceTest {
         StepVerifier.create(producer)
                 .verifyComplete();
 
-        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive());
+        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
         verify(registryRepository).ifPresent(request.getId(), request.getType());
         verify(registryRepository).insertBridgeServiceEntry(bridgeId, request);
         verify(adminServiceClient).getServiceAccount(bridgeId);
@@ -204,7 +204,7 @@ class RegistryServiceTest {
         var bridgeId = string();
         var serviceAccount = serviceAccount().build();
         var realmRoles = List.of(realmRole().name("HIP").build(), realmRole().name("HIU").build());
-        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive()))
+        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifPresent(request.getId(), request.getType())).thenReturn(just(true));
         when(registryRepository.updateBridgeServiceEntry(bridgeId, request)).thenReturn(empty());
@@ -218,7 +218,7 @@ class RegistryServiceTest {
         StepVerifier.create(producer)
                 .verifyComplete();
 
-        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive());
+        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
         verify(registryRepository).ifPresent(request.getId(), request.getType());
         verify(registryRepository).updateBridgeServiceEntry(bridgeId, request);
         verify(bridgeMappings).invalidate(Pair.of(request.getId(), request.getType()));
