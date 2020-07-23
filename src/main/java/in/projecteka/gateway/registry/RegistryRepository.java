@@ -24,7 +24,7 @@ public class RegistryRepository {
             "blocklisted = $4, date_modified = timezone('utc'::text, now()) WHERE bridge.bridge_id = $5";
 
     private static final String SELECT_ACTIVE_BRIDGE_SERVICE = "SELECT * FROM bridge_service " +
-            "WHERE service_id = $1 AND type = $2 AND active = $3";
+            "WHERE service_id = $1 AND type = $2 AND active = $3 AND bridge_id != $4";
     private static final String SELECT_BRIDGE_SERVICE = "SELECT * FROM bridge_service " +
             "WHERE service_id = $1 AND type = $2";
     private static final String INSERT_BRIDGE_SERVICE_ENTRY = "INSERT INTO " +
@@ -82,9 +82,9 @@ public class RegistryRepository {
                         }));
     }
 
-    public Mono<Boolean> ifPresent(String serviceId, ServiceType type, boolean active) {
+    public Mono<Boolean> ifPresent(String serviceId, ServiceType type, boolean active, String bridgeId) {
         return select(SELECT_ACTIVE_BRIDGE_SERVICE,
-                Tuple.of(serviceId, type.toString(), active),
+                Tuple.of(serviceId, type.toString(), active, bridgeId),
                 "Failed to fetch active bridge service");
     }
 
