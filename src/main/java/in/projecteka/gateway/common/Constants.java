@@ -55,6 +55,8 @@ public class Constants {
     public static final String INTERNAL_BRIDGES = "/internal/bridges";
     public static final String INTERNAL_BRIDGES_BRIDGE_ID_SERVICES = "/internal/bridges/{bridgeId}/services";
     public static final String USER_SESSION = "/user/sessions";
+    public static final String USERS_AUTH_CONFIRM = CURRENT_VERSION + "/users/auth/confirm";
+    public static final String USERS_AUTH_ON_CONFIRM = CURRENT_VERSION + "/users/auth/on-confirm";
 
 
     private Constants() {

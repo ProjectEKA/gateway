@@ -6,21 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import in.projecteka.gateway.clients.AdminServiceClient;
-import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
-import in.projecteka.gateway.clients.ConsentFetchServiceClient;
-import in.projecteka.gateway.clients.ConsentRequestServiceClient;
-import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
-import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
-import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.HipDataFlowServiceClient;
-import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
-import in.projecteka.gateway.clients.IdentityProperties;
-import in.projecteka.gateway.clients.IdentityServiceClient;
-import in.projecteka.gateway.clients.LinkConfirmServiceClient;
-import in.projecteka.gateway.clients.LinkInitServiceClient;
-import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.*;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
@@ -646,6 +632,37 @@ public class GatewayConfiguration {
                 hipDataFlowServiceClient,
                 hipDataflowRequestAction);
     }
+
+    @Bean
+    public AuthConfirmServiceClient authConfirmServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new AuthConfirmServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("authConfirmDefaultValidatedRequestAction")
+    public DefaultValidatedRequestAction<AuthConfirmServiceClient> authConfirmDefaultValidatedRequestAction(
+            AuthConfirmServiceClient authConfirmServiceClient) {
+        return new DefaultValidatedRequestAction<>(authConfirmServiceClient);
+    }
+
+    @Bean("authConfirmRequestOrchestrator")
+    public RequestOrchestrator<AuthConfirmServiceClient> authConfirmRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            AuthConfirmServiceClient authConfirmServiceClient,
+            DefaultValidatedRequestAction<AuthConfirmServiceClient> authConfirmRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                authConfirmServiceClient,
+                authConfirmRequestAction);
+    }
+
 
     @Bean
     SimpleMessageListenerContainer container(

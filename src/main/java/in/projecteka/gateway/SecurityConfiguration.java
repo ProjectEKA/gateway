@@ -29,34 +29,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
-import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
-import static in.projecteka.gateway.common.Constants.PATH_CERTS;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_FETCH;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_ON_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
-import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
-import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
-import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
-import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
-import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
-import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
-import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
-import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
-import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
-import static in.projecteka.gateway.common.Constants.USER_SESSION;
+import static in.projecteka.gateway.common.Constants.*;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
@@ -79,7 +52,8 @@ public class SecurityConfiguration {
             PATH_LINK_ON_INIT,
             PATH_LINK_ON_CONFIRM,
             PATH_CONSENTS_HIP_ON_NOTIFY,
-            PATH_HEALTH_INFORMATION_HIP_ON_REQUEST
+            PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
+            USERS_AUTH_CONFIRM
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
@@ -96,7 +70,8 @@ public class SecurityConfiguration {
             PATH_CONSENT_REQUESTS_ON_INIT,
             PATH_PATIENTS_ON_FIND,
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
-            PATH_HEALTH_INFORMATION_CM_ON_REQUEST
+            PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
+            USERS_AUTH_ON_CONFIRM
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
