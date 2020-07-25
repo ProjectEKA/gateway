@@ -126,7 +126,7 @@ public class RegistryService {
     public Mono<Void> populateBridgeServicesEntries(String bridgeId, List<BridgeServiceRequest> bridgeServicesRequest) {
         return Flux.fromIterable(bridgeServicesRequest)
                 .flatMap(request -> request.isActive()
-                        ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive())
+                        ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId)
                         .flatMap(result -> Boolean.TRUE.equals(result)
                                 ? Mono.error(invalidBridgeServiceRequest())
                                 : populateBridgeServiceEntryAndAddRole(bridgeId, request))
