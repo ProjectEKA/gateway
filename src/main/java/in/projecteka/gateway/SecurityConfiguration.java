@@ -31,6 +31,7 @@ import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CERTS;
@@ -53,9 +54,9 @@ import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
-import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
@@ -110,7 +111,8 @@ public class SecurityConfiguration {
 
     protected static final String[] INTERNAL_APIS = {
             INTERNAL_BRIDGES,
-            INTERNAL_BRIDGES_BRIDGE_ID_SERVICES
+            INTERNAL_BRIDGES_BRIDGE_ID_SERVICES,
+            INTERNAL_CM
     };
 
     @Bean
