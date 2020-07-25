@@ -3,6 +3,7 @@ import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.exception.CacheNotAccessibleException;
 import reactor.core.publisher.Mono;
 import java.util.concurrent.ExecutionException;
+
 public class LoadingCacheAdapter<K, V> implements CacheAdapter<K, V> {
     private final LoadingCache<K, V> loadingCache;
     public LoadingCacheAdapter(LoadingCache<K, V> loadingCache) {
@@ -23,6 +24,12 @@ public class LoadingCacheAdapter<K, V> implements CacheAdapter<K, V> {
     @Override
     public Mono<Void> put(K key, V value) {
         loadingCache.put(key, value);
+        return Mono.empty();
+    }
+
+    @Override
+    public Mono<Void> invalidate(K key) {
+        loadingCache.invalidate(key);
         return Mono.empty();
     }
 }

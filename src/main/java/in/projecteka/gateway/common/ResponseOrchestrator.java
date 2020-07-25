@@ -10,7 +10,6 @@ import static in.projecteka.gateway.common.Constants.nameMap;
 import static in.projecteka.gateway.common.Utils.updateRequestId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
-
 @AllArgsConstructor
 public class ResponseOrchestrator {
     Validator validator;

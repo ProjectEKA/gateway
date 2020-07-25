@@ -44,4 +44,8 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
                 .then();
     }
 
+    @Override
+    public Mono<Void> invalidate(String key) {
+        return null;
+    }
 }

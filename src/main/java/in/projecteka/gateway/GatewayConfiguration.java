@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
@@ -23,6 +25,7 @@ import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.MappingRepository;
+import in.projecteka.gateway.common.RedundantRequestValidator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import in.projecteka.gateway.common.RetryableValidatedRequestAction;
@@ -33,11 +36,14 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
-import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.common.MappingService;
+import in.projecteka.gateway.registry.RegistryRepository;
+import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
@@ -49,12 +55,18 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.web.ResourceProperties;
+import org.springframework.boot.web.reactive.error.ErrorAttributes;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.data.util.Pair;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -150,6 +162,11 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    public MappingService mappingService(MappingRepository mappingRepository) {
+        return new MappingService(mappingRepository);
+    }
+
+    @Bean
     public ObjectMapper objectMapper() {
         return new ObjectMapper()
                 .registerModule(new JavaTimeModule())
@@ -174,13 +191,13 @@ public class GatewayConfiguration {
 
     @Bean("discoveryRequestOrchestrator")
     public RequestOrchestrator<DiscoveryServiceClient> discoveryHelper(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             DiscoveryServiceClient discoveryServiceClient,
             DefaultValidatedRequestAction<DiscoveryServiceClient> discoveryRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 discoveryServiceClient,
                 discoveryRequestAction);
@@ -202,9 +219,9 @@ public class GatewayConfiguration {
     @Bean
     public Validator validator(BridgeRegistry bridgeRegistry,
                                CMRegistry cmRegistry,
-                               CacheAdapter<String, String> requestIdMappings,
-                               CacheAdapter<String, String> requestIdTimestampMappings) {
-        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings, requestIdTimestampMappings);
+                               @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+                               RedundantRequestValidator redundantRequestValidator) {
+        return new Validator(bridgeRegistry, cmRegistry, requestIdMappings, redundantRequestValidator);
     }
 
     @Bean("linkInitServiceClient")
@@ -224,13 +241,13 @@ public class GatewayConfiguration {
 
     @Bean("linkInitRequestOrchestrator")
     public RequestOrchestrator<LinkInitServiceClient> linkInitRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             LinkInitServiceClient linkInitServiceClient,
             DefaultValidatedRequestAction<LinkInitServiceClient> linkInitRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 linkInitServiceClient,
                 linkInitRequestAction);
@@ -267,13 +284,13 @@ public class GatewayConfiguration {
 
     @Bean("linkConfirmRequestOrchestrator")
     public RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             LinkConfirmServiceClient linkConfirmServiceClient,
             DefaultValidatedRequestAction<LinkConfirmServiceClient> linkConfirmRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 linkConfirmServiceClient,
                 linkConfirmRequestAction);
@@ -341,13 +358,13 @@ public class GatewayConfiguration {
 
     @Bean("consentRequestOrchestrator")
     public RequestOrchestrator<ConsentRequestServiceClient> consentRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             ConsentRequestServiceClient consentRequestServiceClient,
             DefaultValidatedRequestAction<ConsentRequestServiceClient> consentRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 consentRequestServiceClient,
                 consentRequestAction);
@@ -361,13 +378,13 @@ public class GatewayConfiguration {
 
     @Bean("consentFetchRequestOrchestrator")
     public RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             ConsentFetchServiceClient consentFetchServiceClient,
             DefaultValidatedRequestAction<ConsentFetchServiceClient> consentRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 consentFetchServiceClient,
                 consentRequestAction);
@@ -394,13 +411,13 @@ public class GatewayConfiguration {
 
     @Bean("patientSearchOrchestrator")
     public RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             PatientSearchServiceClient patientSearchServiceClient,
             DefaultValidatedRequestAction<PatientSearchServiceClient> patientSearchRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 patientSearchServiceClient,
                 patientSearchRequestAction);
@@ -437,13 +454,13 @@ public class GatewayConfiguration {
 
     @Bean("hipConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             HipConsentNotifyServiceClient hipConsentNotifyServiceClient,
             DefaultValidatedRequestAction<HipConsentNotifyServiceClient> hipConsentNotifyRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 hipConsentNotifyServiceClient,
                 hipConsentNotifyRequestAction);
@@ -467,13 +484,13 @@ public class GatewayConfiguration {
 
     @Bean("hiuConsentNotifyRequestOrchestrator")
     public RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient,
             DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 hiuConsentNotifyServiceClient,
                 hiuConsentNotifyRequestAction);
@@ -533,13 +550,13 @@ public class GatewayConfiguration {
 
     @Bean("dataFlowRequestOrchestrator")
     public RequestOrchestrator<DataFlowRequestServiceClient> dataFlowRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             DataFlowRequestServiceClient dataFlowRequestServiceClient,
             DefaultValidatedRequestAction<DataFlowRequestServiceClient> dataflowRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 dataFlowRequestServiceClient,
                 dataflowRequestAction);
@@ -575,13 +592,13 @@ public class GatewayConfiguration {
 
     @Bean("healthInfoNotificationOrchestrator")
     public RequestOrchestrator<HealthInfoNotificationServiceClient> healthInfoNotificationOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             HealthInfoNotificationServiceClient healthInfoNotificationServiceClient,
             DefaultValidatedRequestAction<HealthInfoNotificationServiceClient> healthInfoNotificationRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 healthInfoNotificationServiceClient,
                 healthInfoNotificationRequestAction);
@@ -618,13 +635,13 @@ public class GatewayConfiguration {
 
     @Bean("hipDataflowRequestOrchestrator")
     public RequestOrchestrator<HipDataFlowServiceClient> hipDataflowRequestOrchestrator(
-            CacheAdapter<String, String> requestIdMappings,
-            CacheAdapter<String, String> requestIdTimestampMappings,
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             HipDataFlowServiceClient hipDataFlowServiceClient,
             RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
-                requestIdTimestampMappings,
+                redundantRequestValidator,
                 validator,
                 hipDataFlowServiceClient,
                 hipDataflowRequestAction);
@@ -715,5 +732,53 @@ public class GatewayConfiguration {
     @Bean
     public MappingRepository mappingRepository(PgPool pgPool) {
         return new MappingRepository(pgPool);
+    }
+
+    @Bean
+    public RedundantRequestValidator redundantRequestValidator(
+            @Qualifier("requestIdTimestampMappings") CacheAdapter<String, String> requestIdTimestampMappings,
+            RedisOptions redisOptions,
+            @Value("${gateway.cacheMethod}") String cacheMethod) {
+        return new RedundantRequestValidator(requestIdTimestampMappings,
+                "redis".equalsIgnoreCase(cacheMethod)
+                ? String.format("%s_replay", redisOptions.getRootNamespace())
+                : null);
+    }
+
+    @Bean
+    public AdminServiceClient adminClientRegistryClient(@Qualifier("customBuilder") WebClient.Builder builder,
+                                                        IdentityProperties identityProperties,
+                                                        IdentityService identityService) {
+        return new AdminServiceClient(builder,
+                identityProperties.getUrl(),
+                identityProperties.getRealm(),
+                identityService::tokenForAdmin);
+    }
+
+    @Bean
+    public RegistryRepository registryRepository(PgPool pgPool) {
+        return new RegistryRepository(pgPool);
+    }
+
+    @Bean
+    public RegistryService registryService(RegistryRepository registryRepository,
+                                           CacheAdapter<String, String> consentManagerMappings,
+                                           CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                           AdminServiceClient adminServiceClient) {
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
+    }
+
+    @Bean
+    // This exception handler needs to be given highest priority compared to DefaultErrorWebExceptionHandler, hence order = -2.
+    @Order(-2)
+    public ClientErrorExceptionHandler clientErrorExceptionHandler(ErrorAttributes errorAttributes,
+                                                                   ResourceProperties resourceProperties,
+                                                                   ApplicationContext applicationContext,
+                                                                   ServerCodecConfigurer serverCodecConfigurer) {
+
+        ClientErrorExceptionHandler clientErrorExceptionHandler = new ClientErrorExceptionHandler(errorAttributes,
+                resourceProperties, applicationContext);
+        clientErrorExceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
+        return clientErrorExceptionHandler;
     }
 }

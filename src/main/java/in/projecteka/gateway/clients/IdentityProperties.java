@@ -17,6 +17,8 @@ public class IdentityProperties {
     private final String clientId;
     private final String host;
     private final String realm;
+    private final String userName;
+    private final String password;
 
     public String getJwkUrl() {
         return format("%s/realms/%s/protocol/openid-connect/certs", url, realm);
