@@ -77,6 +77,6 @@ public class ClientError extends Throwable {
     public static ClientError invalidBridgeServiceRequest() {
         return new ClientError(BAD_REQUEST,
                 new ErrorRepresentation(new Error(INVALID_BRIDGE_SERVICE_REQUEST,
-                        "Duplicate entry/Can't be serviced by multiple bridges")));
+                        "Can't be serviced by multiple bridges")));
     }
 }
