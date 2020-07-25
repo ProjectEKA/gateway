@@ -31,6 +31,7 @@ import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CERTS;
@@ -109,6 +110,7 @@ public class SecurityConfiguration {
     };
 
     protected static final String[] INTERNAL_APIS = {
+            INTERNAL_CM,
             INTERNAL_BRIDGES,
             INTERNAL_BRIDGES_BRIDGE_ID_SERVICES
     };
