@@ -1,9 +1,12 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.common.DbOperationError;
+import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import io.vertx.pgclient.PgPool;
+import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
@@ -18,6 +21,16 @@ public class RegistryRepository {
     private static final Logger logger = LoggerFactory.getLogger(RegistryRepository.class);
 
     private static final String SELECT_BRIDGE = "SELECT active FROM bridge WHERE bridge_id = $1";
+
+    private static final String SELECT_CM = "SELECT * FROM consent_manager where suffix = $1";
+    private static final String CREATE_CM_ENTRY =
+            "INSERT INTO consent_manager (name, url, cm_id, suffix, active, blocklisted, license, licensing_authority)"
+                    + "VALUES ($1, $2, $3, $3, $4, $5, '', '')";
+    private static final String UPDATE_CM_ENTRY =
+            "UPDATE consent_manager SET name = $1, url = $2, active = $3, blocklisted = $4," +
+                    " date_modified = timezone('utc'::text, now()) " +
+                    "WHERE consent_manager.suffix = $5";
+
     private static final String INSERT_BRIDGE_ENTRY = "INSERT INTO " +
             "bridge (name, url, bridge_id, active, blocklisted) VALUES ($1, $2, $3, $4, $5)";
     private static final String UPDATE_BRIDGE_ENTRY = "UPDATE bridge SET name = $1, url = $2, active = $3, " +
@@ -33,6 +46,7 @@ public class RegistryRepository {
             "active = $2, name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
             "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND " +
             "bridge_service.service_id = $5 AND bridge_service.type = $6";
+
 
     private final PgPool dbClient;
 
@@ -51,6 +65,58 @@ public class RegistryRepository {
                                 return;
                             }
                             monoSink.success(iterator.next().getBoolean(0).toString());
+                        }));
+    }
+
+    public Mono<CMEntry> getCMEntryIfActive(String suffix) {
+        return Mono.create(monoSink -> dbClient.preparedQuery(SELECT_CM)
+                .execute(Tuple.of(suffix), handler -> {
+                    if (handler.failed()) {
+                        logger.error(handler.cause().getMessage(), handler.cause());
+                        monoSink.error(new DbOperationError("Failed to get the CM entry"));
+                        return;
+                    }
+                    var iterator = handler.result().iterator();
+                    if (!iterator.hasNext()) {
+                        monoSink.success(CMEntry.builder().isExists(false).build());
+                        return;
+                    }
+                    monoSink.success(cmEntryFrom(iterator.next()));
+                }));
+    }
+
+    private CMEntry cmEntryFrom(Row row) {
+        return CMEntry.builder()
+                .isExists(true)
+                .isActive(row.getBoolean("active"))
+                .build();
+    }
+
+    public Mono<Void> createCMEntry(CMServiceRequest request) {
+        return Mono.create(monoSink -> dbClient.preparedQuery(CREATE_CM_ENTRY)
+                .execute(Tuple.of(request.getName(), request.getUrl(), request.getSuffix(),
+                        request.getIsActive(), request.getIsBlocklisted()),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to create CM entry"));
+                                return;
+                            }
+                            monoSink.success();
+                        }));
+    }
+
+    public Mono<Void> updateCMEntry(CMServiceRequest request) {
+        return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_CM_ENTRY)
+                .execute(Tuple.of(request.getName(), request.getUrl(), request.getIsActive(),
+                        request.getIsBlocklisted(), request.getSuffix()),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to update CM entry"));
+                                return;
+                            }
+                            monoSink.success();
                         }));
     }
 

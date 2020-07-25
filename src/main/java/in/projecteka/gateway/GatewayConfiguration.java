@@ -762,9 +762,10 @@ public class GatewayConfiguration {
 
     @Bean
     public RegistryService registryService(RegistryRepository registryRepository,
+                                           CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
                                            AdminServiceClient adminServiceClient) {
-        return new RegistryService(registryRepository, bridgeMappings, adminServiceClient);
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
     @Bean
