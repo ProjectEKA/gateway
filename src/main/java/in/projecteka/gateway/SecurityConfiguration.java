@@ -110,7 +110,6 @@ public class SecurityConfiguration {
     };
 
     protected static final String[] INTERNAL_APIS = {
-            INTERNAL_CM,
             INTERNAL_BRIDGES,
             INTERNAL_BRIDGES_BRIDGE_ID_SERVICES,
             INTERNAL_CM
