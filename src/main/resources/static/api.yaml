@@ -84,6 +84,10 @@ paths:
       responses:
         '200':
           description: Bridge entry created/updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientResponse'
         '400':
           description: >
             Invalid request, required attributes not provided
@@ -249,9 +253,9 @@ components:
     ClientResponse:
       type: object
       properties:
-        client_key:
+        id:
           type: string
-        client_secret:
+        secret:
           type: string
       xml:
         name: ClientResponse
