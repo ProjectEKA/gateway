@@ -12,7 +12,7 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
 
     private final RedisClient redisClient;
     private StatefulRedisConnection<String, String> statefulConnection;
-    private int expirationInMinutes;
+    private final int expirationInMinutes;
 
     public RedisCacheAdapter(RedisClient redisClient, int expirationInMinutes) {
         this.redisClient = redisClient;

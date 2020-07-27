@@ -8,6 +8,6 @@ import lombok.Value;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UserSessionRequest {
-    String userName;
+    String username;
     String password;
 }

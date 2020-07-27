@@ -11,6 +11,7 @@ import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.MappingRepository;
+import in.projecteka.gateway.common.MappingService;
 import in.projecteka.gateway.common.RedundantRequestValidator;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -22,12 +23,12 @@ import in.projecteka.gateway.common.cache.LoadingCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisCacheAdapter;
 import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.common.heartbeat.CacheHealth;
 import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
-import in.projecteka.gateway.common.MappingService;
 import in.projecteka.gateway.registry.RegistryRepository;
 import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
@@ -73,18 +74,32 @@ public class GatewayConfiguration {
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings", "requestIdTimestampMappings"})
-    public CacheAdapter<String, String> createRedisCacheAdapter(RedisOptions redisOptions) {
-        RedisClient redisClient = getRedisClient(redisOptions);
+    public CacheAdapter<String, String> createRedisCacheAdapter(@Qualifier("Lettuce") RedisClient redisClient,
+                                                                RedisOptions redisOptions) {
         return new RedisCacheAdapter(redisClient, redisOptions.getExpiry());
     }
 
-    private RedisClient getRedisClient(RedisOptions redisOptions) {
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("Lettuce")
+    RedisClient redis(RedisOptions redisOptions) {
         RedisURI redisUri = RedisURI.Builder.
                 redis(redisOptions.getHost())
                 .withPort(redisOptions.getPort())
                 .withPassword(redisOptions.getPassword())
                 .build();
         return RedisClient.create(redisUri);
+    }
+
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
+    @Bean("Lettuce")
+    RedisClient dummyRedis() {
+        var redisUri = RedisURI.Builder.redis("localhost").build();
+        return RedisClient.create(redisUri);
+    }
+
+    @Bean
+    CacheHealth cacheHealth(CacheMethodProperty cacheMethodProperty, @Qualifier("Lettuce") RedisClient redisClient) {
+        return new CacheHealth(cacheMethodProperty, redisClient);
     }
 
     @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
@@ -704,8 +719,10 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions, IdentityProperties identityProperties, RedisOptions redisOptions, CacheMethodProperty cacheMethodProperty) {
-        return new Heartbeat(rabbitmqOptions, identityProperties, redisOptions, cacheMethodProperty);
+    public Heartbeat heartbeat(RabbitmqOptions rabbitmqOptions,
+                               IdentityProperties identityProperties,
+                               CacheHealth cacheHealth) {
+        return new Heartbeat(rabbitmqOptions, identityProperties, cacheHealth);
     }
 
     @Bean
@@ -779,9 +796,10 @@ public class GatewayConfiguration {
 
     @Bean
     public RegistryService registryService(RegistryRepository registryRepository,
+                                           CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
                                            AdminServiceClient adminServiceClient) {
-        return new RegistryService(registryRepository, bridgeMappings, adminServiceClient);
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
     @Bean
