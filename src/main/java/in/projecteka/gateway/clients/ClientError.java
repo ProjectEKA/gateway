@@ -74,12 +74,6 @@ public class ClientError extends Throwable {
                         "consent_manager suffix and url can't be empty")));
     }
 
-    public static ClientError invalidRequestWithNullValues() {
-        return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_CM_SERVICE_REQUEST,
-                        "isActive and isBlockListed can't be null")));
-    }
-
     public static ClientError invalidCMEntry() {
         return new ClientError(BAD_REQUEST,
                 new ErrorRepresentation(new Error(INVALID_CM_ENTRY,
