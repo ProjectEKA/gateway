@@ -14,7 +14,15 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.*;
+import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
+import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+
 
 @RestController
 @AllArgsConstructor
@@ -31,7 +39,7 @@ public class UserController {
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
                         patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
-                        .subscriberContext(context -> context.put("apiCalled", PATH_PATIENTS_FIND)));
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENTS_FIND)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

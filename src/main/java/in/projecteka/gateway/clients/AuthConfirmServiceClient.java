@@ -24,7 +24,7 @@ public class AuthConfirmServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId) {
-        return null;
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
     }
 
     @Override
