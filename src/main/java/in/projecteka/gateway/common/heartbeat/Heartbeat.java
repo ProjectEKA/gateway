@@ -3,16 +3,12 @@ package in.projecteka.gateway.common.heartbeat;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import in.projecteka.gateway.clients.IdentityProperties;
-import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URL;
 import java.util.concurrent.TimeoutException;
 
@@ -28,16 +24,14 @@ import static reactor.core.publisher.Mono.just;
 
 @AllArgsConstructor
 public class Heartbeat {
-    public static final String CACHE_METHOD_NAME = "guava";
     public static final String SERVICE_DOWN = "Service Down";
     private final RabbitmqOptions rabbitmqOptions;
     private final IdentityProperties identityProperties;
-    private final RedisOptions redisOptions;
-    private final CacheMethodProperty cacheMethod;
+    private final CacheHealth cacheHealth;
 
     public Mono<HeartbeatResponse> getStatus() {
         try {
-            return (isRedisUp() && isRabbitMQUp() && isKeycloakUp())
+            return (cacheHealth.isUp() && isRabbitMQUp() && isKeycloakUp())
                    ? just(HeartbeatResponse.builder().timeStamp(now(UTC)).status(UP).build())
                    : just(HeartbeatResponse.builder().timeStamp(now(UTC)).status(DOWN).error(of(SERVICE_DOWN)).build());
         } catch (IOException | TimeoutException e) {
@@ -56,25 +50,12 @@ public class Heartbeat {
         }
     }
 
-    private boolean isRedisUp() throws IOException {
-        return cacheMethod.getMethodName().equals(CACHE_METHOD_NAME)
-                || checkConnection(redisOptions.getHost(), redisOptions.getPort());
-    }
-
     private boolean isKeycloakUp() throws IOException {
         var siteUrl = new URL(identityProperties.getUrl());
         HttpURLConnection httpURLConnection = (HttpURLConnection) siteUrl.openConnection();
         httpURLConnection.setRequestMethod(valueOf(GET));
         httpURLConnection.connect();
         return httpURLConnection.getResponseCode() == HTTP_OK;
-    }
-
-    private boolean checkConnection(String host, int port) throws IOException {
-        SocketAddress socketAddress = new InetSocketAddress(host, port);
-        try (Socket socket = new Socket()) {
-            socket.connect(socketAddress);
-            return socket.isConnected();
-        }
     }
 }
 
