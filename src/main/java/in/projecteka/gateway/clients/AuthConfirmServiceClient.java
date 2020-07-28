@@ -5,6 +5,7 @@ import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +25,7 @@ public class AuthConfirmServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
+        return bridgeRegistry.getHostFor(clientId, ServiceType.HIP).map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
     }
 
     @Override

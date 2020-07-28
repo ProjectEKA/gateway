@@ -30,6 +30,7 @@ public class UserController {
     RequestOrchestrator<PatientSearchServiceClient> patientSearchRequestOrchestrator;
     ResponseOrchestrator patientSearchResponseOrchestrator;
     RequestOrchestrator<AuthConfirmServiceClient> authConfirmRequestOrchestrator;
+    ResponseOrchestrator authConfirmResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_PATIENTS_FIND)
@@ -63,7 +64,7 @@ public class UserController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(USERS_AUTH_ON_CONFIRM)
     public Mono<Void> authOnConfirm(HttpEntity<String> requestEntity){
-        return Mono.empty();
-    }
+        return authConfirmResponseOrchestrator.processResponse(requestEntity, X_HIP_ID)
+                .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_ON_CONFIRM));    }
 
 }

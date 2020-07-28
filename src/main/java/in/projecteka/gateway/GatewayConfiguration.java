@@ -693,6 +693,19 @@ public class GatewayConfiguration {
                 authConfirmRequestAction);
     }
 
+    @Bean("authConfirmResponseAction")
+    public DefaultValidatedResponseAction<AuthConfirmServiceClient> authConfirmResponseAction(
+            AuthConfirmServiceClient authConfirmServiceClient) {
+        return new DefaultValidatedResponseAction<>(authConfirmServiceClient);
+    }
+
+    @Bean("authConfirmResponseOrchestrator")
+    public ResponseOrchestrator authConfirmResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<AuthConfirmServiceClient> authConfirmResponseAction) {
+        return new ResponseOrchestrator(validator, authConfirmResponseAction);
+    }
+
 
     @Bean
     SimpleMessageListenerContainer container(
