@@ -6,7 +6,7 @@ gateway:
   redis:
     #Will not be used if cacheMethod is guava
     host: ${REDIS_HOST:localhost}
-    port: 6379
+    port: ${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:password}
     expiry: ${REDIS_KEY_EXPIRY:5}
     rootNamespace: ${ROOT_NAMESPACE:gateway}

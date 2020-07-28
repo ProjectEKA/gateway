@@ -23,7 +23,7 @@ public class Error implements Serializable {
         return new Error(ErrorCode.UNKNOWN_ERROR_OCCURRED, message);
     }
 
-    public static Error serviceDownError(String message) {
+    public static Error of(String message) {
         return new Error(ErrorCode.SERVICE_DOWN, message);
     }
 }

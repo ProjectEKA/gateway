@@ -57,6 +57,7 @@ public class Constants {
     public static final String USER_SESSION = "/user/sessions";
     public static final String PATH_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/add-contexts";
     public static final String PATH_ON_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/on-add-contexts";
+    public static final String INTERNAL_CM = "/internal/cm";
 
     private Constants() {
     }
