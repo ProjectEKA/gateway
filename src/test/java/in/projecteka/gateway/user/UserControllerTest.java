@@ -3,6 +3,7 @@ package in.projecteka.gateway.user;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.AuthConfirmServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
@@ -26,7 +27,9 @@ import java.util.List;
 
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
@@ -48,6 +51,9 @@ class UserControllerTest {
     @MockBean
     RequestOrchestrator<PatientSearchServiceClient> patientSearchOrchestrator;
 
+    @MockBean
+    RequestOrchestrator<AuthConfirmServiceClient> authConfirmRequestOrchestrator;
+
     @Autowired
     WebTestClient webTestClient;
 
@@ -67,6 +73,10 @@ class UserControllerTest {
     @Qualifier("patientSearchResponseOrchestrator")
     @MockBean
     ResponseOrchestrator patientSearchResponseOrchestrator;
+
+    @Qualifier("authConfirmResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator authConfirmResponseOrchestrator;
 
     @MockBean
     Validator patientSearchValidator;
@@ -98,6 +108,39 @@ class UserControllerTest {
         webTestClient
                 .post()
                 .uri(Constants.PATH_PATIENTS_ON_FIND)
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForAuthConfirmHipInitiatedLinking() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
+        when(authConfirmRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        webTestClient
+                .post()
+                .uri(Constants.USERS_AUTH_CONFIRM)
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+    @Test
+    void shouldFireAndForgetForAuthOnConfirmHipInitiatedLinking() throws JsonProcessingException {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(authConfirmResponseOrchestrator.processResponse(any(), eq(X_HIP_ID))).thenReturn(empty());
+        webTestClient
+                .post()
+                .uri(Constants.USERS_AUTH_ON_CONFIRM)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
