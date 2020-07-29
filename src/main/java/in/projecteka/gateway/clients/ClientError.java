@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_REGISTRY_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_SERVICE_REQUEST;
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_CM_ENTRY;
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_CM_SERVICE_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
@@ -68,10 +70,15 @@ public class ClientError extends Throwable {
 
     public static ClientError invalidCMRegistryRequest() {
         return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
-                        "can't register an inactive consent_manager")));
+                new ErrorRepresentation(new Error(INVALID_CM_SERVICE_REQUEST,
+                        "consent_manager suffix and url can't be empty")));
     }
 
+    public static ClientError invalidCMEntry() {
+        return new ClientError(BAD_REQUEST,
+                new ErrorRepresentation(new Error(INVALID_CM_ENTRY,
+                        "can't register an inactive consent_manager")));
+    }
 
 
     public static ClientError invalidBridgeServiceRequest() {
