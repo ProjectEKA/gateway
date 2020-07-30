@@ -22,6 +22,7 @@ import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
@@ -830,6 +831,47 @@ public class GatewayConfiguration {
         return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
+    @Bean("hipInitLinkServiceClient")
+    public HipInitLinkServiceClient hipInitLinkServiceClient(ServiceOptions serviceOptions,
+                                                            @Qualifier("customBuilder") WebClient.Builder builder,
+                                                            CMRegistry cmRegistry,
+                                                            IdentityService identityService,
+                                                            BridgeRegistry bridgeRegistry) {
+        return new HipInitLinkServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hipInitLinkRequestAction")
+    public DefaultValidatedRequestAction<HipInitLinkServiceClient> hipInitLinkRequestAction(
+            HipInitLinkServiceClient hipInitLinkServiceClient) {
+        return new DefaultValidatedRequestAction<>(hipInitLinkServiceClient);
+    }
+
+    @Bean("hipInitLinkRequestOrchestrator")
+    public RequestOrchestrator<HipInitLinkServiceClient> hipInitLinkRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            HipInitLinkServiceClient hipInitLinkServiceClient,
+            DefaultValidatedRequestAction<HipInitLinkServiceClient> hipInitLinkRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                hipInitLinkServiceClient,
+                hipInitLinkRequestAction);
+    }
+
+    @Bean("hipInitLinkResponseAction")
+    public DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction(
+            HipInitLinkServiceClient hipInitLinkServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipInitLinkServiceClient);
+    }
+
+    @Bean("hipInitLinkResponseOrchestrator")
+    public ResponseOrchestrator hipInitLinkResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction) {
+        return new ResponseOrchestrator(validator, hipInitLinkResponseAction);
+    }
     @Bean
     // This exception handler needs to be given highest priority compared to DefaultErrorWebExceptionHandler, hence order = -2.
     @Order(-2)

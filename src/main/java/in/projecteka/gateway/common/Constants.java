@@ -57,6 +57,8 @@ public class Constants {
     public static final String USER_SESSION = "/user/sessions";
     public static final String USERS_AUTH_CONFIRM = CURRENT_VERSION + "/users/auth/confirm";
     public static final String USERS_AUTH_ON_CONFIRM = CURRENT_VERSION + "/users/auth/on-confirm";
+    public static final String PATH_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/add-contexts";
+    public static final String PATH_ON_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/on-add-contexts";
     public static final String INTERNAL_CM = "/internal/cm";
 
     private Constants() {
