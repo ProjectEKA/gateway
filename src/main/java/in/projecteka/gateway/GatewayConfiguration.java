@@ -22,6 +22,7 @@ import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
+import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
@@ -826,6 +827,48 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<UserAuthenticatorClient> userAuthenticationResponseAction) {
         return new ResponseOrchestrator(validator, userAuthenticationResponseAction);
+    }
+
+    @Bean("hipInitLinkServiceClient")
+    public HipInitLinkServiceClient hipInitLinkServiceClient(ServiceOptions serviceOptions,
+                                                            @Qualifier("customBuilder") WebClient.Builder builder,
+                                                            CMRegistry cmRegistry,
+                                                            IdentityService identityService,
+                                                            BridgeRegistry bridgeRegistry) {
+        return new HipInitLinkServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hipInitLinkRequestAction")
+    public DefaultValidatedRequestAction<HipInitLinkServiceClient> hipInitLinkRequestAction(
+            HipInitLinkServiceClient hipInitLinkServiceClient) {
+        return new DefaultValidatedRequestAction<>(hipInitLinkServiceClient);
+    }
+
+    @Bean("hipInitLinkRequestOrchestrator")
+    public RequestOrchestrator<HipInitLinkServiceClient> hipInitLinkRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            HipInitLinkServiceClient hipInitLinkServiceClient,
+            DefaultValidatedRequestAction<HipInitLinkServiceClient> hipInitLinkRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                hipInitLinkServiceClient,
+                hipInitLinkRequestAction);
+    }
+
+    @Bean("hipInitLinkResponseAction")
+    public DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction(
+            HipInitLinkServiceClient hipInitLinkServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipInitLinkServiceClient);
+    }
+
+    @Bean("hipInitLinkResponseOrchestrator")
+    public ResponseOrchestrator hipInitLinkResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction) {
+        return new ResponseOrchestrator(validator, hipInitLinkResponseAction);
     }
 
     @Bean
