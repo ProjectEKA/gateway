@@ -2,6 +2,7 @@ package in.projecteka.gateway.link.link;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.common.Authenticator;
@@ -50,6 +51,13 @@ public class LinkControllerTest {
 
     @MockBean
     RequestOrchestrator<LinkConfirmServiceClient> linkConfirmRequestOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<HipInitLinkServiceClient> hipInitLinkRequestOrchestrator;
+
+    @Qualifier("hipInitLinkResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator hipInitLinkResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -118,4 +126,42 @@ public class LinkControllerTest {
                 .expectStatus()
                 .isAccepted();
     }
+
+    @Test
+    void shouldFireAndForgetForHipInitLink() {
+        var token = string();
+        var clientId = string();
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
+        when(hipInitLinkRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_ADD_CARE_CONTEXTS)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    public void shouldFireAndForgetForHipInitOnLink() {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(hipInitLinkResponseOrchestrator.processResponse(any(), eq(X_HIP_ID)))
+                .thenReturn(Mono.empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_ON_ADD_CARE_CONTEXTS)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
 }
