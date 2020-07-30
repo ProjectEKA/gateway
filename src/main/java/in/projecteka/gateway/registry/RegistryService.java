@@ -18,6 +18,7 @@ import java.util.List;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
 import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
 import static reactor.core.publisher.Mono.empty;
@@ -31,11 +32,34 @@ public class RegistryService {
     private final AdminServiceClient adminServiceClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
-        return registryRepository.getCMEntryIfActive(request.getSuffix())
-                .flatMap(cmEntry -> cmEntry.isExists()
-                        ? updateCMEntry(cmEntry, request)
-                        : createCMEntry(request)
-                );
+        return Mono.just(request)
+                .filterWhen(this::validateRequest)
+                .flatMap(req -> updateCMRequest(request))
+                .flatMap(updatedRequest -> registryRepository.getCMEntryIfActive(updatedRequest.getSuffix())
+                        .flatMap(cmEntry -> cmEntry.isExists()
+                                ? updateCMEntry(cmEntry, updatedRequest)
+                                : createCMEntry(updatedRequest)
+                        ));
+    }
+
+    private Mono<CMServiceRequest> updateCMRequest(CMServiceRequest request) {
+        var updateCMServiceRequest = request.toBuilder();
+
+        if (request.getIsActive() == null)
+            updateCMServiceRequest.isActive(true);
+        if (request.getIsBlocklisted() == null)
+            updateCMServiceRequest.isBlocklisted(false);
+
+        return Mono.just(updateCMServiceRequest.build());
+    }
+
+    private Mono<Boolean> validateRequest(CMServiceRequest request) {
+        if (request != null
+                && ((request.getSuffix() == null || request.getSuffix().isBlank())
+                || (request.getUrl() == null || request.getUrl().isBlank())) )
+            return Mono.error(invalidCMRegistryRequest());
+
+        return Mono.just(true);
     }
 
     private Mono<ClientResponse> updateCMEntry(CMEntry cmEntry, CMServiceRequest request) {
@@ -48,7 +72,7 @@ public class RegistryService {
         if (Boolean.TRUE.equals(request.getIsActive()))
             return registryRepository.createCMEntry(request)
                     .then(createClientAndAddRole(request.getSuffix()));
-        return Mono.error(invalidCMRegistryRequest());
+        return Mono.error(invalidCMEntry());
     }
 
     private Mono<ClientResponse> updateClients(CMEntry oldCMEntry, CMServiceRequest newCMEntry) {

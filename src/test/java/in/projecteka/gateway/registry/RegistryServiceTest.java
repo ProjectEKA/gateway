@@ -5,6 +5,7 @@ import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -15,6 +16,7 @@ import reactor.test.StepVerifier;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
 import static org.mockito.Mockito.times;
@@ -60,7 +62,9 @@ class RegistryServiceTest {
     @BeforeEach
     void init() {
         initMocks(this);
-        registryService = Mockito.spy(new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient));
+        registryService = Mockito.spy(new RegistryService(
+                registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
+        ));
     }
 
     @Test
@@ -105,9 +109,27 @@ class RegistryServiceTest {
 
         StepVerifier.create(registryService.populateCMEntry(request))
                 .verifyErrorSatisfies(throwable ->
-                        assertThat(throwable).isEqualToComparingFieldByField(invalidCMRegistryRequest()));
+                        assertThat(throwable).isEqualToComparingFieldByField(invalidCMEntry()));
 
         verify(registryRepository).getCMEntryIfActive(request.getSuffix());
+    }
+
+    @Test
+    void shouldThrowErrorForIfURLIsEmpty() {
+        var request = cmServiceRequest().url("").build();
+
+        StepVerifier.create(registryService.populateCMEntry(request))
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(invalidCMRegistryRequest()));
+    }
+
+    @Test
+    void shouldThrowErrorForIfCMSuffixIsEmpty() {
+        var request = cmServiceRequest().suffix("").build();
+
+        StepVerifier.create(registryService.populateCMEntry(request))
+                .verifyErrorSatisfies(throwable ->
+                        assertThat(throwable).isEqualToComparingFieldByField(invalidCMRegistryRequest()));
     }
 
     @Test
