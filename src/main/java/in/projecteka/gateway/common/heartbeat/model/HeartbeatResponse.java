@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 @Value
 public class HeartbeatResponse {
-    private LocalDateTime timeStamp;
-    private Status status;
-    private Error error;
+    LocalDateTime timeStamp;
+    Status status;
+    Error error;
 }

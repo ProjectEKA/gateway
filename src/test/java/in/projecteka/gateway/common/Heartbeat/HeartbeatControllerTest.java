@@ -2,11 +2,8 @@ package in.projecteka.gateway.common.Heartbeat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.common.Constants;
-import in.projecteka.gateway.common.TestBuilders;
 import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.model.HeartbeatResponse;
-import in.projecteka.gateway.common.heartbeat.model.Status;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,10 +16,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-
-
+import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
+import static in.projecteka.gateway.common.TestBuilders.OBJECT_MAPPER;
+import static in.projecteka.gateway.common.heartbeat.model.Status.DOWN;
+import static in.projecteka.gateway.common.heartbeat.model.Status.UP;
+import static java.time.LocalDateTime.now;
+import static java.time.ZoneOffset.UTC;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(SpringExtension.class)
@@ -50,16 +49,13 @@ class HeartbeatControllerTest {
 
     @Test
     void shouldGiveGatewayStatusAsUp() throws JsonProcessingException {
-        var heartbeatResponse = HeartbeatResponse.builder()
-                .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
-                .status(Status.UP)
-                .build();
-        var heartbeatResponseJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(heartbeatResponse);
+        var heartbeatResponse = HeartbeatResponse.builder().timeStamp(now(UTC)).status(UP).build();
+        var heartbeatResponseJson = OBJECT_MAPPER.writeValueAsString(heartbeatResponse);
 
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri(Constants.PATH_HEARTBEAT)
+                .uri(PATH_HEARTBEAT)
                 .exchange()
                 .expectStatus()
                 .isOk()
@@ -69,20 +65,16 @@ class HeartbeatControllerTest {
 
     @Test
     void shouldGiveGatewayStatusAsDown() throws JsonProcessingException {
-        var heartbeatResponse = HeartbeatResponse.builder()
-                .timeStamp(LocalDateTime.now(ZoneOffset.UTC))
-                .status(Status.DOWN)
-                //.error(Error.builder().code(ErrorCode.SERVICE_DOWN).message("Service Down").build())
-                .build();
-        var heartbeatResponseJson = TestBuilders.OBJECT_MAPPER.writeValueAsString(heartbeatResponse);
+        var heartbeatResponse = HeartbeatResponse.builder().timeStamp(now(UTC)).status(DOWN).build();
+        var heartbeatResponseJson = OBJECT_MAPPER.writeValueAsString(heartbeatResponse);
 
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri(Constants.PATH_HEARTBEAT)
+                .uri(PATH_HEARTBEAT)
                 .exchange()
                 .expectStatus()
-                .isOk()
+                .is5xxServerError()
                 .expectBody()
                 .json(heartbeatResponseJson);
     }

@@ -36,10 +36,10 @@ public class SessionController {
 
     @PostMapping(USER_SESSION)
     public Mono<Session> sessionFor(@RequestBody UserSessionRequest session) {
-        logger.info("Session request received {}", keyValue("username", session.getUserName()));
+        logger.info("Session request received {}", keyValue("username", session.getUsername()));
         return identityServiceClient.getUserToken(centralRegistryProperties.getClientId(),
                 centralRegistryProperties.getClientSecret(),
-                session.getUserName(),
+                session.getUsername(),
                 session.getPassword());
     }
 
