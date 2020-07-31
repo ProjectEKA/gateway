@@ -7,6 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.AuthConfirmServiceClient;
 import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
@@ -663,6 +664,50 @@ public class GatewayConfiguration {
                 hipDataFlowServiceClient,
                 hipDataflowRequestAction);
     }
+
+    @Bean
+    public AuthConfirmServiceClient authConfirmServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new AuthConfirmServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("authConfirmDefaultValidatedRequestAction")
+    public DefaultValidatedRequestAction<AuthConfirmServiceClient> authConfirmDefaultValidatedRequestAction(
+            AuthConfirmServiceClient authConfirmServiceClient) {
+        return new DefaultValidatedRequestAction<>(authConfirmServiceClient);
+    }
+
+    @Bean("authConfirmRequestOrchestrator")
+    public RequestOrchestrator<AuthConfirmServiceClient> authConfirmRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            AuthConfirmServiceClient authConfirmServiceClient,
+            DefaultValidatedRequestAction<AuthConfirmServiceClient> authConfirmRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                authConfirmServiceClient,
+                authConfirmRequestAction);
+    }
+
+    @Bean("authConfirmResponseAction")
+    public DefaultValidatedResponseAction<AuthConfirmServiceClient> authConfirmResponseAction(
+            AuthConfirmServiceClient authConfirmServiceClient) {
+        return new DefaultValidatedResponseAction<>(authConfirmServiceClient);
+    }
+
+    @Bean("authConfirmResponseOrchestrator")
+    public ResponseOrchestrator authConfirmResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<AuthConfirmServiceClient> authConfirmResponseAction) {
+        return new ResponseOrchestrator(validator, authConfirmResponseAction);
+    }
+
 
     @Bean
     SimpleMessageListenerContainer container(
