@@ -60,6 +60,8 @@ import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONF
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Role.ADMIN;
@@ -86,6 +88,7 @@ public class SecurityConfiguration {
             PATH_CONSENTS_HIP_ON_NOTIFY,
             PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
             USERS_AUTH_CONFIRM,
+            PATH_USERS_AUTH_INIT,
             PATH_ADD_CARE_CONTEXTS
     };
 
@@ -105,6 +108,7 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
             USERS_AUTH_ON_CONFIRM,
+            PATH_USERS_AUTH_ON_INIT,
             PATH_ON_ADD_CARE_CONTEXTS
     };
 

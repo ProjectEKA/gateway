@@ -22,6 +22,7 @@ import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
@@ -831,6 +832,48 @@ public class GatewayConfiguration {
         return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
+    @Bean("userAuthenticatorClient")
+    public UserAuthenticatorClient userAuthenticatorClient(ServiceOptions serviceOptions,
+                                                          @Qualifier("customBuilder") WebClient.Builder builder,
+                                                          CMRegistry cmRegistry,
+                                                          IdentityService identityService,
+                                                          BridgeRegistry bridgeRegistry) {
+        return new UserAuthenticatorClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("userAuthenticationRequestAction")
+    public DefaultValidatedRequestAction<UserAuthenticatorClient> userAuthenticationRequestAction(
+            UserAuthenticatorClient userAuthenticatorClient) {
+        return new DefaultValidatedRequestAction<>(userAuthenticatorClient);
+    }
+
+    @Bean("userAuthenticationRequestOrchestrator")
+    public RequestOrchestrator<UserAuthenticatorClient> userAuthenticationRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            UserAuthenticatorClient userAuthenticatorClient,
+            DefaultValidatedRequestAction<UserAuthenticatorClient> userAuthenticationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                userAuthenticatorClient,
+                userAuthenticationRequestAction);
+    }
+
+    @Bean("userAuthenticationResponseAction")
+    public DefaultValidatedResponseAction<UserAuthenticatorClient> userAuthenticationResponseAction(
+            UserAuthenticatorClient userAuthenticatorClient) {
+        return new DefaultValidatedResponseAction<>(userAuthenticatorClient);
+    }
+
+    @Bean("userAuthenticationResponseOrchestrator")
+    public ResponseOrchestrator userAuthenticationResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<UserAuthenticatorClient> userAuthenticationResponseAction) {
+        return new ResponseOrchestrator(validator, userAuthenticationResponseAction);
+    }
+
     @Bean("hipInitLinkServiceClient")
     public HipInitLinkServiceClient hipInitLinkServiceClient(ServiceOptions serviceOptions,
                                                             @Qualifier("customBuilder") WebClient.Builder builder,
@@ -872,6 +915,7 @@ public class GatewayConfiguration {
             DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction) {
         return new ResponseOrchestrator(validator, hipInitLinkResponseAction);
     }
+
     @Bean
     // This exception handler needs to be given highest priority compared to DefaultErrorWebExceptionHandler, hence order = -2.
     @Order(-2)
