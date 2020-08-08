@@ -93,7 +93,7 @@ public class GatewayConfiguration {
     @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(@Qualifier("Lettuce") RedisClient redisClient,
                                                                 RedisOptions redisOptions) {
-        return new RedisCacheAdapter(redisClient, redisOptions.getExpiry());
+        return new RedisCacheAdapter(redisClient, redisOptions.getExpiry(), redisOptions.getRetry());
     }
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")

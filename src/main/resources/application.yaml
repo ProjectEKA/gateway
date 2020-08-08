@@ -10,7 +10,7 @@ gateway:
     password: ${REDIS_PASSWORD:password}
     expiry: ${REDIS_KEY_EXPIRY:5}
     rootNamespace: ${ROOT_NAMESPACE:gateway}
-  # timeout in seconds
+    retry: ${REDIS_RETRY:0}
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
