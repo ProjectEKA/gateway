@@ -17,4 +17,5 @@ public class RedisOptions {
     private final String password;
     private final int expiry;
     private final String rootNamespace;
+    private final int retry;
 }
