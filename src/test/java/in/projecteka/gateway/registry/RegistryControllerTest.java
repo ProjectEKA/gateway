@@ -1,13 +1,16 @@
 package in.projecteka.gateway.registry;
 
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.common.AdminAuthenticator;
+import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -16,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
@@ -48,8 +52,9 @@ class RegistryControllerTest {
         var clientId = string();
         var bridgeRegistryRequest = bridgeRegistryRequest().build();
         var caller = caller().clientId(clientId).roles(List.of(ADMIN)).build();
+        var clientResponse = ClientResponse.builder().id(clientId).build();
         when(adminAuthenticator.verify(token)).thenReturn(just(caller));
-        when(registryService.populateBridgeEntry(bridgeRegistryRequest)).thenReturn(Mono.empty());
+        when(registryService.populateBridgeEntry(bridgeRegistryRequest)).thenReturn(just(clientResponse));
 
         webTestClient
                 .put()
@@ -73,10 +78,10 @@ class RegistryControllerTest {
 
         webTestClient
                 .put()
-                .uri(INTERNAL_BRIDGES)
+                .uri(INTERNAL_BRIDGES_BRIDGE_ID_SERVICES, bridgeId)
+                .contentType(MediaType.APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
-                .attribute("bridgeId", bridgeId)
-                .bodyValue(BodyInserters.fromValue(List.of(bridgeServiceRequest)))
+                .body(Mono.just(List.of(bridgeServiceRequest)), BridgeServiceRequest.class)
                 .exchange()
                 .expectStatus()
                 .isOk();

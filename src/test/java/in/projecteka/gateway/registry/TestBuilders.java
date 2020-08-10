@@ -2,6 +2,7 @@ package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
+import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
@@ -32,5 +33,9 @@ public class TestBuilders {
 
     public static CMServiceRequest.CMServiceRequestBuilder cmServiceRequest() {
         return easyRandom.nextObject(CMServiceRequest.CMServiceRequestBuilder.class);
+    }
+
+    public static Bridge.BridgeBuilder bridge() {
+        return easyRandom.nextObject(Bridge.BridgeBuilder.class);
     }
 }

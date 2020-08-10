@@ -21,6 +21,8 @@ import static in.projecteka.gateway.clients.ClientError.clientAlreadyExists;
 import static in.projecteka.gateway.clients.ClientError.notFound;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
+import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 public class AdminServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(AdminServiceClient.class);
@@ -76,12 +78,12 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 409,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
-                                            logger.error(keyCloakError.getError(), keyCloakError);
+                                            logger.error(keyCloakError.getErrorMessage(), keyCloakError);
                                             return Mono.error(clientAlreadyExists(keyCloakError.getErrorMessage()));
                                         }))
                         .onStatus(HttpStatus::isError, clientResponse -> {
@@ -106,7 +108,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 404,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
@@ -135,7 +137,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 404,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
@@ -167,7 +169,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 404,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
@@ -197,7 +199,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 404,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
@@ -227,7 +229,7 @@ public class AdminServiceClient {
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                         .flatMap(keyCloakError -> {
                                             logger.error(keyCloakError.getError(), keyCloakError);
-                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                            return Mono.error(unknownUnAuthorizedError(keyCloakError.getError()));
                                         }))
                         .onStatus(httpStatus -> httpStatus.value() == 404,
                                 clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
@@ -243,5 +245,18 @@ public class AdminServiceClient {
                 );
     }
 
+    public Mono<Void> createClientIfNotExists(String clientId) {
+        return createClient(clientId)
+                .onErrorResume(ClientError.class, exception -> exception.getHttpStatus() == CONFLICT
+                        ? Mono.empty()
+                        : Mono.error(exception));
+    }
+
+    public Mono<Void> deleteClientIfExists(String clientId) {
+        return deleteClient(clientId)
+                .onErrorResume(ClientError.class, exception -> exception.getHttpStatus() == NOT_FOUND
+                        ? Mono.empty()
+                        : Mono.error(exception));
+    }
 }
 
