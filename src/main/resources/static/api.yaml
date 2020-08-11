@@ -8,6 +8,7 @@ servers:
     description: Dev
 tags:
   - name: registration
+  - name: session
 paths:
   /internal/cm:
     put:
@@ -170,6 +171,58 @@ paths:
               application/xml:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
+  /user/sessions:
+    post:
+      tags:
+        - session
+      description: >
+        This API is meant to get admin token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSessionRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/UserSessionRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserSessionResponse'
+        '400':
+          description: >
+            Invalid request, required attributes not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: >
+            **Causes:**
+              * Invalid username or password.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >
+            **Causes:**
+              * Downstream system(s) is down.
+              * Unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   parameters:
     authorization:
@@ -259,6 +312,37 @@ components:
           type: string
       xml:
         name: ClientResponse
+    UserSessionRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      xml:
+        name: UserSessionRequest
+    UserSessionResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJSUzI1Ni.IsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrVVp.2MXJQMjRyYXN1UW9wU2lWbkdZQUZIVFowYVZGVWpYNXFLMnNibTk0In0
+        expiresIn:
+          type: integer
+          example: 1800
+          description: In Minutes
+        refreshExpiresIn:
+          type: integer
+          example: 1800
+          description: In Minutes
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJSUzI1Ni.IsInR5cCIgOiAiSldUIiwia2lkIiA6ICJrVVp.2MXJQMjRyYXN1UW9wU2lWbkdZQUZIVFowYVZGVWpYNXFLMnNibTk0In0
+        tokenType:
+          type: string
+          example: bearer
+      xml:
+        name: UserSessionResponse
     ErrorResponse:
       type: object
       properties:
