@@ -94,7 +94,7 @@ class SecurityConfigurationEnablerTest {
     }
 
     @Test
-    void return5xxSeverError() {
+    void return4xxSeverError() {
         var token = string();
         var caller = Caller.builder().roles(List.of(Role.ADMIN)).build();
         when(adminAuthenticator.verify(token)).thenReturn(just(caller));
@@ -108,6 +108,6 @@ class SecurityConfigurationEnablerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .is5xxServerError();
+                .is4xxClientError();
     }
 }
