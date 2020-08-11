@@ -1,10 +1,11 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.common.DbOperationError;
-import in.projecteka.gateway.registry.model.CMEntry;
-import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
@@ -13,14 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
-
 
 @AllArgsConstructor
 public class RegistryRepository {
     private static final Logger logger = LoggerFactory.getLogger(RegistryRepository.class);
-
-    private static final String SELECT_BRIDGE = "SELECT active FROM bridge WHERE bridge_id = $1";
 
     private static final String SELECT_CM = "SELECT * FROM consent_manager where suffix = $1";
     private static final String CREATE_CM_ENTRY =
@@ -31,14 +28,16 @@ public class RegistryRepository {
                     " date_modified = timezone('utc'::text, now()) " +
                     "WHERE consent_manager.suffix = $5";
 
+    private static final String SELECT_BRIDGE = "SELECT name, url, bridge_id, active, blocklisted FROM bridge " +
+            "WHERE bridge_id = $1";
     private static final String INSERT_BRIDGE_ENTRY = "INSERT INTO " +
             "bridge (name, url, bridge_id, active, blocklisted) VALUES ($1, $2, $3, $4, $5)";
     private static final String UPDATE_BRIDGE_ENTRY = "UPDATE bridge SET name = $1, url = $2, active = $3, " +
             "blocklisted = $4, date_modified = timezone('utc'::text, now()) WHERE bridge.bridge_id = $5";
 
-    private static final String SELECT_ACTIVE_BRIDGE_SERVICE = "SELECT * FROM bridge_service " +
+    private static final String SELECT_ACTIVE_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
             "WHERE service_id = $1 AND type = $2 AND active = $3 AND bridge_id != $4";
-    private static final String SELECT_BRIDGE_SERVICE = "SELECT * FROM bridge_service " +
+    private static final String SELECT_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
             "WHERE service_id = $1 AND type = $2";
     private static final String INSERT_BRIDGE_SERVICE_ENTRY = "INSERT INTO " +
             "bridge_service (bridge_id, type, active, service_id, name) VALUES ($1, $2, $3, $4, $5)";
@@ -50,7 +49,7 @@ public class RegistryRepository {
 
     private final PgPool dbClient;
 
-    public Mono<String> ifPresent(String bridgeId) {
+    public Mono<Bridge> ifPresent(String bridgeId) {
         return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE)
                 .execute(Tuple.of(bridgeId),
                         handler -> {
@@ -61,10 +60,18 @@ public class RegistryRepository {
                             }
                             var iterator = handler.result().iterator();
                             if (!iterator.hasNext()) {
-                                monoSink.success(NOT_EXISTS.name());
+                                monoSink.success(Bridge.builder().build());
                                 return;
                             }
-                            monoSink.success(iterator.next().getBoolean(0).toString());
+                            var row = iterator.next();
+                            var bridge = Bridge.builder()
+                                    .id(row.getString("bridge_id"))
+                                    .name(row.getString("name"))
+                                    .url(row.getString("url"))
+                                    .active(row.getBoolean("active"))
+                                    .blocklisted(row.getBoolean("blocklisted"))
+                                    .build();
+                            monoSink.success(bridge);
                         }));
     }
 
@@ -123,7 +130,7 @@ public class RegistryRepository {
     public Mono<Void> insertBridgeEntry(BridgeRegistryRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(INSERT_BRIDGE_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(), request.getId(),
-                        request.isActive(), request.isBlocklisted()),
+                        request.getActive(), request.getBlocklisted()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -137,7 +144,7 @@ public class RegistryRepository {
     public Mono<Void> updateBridgeEntry(BridgeRegistryRequest request) {
         return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_BRIDGE_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(),
-                        request.isActive(), request.isBlocklisted(), request.getId()),
+                        request.getActive(), request.getBlocklisted(), request.getId()),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());

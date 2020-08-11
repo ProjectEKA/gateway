@@ -4,40 +4,38 @@ import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
+import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.CMEntry;
-import in.projecteka.gateway.registry.model.CMServiceRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.util.Pair;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.test.StepVerifier;
+
+import java.util.List;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
-import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
-import org.mockito.Mockito;
-import org.springframework.data.util.Pair;
-
-import java.util.List;
-
-import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
+import static in.projecteka.gateway.registry.TestBuilders.bridge;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
 import static in.projecteka.gateway.registry.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestBuilders.clientSecret;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.just;
 
@@ -206,9 +204,9 @@ class RegistryServiceTest {
         var bridgeId = request.getId();
         var clientSecret = clientSecret().build();
         var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(NOT_EXISTS.name()));
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(Bridge.builder().build()));
         when(registryRepository.insertBridgeEntry(request)).thenReturn(empty());
-        when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.createClientIfNotExists(bridgeId)).thenReturn(empty());
         when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
 
         var producer = registryService.populateBridgeEntry(request);
@@ -218,7 +216,7 @@ class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).insertBridgeEntry(request);
-        verify(adminServiceClient).createClient(bridgeId);
+        verify(adminServiceClient).createClientIfNotExists(bridgeId);
         verify(adminServiceClient).getClientSecret(bridgeId);
     }
 
@@ -226,12 +224,12 @@ class RegistryServiceTest {
     void shouldThrowInvalidBridgeRegistryRequestErrorWhenAnInactiveBridgeRegisters() {
         var request = bridgeRegistryRequest().active(false).build();
         var bridgeId = request.getId();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(NOT_EXISTS.name()));
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(Bridge.builder().build()));
 
         var producer = registryService.populateBridgeEntry(request);
         StepVerifier.create(producer)
-                .verifyErrorSatisfies(throwable ->
-                        assertThat(throwable).isEqualToComparingFieldByField(invalidBridgeRegistryRequest()));
+                .verifyErrorSatisfies(throwable -> assertThat(throwable)
+                        .isEqualToComparingFieldByField(invalidBridgeRegistryRequest("can't register an inactive bridge")));
 
         verify(registryRepository).ifPresent(bridgeId);
     }
@@ -240,9 +238,10 @@ class RegistryServiceTest {
     void shouldUpdateBridgeEntryAndDeleteClientInKeyCloakWhenBridgeSetToInactive() {
         var request = bridgeRegistryRequest().active(false).build();
         var bridgeId = request.getId();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just("true"));
+        var bridge = bridge().build();
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(bridge));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
-        when(adminServiceClient.deleteClient(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.deleteClientIfExists(bridgeId)).thenReturn(empty());
 
         var producer = registryService.populateBridgeEntry(request);
         StepVerifier.create(producer)
@@ -250,18 +249,19 @@ class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).updateBridgeEntry(request);
-        verify(adminServiceClient).deleteClient(bridgeId);
+        verify(adminServiceClient).deleteClientIfExists(bridgeId);
     }
 
     @Test
     void shouldUpdateBridgeEntryAndCreateClientInKeyCloakWhenBridgeSetToActive() {
         var request = bridgeRegistryRequest().active(true).build();
         var bridgeId = request.getId();
+        var bridge = bridge().build();
         var clientSecret = clientSecret().build();
         var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
-        when(registryRepository.ifPresent(bridgeId)).thenReturn(just("false"));
+        when(registryRepository.ifPresent(bridgeId)).thenReturn(just(bridge));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
-        when(adminServiceClient.createClient(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.createClientIfNotExists(bridgeId)).thenReturn(empty());
         when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
 
         var producer = registryService.populateBridgeEntry(request);
@@ -271,7 +271,7 @@ class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(bridgeId);
         verify(registryRepository).updateBridgeEntry(request);
-        verify(adminServiceClient).createClient(bridgeId);
+        verify(adminServiceClient).createClientIfNotExists(bridgeId);
         verify(adminServiceClient).getClientSecret(bridgeId);
     }
 

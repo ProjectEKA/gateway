@@ -1,17 +1,17 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.registry.model.CMServiceRequest;
-import lombok.AllArgsConstructor;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
-
+import in.projecteka.gateway.registry.model.CMServiceRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import javax.validation.Valid;
 import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
@@ -30,7 +30,7 @@ public class RegistryController {
     }
 
     @PutMapping(INTERNAL_BRIDGES)
-    public Mono<ClientResponse> bridgeEntry(@RequestBody BridgeRegistryRequest bridgeRegistryRequest) {
+    public Mono<ClientResponse> bridgeEntry(@Valid @RequestBody BridgeRegistryRequest bridgeRegistryRequest) {
         return registryService.populateBridgeEntry(bridgeRegistryRequest);
     }
 

@@ -1,18 +1,18 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.common.cache.CacheAdapter;
-import in.projecteka.gateway.registry.model.CMEntry;
-import in.projecteka.gateway.registry.model.CMServiceRequest;
-import lombok.AllArgsConstructor;
-
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
+import in.projecteka.gateway.common.cache.CacheAdapter;
+import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
+import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.CMServiceRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -20,8 +20,6 @@ import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryReq
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
-import static in.projecteka.gateway.registry.EntryStatus.NOT_EXISTS;
-import static reactor.core.publisher.Mono.empty;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -96,26 +94,37 @@ public class RegistryService {
                                 .build());
     }
 
-
-    @SuppressWarnings("ReactiveStreamsUnusedPublisher")
     public Mono<ClientResponse> populateBridgeEntry(BridgeRegistryRequest bridgeRegistryRequest) {
         return registryRepository.ifPresent(bridgeRegistryRequest.getId())
-                .flatMap(res -> !res.equals(NOT_EXISTS.name())
-                        ? registryRepository.updateBridgeEntry(bridgeRegistryRequest)
-                        .thenReturn(res)
-                        .flatMap(result -> Boolean.parseBoolean(result) != bridgeRegistryRequest.isActive()
-                                ? bridgeRegistryRequest.isActive()
-                                ? createClient(bridgeRegistryRequest.getId())
-                                : adminServiceClient.deleteClient(bridgeRegistryRequest.getId()).then(empty())
-                                : empty())
-                        : bridgeRegistryRequest.isActive()
+                .flatMap(bridge -> bridge.getId() != null
+                        ? bridgeRequest(bridge, bridgeRegistryRequest)
+                        .flatMap(req -> registryRepository.updateBridgeEntry(req)
+                                .then(req.getActive()
+                                        ? createClient(bridgeRegistryRequest.getId())
+                                        : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
+                                        .then(Mono.empty())
+                                ))
+                        : bridgeRegistryRequest.getActive() == null
+                        ? Mono.error(invalidBridgeRegistryRequest("Invalid request"))
+                        : bridgeRegistryRequest.getActive()
                         ? registryRepository.insertBridgeEntry(bridgeRegistryRequest)
                         .then(createClient(bridgeRegistryRequest.getId()))
-                        : Mono.error(invalidBridgeRegistryRequest()));
+                        : Mono.error(invalidBridgeRegistryRequest("can't register an inactive bridge")));
+    }
+
+    private Mono<BridgeRegistryRequest> bridgeRequest(Bridge bridge, BridgeRegistryRequest request) {
+        var bridgeRequest = BridgeRegistryRequest.builder()
+                .id(request.getId())
+                .name(request.getName() == null ? bridge.getName() : request.getName())
+                .url(request.getUrl() == null ? bridge.getUrl() : request.getUrl())
+                .active(request.getActive() == null ? bridge.getActive() : request.getActive())
+                .blocklisted(request.getBlocklisted() == null ? bridge.getBlocklisted() : request.getBlocklisted())
+                .build();
+        return Mono.just(bridgeRequest);
     }
 
     private Mono<ClientResponse> createClient(String bridgeId) {
-        return adminServiceClient.createClient(bridgeId)
+        return adminServiceClient.createClientIfNotExists(bridgeId)
                 .then(adminServiceClient.getClientSecret(bridgeId)
                         .map(clientSecret -> ClientResponse.builder()
                                 .id(bridgeId)

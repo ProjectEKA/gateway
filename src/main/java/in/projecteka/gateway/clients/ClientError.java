@@ -62,10 +62,9 @@ public class ClientError extends Throwable {
         return new ClientError(NOT_FOUND, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
     }
 
-    public static ClientError invalidBridgeRegistryRequest() {
+    public static ClientError invalidBridgeRegistryRequest(String message) {
         return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST,
-                        "can't register an inactive bridge")));
+                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST, message)));
     }
 
     public static ClientError invalidCMRegistryRequest() {
