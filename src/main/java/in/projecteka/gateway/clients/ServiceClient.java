@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -22,6 +21,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Serializer.from;
 import static java.lang.String.format;
+import static java.time.Duration.ofSeconds;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.empty;
@@ -89,7 +89,7 @@ public abstract class ServiceClient {
                                         e.toString()))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
-                .timeout(Duration.ofSeconds(serviceOptions.getTimeout()));
+                .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
 
     private <T> Mono<ResponseEntity<Void>> bridgeWebClientBuilder(T request,
@@ -106,12 +106,11 @@ public abstract class ServiceClient {
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
-                        clientResponse -> clientResponse
-                                .bodyToMono(HashMap.class)
+                        clientResponse -> clientResponse.bodyToMono(HashMap.class)
                                 .doOnSuccess(e -> logger.error(clientResponse.statusCode().toString(),
                                         e.toString()))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
-                .timeout(Duration.ofSeconds(serviceOptions.getTimeout()));
+                .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
 }

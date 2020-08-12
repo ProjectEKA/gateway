@@ -1,13 +1,12 @@
 package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.clients.model.Error;
+import in.projecteka.gateway.clients.model.ErrorCode;
 import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_REGISTRY_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_SERVICE_REQUEST;
-import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_CM_ENTRY;
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_CM_SERVICE_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
@@ -21,8 +20,8 @@ import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Getter
 public class ClientError extends Throwable {
-    private static final String CANNOT_PROCESS_REQUEST_TRY_LATER = "Cannot process the request at the moment, please " +
-            "try later.";
+    private static final String CANNOT_PROCESS_REQUEST_TRY_LATER = "Cannot process the request at the moment, " +
+            "please try later.";
     private final HttpStatus httpStatus;
     private final ErrorRepresentation error;
 
@@ -32,57 +31,66 @@ public class ClientError extends Throwable {
     }
 
     public static ClientError unableToConnect() {
-        return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, CANNOT_PROCESS_REQUEST_TRY_LATER)));
+        return internalServerError(CANNOT_PROCESS_REQUEST_TRY_LATER);
     }
 
     public static ClientError mappingNotFoundForId(String id) {
-        return new ClientError(INTERNAL_SERVER_ERROR,
-                new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, format("No mapping found for %s", id))));
+        return internalServerError(format("No mapping found for %s", id));
     }
 
     public static ClientError invalidRequest(String message) {
-        return new ClientError(BAD_REQUEST, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+        return new ClientError(BAD_REQUEST, errorOf(message, UNKNOWN_ERROR_OCCURRED));
     }
 
     public static ClientError tooManyRequests() {
-        return new ClientError(TOO_MANY_REQUESTS,
-                new ErrorRepresentation(new Error(TOO_MANY_REQUESTS_FOUND, "Too many requests found")));
+        return new ClientError(TOO_MANY_REQUESTS, errorOf("Too many requests found", TOO_MANY_REQUESTS_FOUND));
     }
 
     public static ClientError unknownUnAuthorizedError(String message) {
-        return new ClientError(UNAUTHORIZED, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+        return new ClientError(UNAUTHORIZED, errorOf(message, UNKNOWN_ERROR_OCCURRED));
     }
 
     public static ClientError clientAlreadyExists(String message) {
-        return new ClientError(CONFLICT, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+        return new ClientError(CONFLICT, errorOf(message, UNKNOWN_ERROR_OCCURRED));
     }
 
     public static ClientError notFound(String message) {
-        return new ClientError(NOT_FOUND, new ErrorRepresentation(new Error(UNKNOWN_ERROR_OCCURRED, message)));
+        return new ClientError(NOT_FOUND, errorOf(message, UNKNOWN_ERROR_OCCURRED));
     }
 
     public static ClientError invalidBridgeRegistryRequest(String message) {
-        return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_BRIDGE_REGISTRY_REQUEST, message)));
+        return badBridgeRequest(message);
     }
 
     public static ClientError invalidCMRegistryRequest() {
-        return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_CM_SERVICE_REQUEST,
-                        "consent_manager suffix and url can't be empty")));
+        return badCMRequest("consent_manager suffix and url can't be empty");
     }
 
     public static ClientError invalidCMEntry() {
-        return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_CM_ENTRY,
-                        "can't register an inactive consent_manager")));
+        return badCMRequest("can't register an inactive consent_manager");
     }
 
-
     public static ClientError invalidBridgeServiceRequest() {
-        return new ClientError(BAD_REQUEST,
-                new ErrorRepresentation(new Error(INVALID_BRIDGE_SERVICE_REQUEST,
-                        "Can't be serviced by multiple bridges")));
+        return badBridgeRequest("Can't be serviced by multiple bridges");
+    }
+
+    public static ClientError unknownErrorOccurred() {
+        return internalServerError("Unknown error occurred");
+    }
+
+    private static ClientError internalServerError(String message) {
+        return new ClientError(INTERNAL_SERVER_ERROR, errorOf(message, UNKNOWN_ERROR_OCCURRED));
+    }
+
+    private static ClientError badBridgeRequest(String message) {
+        return new ClientError(BAD_REQUEST, errorOf(message, INVALID_BRIDGE_SERVICE_REQUEST));
+    }
+
+    private static ClientError badCMRequest(String message) {
+        return new ClientError(BAD_REQUEST, errorOf(message, INVALID_CM_SERVICE_REQUEST));
+    }
+
+    private static ErrorRepresentation errorOf(String message, ErrorCode errorCode) {
+        return new ErrorRepresentation(new Error(errorCode, message));
     }
 }

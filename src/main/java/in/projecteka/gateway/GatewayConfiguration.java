@@ -8,14 +8,15 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
-import in.projecteka.gateway.clients.ClientErrorExceptionHandler;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.GlobalExceptionHandler;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
+import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.clients.IdentityServiceClient;
@@ -23,7 +24,6 @@ import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
-import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
 import in.projecteka.gateway.common.IdentityService;
@@ -834,10 +834,10 @@ public class GatewayConfiguration {
 
     @Bean("userAuthenticatorClient")
     public UserAuthenticatorClient userAuthenticatorClient(ServiceOptions serviceOptions,
-                                                          @Qualifier("customBuilder") WebClient.Builder builder,
-                                                          CMRegistry cmRegistry,
-                                                          IdentityService identityService,
-                                                          BridgeRegistry bridgeRegistry) {
+                                                           @Qualifier("customBuilder") WebClient.Builder builder,
+                                                           CMRegistry cmRegistry,
+                                                           IdentityService identityService,
+                                                           BridgeRegistry bridgeRegistry) {
         return new UserAuthenticatorClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
     }
 
@@ -876,10 +876,10 @@ public class GatewayConfiguration {
 
     @Bean("hipInitLinkServiceClient")
     public HipInitLinkServiceClient hipInitLinkServiceClient(ServiceOptions serviceOptions,
-                                                            @Qualifier("customBuilder") WebClient.Builder builder,
-                                                            CMRegistry cmRegistry,
-                                                            IdentityService identityService,
-                                                            BridgeRegistry bridgeRegistry) {
+                                                             @Qualifier("customBuilder") WebClient.Builder builder,
+                                                             CMRegistry cmRegistry,
+                                                             IdentityService identityService,
+                                                             BridgeRegistry bridgeRegistry) {
         return new HipInitLinkServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
     }
 
@@ -919,14 +919,14 @@ public class GatewayConfiguration {
     @Bean
     // This exception handler needs to be given highest priority compared to DefaultErrorWebExceptionHandler, hence order = -2.
     @Order(-2)
-    public ClientErrorExceptionHandler clientErrorExceptionHandler(ErrorAttributes errorAttributes,
-                                                                   ResourceProperties resourceProperties,
-                                                                   ApplicationContext applicationContext,
-                                                                   ServerCodecConfigurer serverCodecConfigurer) {
+    public GlobalExceptionHandler clientErrorExceptionHandler(ErrorAttributes errorAttributes,
+                                                              ResourceProperties resourceProperties,
+                                                              ApplicationContext applicationContext,
+                                                              ServerCodecConfigurer serverCodecConfigurer) {
 
-        ClientErrorExceptionHandler clientErrorExceptionHandler = new ClientErrorExceptionHandler(errorAttributes,
+        GlobalExceptionHandler globalExceptionHandler = new GlobalExceptionHandler(errorAttributes,
                 resourceProperties, applicationContext);
-        clientErrorExceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
-        return clientErrorExceptionHandler;
+        globalExceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
+        return globalExceptionHandler;
     }
 }

@@ -13,9 +13,11 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
+import java.util.Properties;
 
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
+import static reactor.core.publisher.Mono.error;
 
 public class IdentityServiceClient {
     private static final Logger logger = LoggerFactory.getLogger(IdentityServiceClient.class);
@@ -43,12 +45,13 @@ public class IdentityServiceClient {
                         clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                 .flatMap(keyCloakError -> {
                                     logger.error(keyCloakError.getError(), keyCloakError);
-                                    return Mono.error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                    return error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
                                 }))
-                .onStatus(HttpStatus::isError, clientResponse -> {
-                    logger.error(clientResponse.statusCode().toString(), "Something went wrong");
-                    return Mono.error(unableToConnect());
-                })
+                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
+                                clientResponse.statusCode(),
+                                properties))
+                        .then(error(unableToConnect())))
                 .bodyToMono(Session.class);
     }
 
@@ -58,10 +61,11 @@ public class IdentityServiceClient {
                         uriBuilder.path("/realms/{realm}/protocol/openid-connect/certs").build(Map.of("realm", realm)))
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> {
-                    logger.error(clientResponse.statusCode().toString(), "Something went wrong");
-                    return Mono.error(unableToConnect());
-                })
+                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
+                                clientResponse.statusCode(),
+                                properties))
+                        .then(error(unableToConnect())))
                 .bodyToMono(JsonNode.class);
     }
 
