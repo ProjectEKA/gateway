@@ -85,7 +85,7 @@ public abstract class ServiceClient {
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                         clientResponse -> clientResponse
                                 .bodyToMono(HashMap.class)
-                                .doOnSuccess(e -> logger.error(clientResponse.statusCode().toString(),
+                                .doOnSuccess(e -> logger.error("Error: {}, {}", clientResponse.statusCode().toString(),
                                         e.toString()))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
@@ -107,7 +107,7 @@ public abstract class ServiceClient {
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                         clientResponse -> clientResponse.bodyToMono(HashMap.class)
-                                .doOnSuccess(e -> logger.error(clientResponse.statusCode().toString(),
+                                .doOnSuccess(e -> logger.error("Error: {} {}", clientResponse.statusCode().toString(),
                                         e.toString()))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
