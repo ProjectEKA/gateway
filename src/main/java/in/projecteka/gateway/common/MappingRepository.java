@@ -22,7 +22,8 @@ public class MappingRepository {
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.service_id = $1 AND bridge_service.type = $2 " +
             "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
-    private static final String SELECT_BRIDGE_PROPERTIES = "select name, bridge_id, url from bridge";
+    private static final String SELECT_BRIDGE_PROPERTIES = "SELECT bridge.name, bridge.bridge_id, bridge.url, bridge_service.type FROM bridge " +
+        "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id ";
     private static final String SELECT_CM_PROPERTIES = "select name, cm_id, url from consent_manager";
     private final PgPool dbClient;
 
@@ -68,6 +69,7 @@ public class MappingRepository {
                                             .name(row.getString(0))
                                             .id(row.getString(1))
                                             .url(row.getString(2))
+                                            .type(row.getString(3))
                                             .build());
                                 }
                             }
@@ -90,6 +92,7 @@ public class MappingRepository {
                                             .name(row.getString(0))
                                             .id(row.getString(1))
                                             .url(row.getString(2))
+                                            .type("CM")
                                             .build());
                                 }
                             }
