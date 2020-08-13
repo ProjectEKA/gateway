@@ -89,6 +89,30 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 @Configuration
 public class GatewayConfiguration {
 
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
+    @Bean("accessToken")
+    public CacheAdapter<String, String> createLoadingCacheAdapterForAccessToken() {
+        return new LoadingCacheAdapter<>(stringStringLoadingCache(5));
+    }
+
+    public LoadingCache<String, String> stringStringLoadingCache(int duration) {
+        return CacheBuilder
+                .newBuilder()
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
+                .build(new CacheLoader<>() {
+                    public String load(String key) {
+                        return "";
+                    }
+                });
+    }
+
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("accessToken")
+    public CacheAdapter<String, String> createRedisCacheAdapterForAccessToken(@Qualifier("Lettuce") RedisClient redisClient,
+                                                                RedisOptions redisOptions) {
+        return new RedisCacheAdapter(redisClient, redisOptions.getExpiry(), redisOptions.getRetry());
+    }
+
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(@Qualifier("Lettuce") RedisClient redisClient,
@@ -450,8 +474,9 @@ public class GatewayConfiguration {
 
     @Bean
     public IdentityService centralRegistry(IdentityProperties identityProperties,
-                                           IdentityServiceClient identityServiceClient) {
-        return new IdentityService(identityServiceClient, identityProperties);
+                                           IdentityServiceClient identityServiceClient,
+                                           @Qualifier("accessToken") CacheAdapter<String, String> accessToken) {
+        return new IdentityService(identityServiceClient, identityProperties, accessToken);
     }
 
     @Bean

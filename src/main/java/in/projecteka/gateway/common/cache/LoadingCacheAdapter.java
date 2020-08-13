@@ -32,4 +32,13 @@ public class LoadingCacheAdapter<K, V> implements CacheAdapter<K, V> {
         loadingCache.invalidate(key);
         return Mono.empty();
     }
+
+    @Override
+    public Mono<V> getIfPresent(K key) {
+        V value = loadingCache.getIfPresent(key);
+        if (value != null && !value.equals("")) {
+            return Mono.just(value);
+        }
+        return Mono.empty();
+    }
 }

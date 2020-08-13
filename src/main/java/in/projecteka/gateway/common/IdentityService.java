@@ -2,9 +2,10 @@ package in.projecteka.gateway.common;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.IdentityProperties;
+import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.model.Session;
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -14,13 +15,20 @@ import static java.lang.String.format;
 public class IdentityService {
 
     private final IdentityServiceClient identityServiceClient;
-
     private final IdentityProperties properties;
+    private final CacheAdapter<String, String> accessTokenCache;
 
     public Mono<String> authenticate() {
-        return identityServiceClient
-                .getTokenFor(properties.getClientId(), properties.getClientSecret())
-                .map(session -> format("%s %s", session.getTokenType(), session.getAccessToken()));
+        return accessTokenCache.getIfPresent("gateway:accessToken")
+                .switchIfEmpty(Mono.defer(this::tokenUsingSecret))
+                .map(token -> format("%s %s", "Bearer", token));
+    }
+
+    private Mono<String> tokenUsingSecret() {
+        return identityServiceClient.getTokenFor(properties.getClientId(), properties.getClientSecret())
+                .flatMap(session ->
+                        accessTokenCache.put("gateway:accessToken", session.getAccessToken())
+                                .thenReturn(session.getAccessToken()));
     }
 
     public Mono<Session> getTokenFor(String clientId, String clientSecret) {

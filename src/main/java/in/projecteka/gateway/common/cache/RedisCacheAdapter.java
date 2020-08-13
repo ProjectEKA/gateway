@@ -13,7 +13,6 @@ import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static java.time.Duration.ofMinutes;
 import static reactor.core.publisher.Mono.defer;
 
 public class RedisCacheAdapter implements CacheAdapter<String, String> {
@@ -61,6 +60,11 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
     public Mono<Void> invalidate(String key) {
         RedisReactiveCommands<String, String> redisCommands = statefulConnection.reactive();
         return retryable(redisCommands.expire(key, 0).then());
+    }
+
+    @Override
+    public Mono<String> getIfPresent(String key) {
+        return retryable(get(key));
     }
 
     private <U> Mono<U> retryable(Mono<U> producer) {
