@@ -13,7 +13,6 @@ import javax.annotation.PreDestroy;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static java.time.Duration.ofMinutes;
 import static reactor.core.publisher.Mono.defer;
 
 public class RedisCacheAdapter implements CacheAdapter<String, String> {
