@@ -19,7 +19,7 @@ public class IdentityService {
     private final CacheAdapter<String, String> accessTokenCache;
 
     public Mono<String> authenticate() {
-        return accessTokenCache.getIfPresent("gateway:accessToken")
+        return accessTokenCache.get("gateway:accessToken")
                 .switchIfEmpty(Mono.defer(this::tokenUsingSecret))
                 .map(token -> format("%s %s", "Bearer", token));
     }

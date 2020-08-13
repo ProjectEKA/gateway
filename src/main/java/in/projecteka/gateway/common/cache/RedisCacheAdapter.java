@@ -62,11 +62,6 @@ public class RedisCacheAdapter implements CacheAdapter<String, String> {
         return retryable(redisCommands.expire(key, 0).then());
     }
 
-    @Override
-    public Mono<String> getIfPresent(String key) {
-        return retryable(get(key));
-    }
-
     private <U> Mono<U> retryable(Mono<U> producer) {
         return defer(() -> producer)
                 .doOnError(error -> logger.error(error.getMessage(), error))
