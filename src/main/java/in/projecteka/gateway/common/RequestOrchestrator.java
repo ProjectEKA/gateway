@@ -93,8 +93,6 @@ public class RequestOrchestrator<T extends ServiceClient> {
                             })
                     .doOnError(ErrorResult.class,
                             errorResult -> {
-                                // TODO: clientId is data bridge Id, not HIU/HIP id.
-                                // Have to change to figure out data bridge URL by looking at client Id.
                                 logger.error("Notifying caller about the failure", errorResult);
                                 serviceClient.notifyError(clientId, sourceRoutingKey, errorResult).subscribe();
                             });

@@ -13,6 +13,7 @@ public class Constants {
     public static final String GW_DEAD_LETTER_EXCHANGE = "gw.dead-letter-exchange";
     public static final String GW_LINK_QUEUE = "gw.link";
     public static final String GW_DATAFLOW_QUEUE = "gw.dataflow";
+    public static final String BRIDGE_ID_PREFIX = "bridge_";
     public static final Map<String, String> nameMap = new HashMap<>() {
         {
             put(X_HIU_ID, "HIU");
@@ -64,5 +65,9 @@ public class Constants {
     public static final String INTERNAL_CM = "/internal/cm";
 
     private Constants() {
+    }
+
+    public static String bridgeId(String clientId) {
+        return BRIDGE_ID_PREFIX + clientId;
     }
 }

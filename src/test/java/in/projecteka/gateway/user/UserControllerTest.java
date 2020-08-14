@@ -26,6 +26,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import java.util.List;
 
 
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
@@ -85,7 +86,9 @@ class UserControllerTest {
     void shouldFireAndForgetForPatientsFindInUserController() {
         var token = string();
         var clientId = string();
-        when(patientSearchOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
+        when(patientSearchOrchestrator
+                .handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
@@ -122,7 +125,9 @@ class UserControllerTest {
         var clientId = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
-        when(authConfirmRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(authConfirmRequestOrchestrator
+                .handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(empty());
         webTestClient
                 .post()
                 .uri(Constants.USERS_AUTH_CONFIRM)

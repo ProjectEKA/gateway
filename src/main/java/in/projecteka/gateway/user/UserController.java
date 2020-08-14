@@ -1,8 +1,8 @@
 package in.projecteka.gateway.user;
 
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
-import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
@@ -22,6 +22,7 @@ import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 
 
 @RestController
@@ -38,8 +39,8 @@ public class UserController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId ->
-                        patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                .flatMap(clientId -> patientSearchRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENTS_FIND)));
     }
 
@@ -57,7 +58,7 @@ public class UserController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> authConfirmRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_CONFIRM)));
     }
 

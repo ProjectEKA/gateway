@@ -30,6 +30,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.UUID;
 
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -99,7 +100,9 @@ class DataflowControllerTest {
     void shouldFireAndForgetForInitDataFlowRequest() {
         var token = string();
         var clientId = string();
-        when(dataFlowRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(clientId))).thenReturn(empty());
+        when(dataFlowRequestOrchestrator
+                .handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
 
@@ -156,7 +159,8 @@ class DataflowControllerTest {
     void shouldFireAndForgetHealthInfoNotification() {
         var token = string();
         var clientId = string();
-        when(healthInfoNotificationOrchestrator.handleThis(any(), eq(X_CM_ID), anyString(), eq(clientId)))
+        when(healthInfoNotificationOrchestrator
+                .handleThis(any(), eq(X_CM_ID), anyString(), eq(BRIDGE_ID_PREFIX + clientId)))
                 .thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU, HIP)).build()));

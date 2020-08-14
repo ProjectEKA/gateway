@@ -19,6 +19,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
@@ -59,7 +60,9 @@ public class UserAuthenticationControllerTest {
         var clientId = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
-        when(userAuthenticationRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(userAuthenticationRequestOrchestrator
+                .handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(empty());
 
         webTestClient
                 .post()

@@ -17,15 +17,16 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
-import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
-import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @RestController
@@ -83,7 +84,8 @@ public class LinkController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        hipInitLinkRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
+                        hipInitLinkRequestOrchestrator
+                                .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_ADD_CARE_CONTEXTS)));
 
     }
