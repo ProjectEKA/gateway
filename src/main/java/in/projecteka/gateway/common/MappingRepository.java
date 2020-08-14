@@ -16,12 +16,14 @@ import reactor.core.publisher.Mono;
 @AllArgsConstructor
 public class MappingRepository {
     private static final Logger logger = LoggerFactory.getLogger(MappingRepository.class);
-    private static final String SELECT_CM_MAPPING = "SELECT url FROM consent_manager" +
-            " WHERE suffix = $1 AND active = $2 AND blocklisted = $3";
+    private static final String SELECT_CM_MAPPING = "SELECT url FROM consent_manager " +
+            "WHERE suffix = $1 AND active = $2 AND blocklisted = $3";
     private static final String SELECT_BRIDGE_MAPPING = "SELECT bridge.url FROM bridge " +
             "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
             "AND bridge_service.service_id = $1 AND bridge_service.type = $2 " +
             "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
+    private static final String SELECT_BRIDGE_URL = "SELECT url FROM bridge " +
+            "WHERE bridge_id = $1 AND active = $2 AND blocklisted = $3";
     private static final String SELECT_BRIDGE_PROPERTIES = "SELECT bridge.name, bridge.bridge_id, bridge.url, bridge_service.type FROM bridge " +
         "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id ";
     private static final String SELECT_CM_PROPERTIES = "select name, cm_id, url from consent_manager";
@@ -35,6 +37,12 @@ public class MappingRepository {
         return select(SELECT_BRIDGE_MAPPING,
                 Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false, true),
                 "Failed to fetch Bridge host");
+    }
+
+    public Mono<String> bridgeHost(String bridgeId) {
+        return select(SELECT_BRIDGE_URL,
+                Tuple.of(bridgeId, true, false),
+                "Failed to fetch Bridge url");
     }
 
     private Mono<String> select(String query, Tuple params, String errorMessage) {

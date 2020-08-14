@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -35,9 +36,9 @@ public class UserAuthenticationController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId ->
-                        userAuthenticationRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
-                                .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_INIT)));
+                .flatMap(clientId -> userAuthenticationRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, BRIDGE_ID_PREFIX + clientId)
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_INIT)));
 
     }
 

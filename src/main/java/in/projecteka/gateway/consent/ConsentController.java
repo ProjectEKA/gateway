@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -37,7 +38,7 @@ public class ConsentController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> consentRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
                         .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENT_REQUESTS_INIT)));
     }
 
@@ -54,9 +55,9 @@ public class ConsentController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId ->
-                        consentFetchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
-                                .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_FETCH)));
+                .flatMap(clientId -> consentFetchRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_FETCH)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)

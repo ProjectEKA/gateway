@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
@@ -38,8 +39,8 @@ public class UserController {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId ->
-                        patientSearchRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIU_ID, clientId)
+                .flatMap(clientId -> patientSearchRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
                         .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENTS_FIND)));
     }
 
@@ -57,7 +58,7 @@ public class UserController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> authConfirmRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, BRIDGE_ID_PREFIX + clientId)
                         .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_CONFIRM)));
     }
 

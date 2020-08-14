@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
@@ -83,7 +84,8 @@ public class LinkController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        hipInitLinkRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
+                        hipInitLinkRequestOrchestrator
+                                .handleThis(requestEntity, X_CM_ID, X_HIP_ID, BRIDGE_ID_PREFIX + clientId)
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_ADD_CARE_CONTEXTS)));
 
     }
