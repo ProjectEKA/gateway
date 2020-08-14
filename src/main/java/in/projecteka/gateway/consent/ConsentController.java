@@ -1,8 +1,8 @@
 package in.projecteka.gateway.consent;
 
-import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 
 @RestController
 @AllArgsConstructor
@@ -38,7 +38,7 @@ public class ConsentController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> consentRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENT_REQUESTS_INIT)));
     }
 
@@ -56,7 +56,7 @@ public class ConsentController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> consentFetchRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_FETCH)));
     }
 

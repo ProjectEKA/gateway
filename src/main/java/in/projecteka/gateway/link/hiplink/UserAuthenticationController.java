@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @RestController
@@ -37,7 +37,7 @@ public class UserAuthenticationController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> userAuthenticationRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, BRIDGE_ID_PREFIX + clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_INIT)));
 
     }

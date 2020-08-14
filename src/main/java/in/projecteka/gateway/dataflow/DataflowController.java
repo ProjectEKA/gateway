@@ -15,16 +15,16 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_REQUEST;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIU_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
+import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
+import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 
 @RestController
 @AllArgsConstructor
@@ -42,7 +42,7 @@ public class DataflowController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId -> dataflowRequestRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
                         .subscriberContext(context -> context.put(API_CALLED, PATH_HEALTH_INFORMATION_CM_REQUEST)));
     }
 
@@ -80,11 +80,11 @@ public class DataflowController {
                 .flatMap(clientId -> {
                     if (isRequestFromHIU(requestEntity))
                         return healthInfoNotificationOrchestrator
-                                .handleThis(requestEntity, X_CM_ID, X_HIU_ID, BRIDGE_ID_PREFIX + clientId)
+                                .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_HEALTH_INFORMATION_NOTIFY));
                     else
                         return healthInfoNotificationOrchestrator
-                                .handleThis(requestEntity, X_CM_ID, X_HIP_ID, BRIDGE_ID_PREFIX + clientId)
+                                .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_HEALTH_INFORMATION_NOTIFY));
                 });
     }

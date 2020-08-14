@@ -66,4 +66,8 @@ public class Constants {
 
     private Constants() {
     }
+
+    public static String bridgeId(String clientId) {
+        return BRIDGE_ID_PREFIX + clientId;
+    }
 }
