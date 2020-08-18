@@ -2,6 +2,7 @@ package in.projecteka.gateway.consent;
 
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
+import in.projecteka.gateway.clients.ConsentStatusServiceClient;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
@@ -19,6 +20,8 @@ import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUEST_ON_STATUS;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUEST_STATUS;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Constants.bridgeId;
@@ -30,6 +33,8 @@ public class ConsentController {
     ResponseOrchestrator consentResponseOrchestrator;
     RequestOrchestrator<ConsentFetchServiceClient> consentFetchRequestOrchestrator;
     ResponseOrchestrator consentFetchResponseOrchestrator;
+    RequestOrchestrator<ConsentStatusServiceClient> consentStatusRequestOrchestrator;
+    ResponseOrchestrator consentStatusResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_CONSENT_REQUESTS_INIT)
@@ -65,5 +70,23 @@ public class ConsentController {
     public Mono<Void> onFetchConsent(HttpEntity<String> requestEntity) {
         return consentFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
                 .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_ON_FETCH));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(PATH_CONSENT_REQUEST_STATUS)
+    public Mono<Void> fetchStatus(HttpEntity<String> requestEntity) {
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
+                .map(Caller::getClientId)
+                .flatMap(clientId -> consentStatusRequestOrchestrator
+                        .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENT_REQUEST_STATUS)));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(PATH_CONSENT_REQUEST_ON_STATUS)
+    public Mono<Void> onFetchStatus(HttpEntity<String> requestEntity) {
+        return consentStatusResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
+                .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENT_REQUEST_ON_STATUS));
     }
 }
