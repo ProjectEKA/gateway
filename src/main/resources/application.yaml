@@ -10,6 +10,7 @@ gateway:
     password: ${REDIS_PASSWORD:password}
     expiry: ${REDIS_KEY_EXPIRY:5}
     rootNamespace: ${ROOT_NAMESPACE:gateway}
+    keep-alive-enabled: ${KEEP_ALIVE_ENABLED:false}
     retry: ${REDIS_RETRY:0}
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}

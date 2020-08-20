@@ -50,8 +50,11 @@ import in.projecteka.gateway.registry.CMRegistry;
 import in.projecteka.gateway.registry.RegistryRepository;
 import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
+import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
+import io.lettuce.core.SocketOptions;
+import io.lettuce.core.resource.ClientResources;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -124,12 +127,16 @@ public class GatewayConfiguration {
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean("Lettuce")
     RedisClient redis(RedisOptions redisOptions) {
+        var socketOptions = SocketOptions.builder().keepAlive(redisOptions.isKeepAliveEnabled()).build();
+        ClientOptions clientOptions = ClientOptions.builder().socketOptions(socketOptions).build();
         RedisURI redisUri = RedisURI.Builder.
                 redis(redisOptions.getHost())
                 .withPort(redisOptions.getPort())
                 .withPassword(redisOptions.getPassword())
                 .build();
-        return RedisClient.create(redisUri);
+        RedisClient redisClient = RedisClient.create(redisUri);
+        redisClient.setOptions(clientOptions);
+        return redisClient;
     }
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
