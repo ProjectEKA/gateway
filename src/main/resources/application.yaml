@@ -2,7 +2,7 @@ server:
   port: 8000
 gateway:
   #Valid values are guava(for local), redis
-  cacheMethod: ${CACHE_METHOD:guava}
+  cacheMethod: ${CACHE_METHOD:guvava}
   redis:
     #Will not be used if cacheMethod is guava
     host: ${REDIS_HOST:localhost}
@@ -10,6 +10,7 @@ gateway:
     password: ${REDIS_PASSWORD:password}
     expiry: ${REDIS_KEY_EXPIRY:5}
     rootNamespace: ${ROOT_NAMESPACE:gateway}
+    keep-alive-enabled: ${KEEP_ALIVE_ENABLED:false}
     retry: ${REDIS_RETRY:0}
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
