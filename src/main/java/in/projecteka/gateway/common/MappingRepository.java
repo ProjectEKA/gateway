@@ -27,7 +27,8 @@ public class MappingRepository {
     private static final String SELECT_BRIDGE_PROPERTIES = "SELECT bridge.name, bridge.bridge_id, bridge.url, bridge_service.type FROM bridge " +
         "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id ";
     private static final String SELECT_CM_PROPERTIES = "select name, cm_id, url from consent_manager";
-    private final PgPool dbClient;
+
+    private final PgPool readOnlyClient;
 
     public Mono<String> cmHost(String cmId) {
         return select(SELECT_CM_MAPPING, Tuple.of(cmId, true, false), "Failed to fetch CM host");
@@ -46,7 +47,7 @@ public class MappingRepository {
     }
 
     private Mono<String> select(String query, Tuple params, String errorMessage) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(query)
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(query)
                 .execute(params,
                         handler -> {
                             if (handler.failed()) {
@@ -64,7 +65,7 @@ public class MappingRepository {
     }
 
     public Flux<ServiceProperties> selectBridgeProperties() {
-        return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_BRIDGE_PROPERTIES)
+        return Flux.create(fluxSink -> readOnlyClient.preparedQuery(SELECT_BRIDGE_PROPERTIES)
                 .execute(
                         handler -> {
                             if (handler.failed()) {
@@ -87,7 +88,7 @@ public class MappingRepository {
     }
 
     public Flux<ServiceProperties> selectConsentManagerProperties() {
-        return Flux.create(fluxSink -> dbClient.preparedQuery(SELECT_CM_PROPERTIES)
+        return Flux.create(fluxSink -> readOnlyClient.preparedQuery(SELECT_CM_PROPERTIES)
                 .execute(
                         handler -> {
                             if (handler.failed()) {
