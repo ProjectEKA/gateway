@@ -47,10 +47,11 @@ public class RegistryRepository {
             "bridge_service.service_id = $5 AND bridge_service.type = $6";
 
 
-    private final PgPool dbClient;
+    private final PgPool readWriteClient;
+    private final PgPool readOnlyClient;
 
     public Mono<Bridge> ifPresent(String bridgeId) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(SELECT_BRIDGE)
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE)
                 .execute(Tuple.of(bridgeId),
                         handler -> {
                             if (handler.failed()) {
@@ -76,7 +77,7 @@ public class RegistryRepository {
     }
 
     public Mono<CMEntry> getCMEntryIfActive(String suffix) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(SELECT_CM)
+        return Mono.create(monoSink -> readOnlyClient.preparedQuery(SELECT_CM)
                 .execute(Tuple.of(suffix), handler -> {
                     if (handler.failed()) {
                         logger.error(handler.cause().getMessage(), handler.cause());
@@ -100,7 +101,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> createCMEntry(CMServiceRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(CREATE_CM_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(CREATE_CM_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(), request.getSuffix(),
                         request.getIsActive(), request.getIsBlocklisted()),
                         handler -> {
@@ -114,7 +115,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> updateCMEntry(CMServiceRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_CM_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(UPDATE_CM_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(), request.getIsActive(),
                         request.getIsBlocklisted(), request.getSuffix()),
                         handler -> {
@@ -128,7 +129,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> insertBridgeEntry(BridgeRegistryRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(INSERT_BRIDGE_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(INSERT_BRIDGE_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(), request.getId(),
                         request.getActive(), request.getBlocklisted()),
                         handler -> {
@@ -142,7 +143,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> updateBridgeEntry(BridgeRegistryRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_BRIDGE_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(UPDATE_BRIDGE_ENTRY)
                 .execute(Tuple.of(request.getName(), request.getUrl(),
                         request.getActive(), request.getBlocklisted(), request.getId()),
                         handler -> {
@@ -168,7 +169,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> insertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(INSERT_BRIDGE_SERVICE_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(INSERT_BRIDGE_SERVICE_ENTRY)
                 .execute(Tuple.of(bridgeId, request.getType().toString(), request.isActive(),
                         request.getId(), request.getName()),
                         handler -> {
@@ -182,7 +183,7 @@ public class RegistryRepository {
     }
 
     public Mono<Void> updateBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
-        return Mono.create(monoSink -> dbClient.preparedQuery(UPDATE_BRIDGE_SERVICE_ENTRY)
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(UPDATE_BRIDGE_SERVICE_ENTRY)
                 .execute(Tuple.of(bridgeId, request.isActive(), request.getName(), true,
                         request.getId(), request.getType().toString()),
                         handler -> {
@@ -196,7 +197,7 @@ public class RegistryRepository {
     }
 
     private Mono<Boolean> select(String query, Tuple params, String errorMessage) {
-        return Mono.create(monoSink -> this.dbClient.preparedQuery(query)
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(query)
                 .execute(params,
                         handler -> {
                             if (handler.failed()) {

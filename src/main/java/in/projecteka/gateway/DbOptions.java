@@ -16,4 +16,22 @@ public class DbOptions {
     private final String user;
     private final String password;
     private final int poolSize;
+    private final boolean replicaReadEnabled;
+    private final Replica replica;
+
+    public Replica getReplica() {
+        return replica != null && replicaReadEnabled
+                ? replica
+                : new Replica(host, port, user, password, getReadPoolSize());
+    }
+
+    private int getReadPoolSize() {
+        return poolSize / 2 + poolSize % 2;
+    }
+
+    public int getPoolSize() {
+        return replica != null && replicaReadEnabled
+                ? poolSize
+                : poolSize / 2;
+    }
 }

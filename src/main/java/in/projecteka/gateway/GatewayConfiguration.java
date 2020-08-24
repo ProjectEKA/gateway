@@ -856,22 +856,35 @@ public class GatewayConfiguration {
                 }).build();
     }
 
-    @Bean
-    public PgPool pgPool(DbOptions dbOptions) {
+    @Bean("readWriteClient")
+    public PgPool readWriteClient(DbOptions dbOptions) {
         PgConnectOptions connectOptions = new PgConnectOptions()
                 .setPort(dbOptions.getPort())
                 .setHost(dbOptions.getHost())
                 .setDatabase(dbOptions.getSchema())
                 .setUser(dbOptions.getUser())
                 .setPassword(dbOptions.getPassword());
-        PoolOptions poolOptions = new PoolOptions()
-                .setMaxSize(dbOptions.getPoolSize());
+
+        PoolOptions poolOptions = new PoolOptions().setMaxSize(dbOptions.getPoolSize());
+        return PgPool.pool(connectOptions, poolOptions);
+    }
+
+    @Bean("readOnlyClient")
+    public PgPool readOnlyClient(DbOptions dbOptions) {
+        PgConnectOptions connectOptions = new PgConnectOptions()
+                .setPort(dbOptions.getReplica().getPort())
+                .setHost(dbOptions.getReplica().getHost())
+                .setDatabase(dbOptions.getSchema())
+                .setUser(dbOptions.getReplica().getUser())
+                .setPassword(dbOptions.getReplica().getPassword());
+
+        PoolOptions poolOptions = new PoolOptions().setMaxSize(dbOptions.getReplica().getPoolSize());
         return PgPool.pool(connectOptions, poolOptions);
     }
 
     @Bean
-    public MappingRepository mappingRepository(PgPool pgPool) {
-        return new MappingRepository(pgPool);
+    public MappingRepository mappingRepository(@Qualifier("readOnlyClient") PgPool readOnlyClient) {
+        return new MappingRepository(readOnlyClient);
     }
 
     @Bean
@@ -896,8 +909,9 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public RegistryRepository registryRepository(PgPool pgPool) {
-        return new RegistryRepository(pgPool);
+    public RegistryRepository registryRepository(@Qualifier("readWriteClient") PgPool readWriteClient,
+                                                 @Qualifier("readOnlyClient") PgPool readOnlyClient) {
+        return new RegistryRepository(readWriteClient, readOnlyClient);
     }
 
     @Bean

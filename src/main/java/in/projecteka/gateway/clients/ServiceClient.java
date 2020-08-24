@@ -62,16 +62,18 @@ public abstract class ServiceClient {
                     logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
                     return error(mappingNotFoundForId(clientId));
                 }))
-                .flatMap(url -> from(requestBody).map(serialized -> route(serialized, url, routingKey, clientId)).orElse(empty()));
+                .flatMap(url -> from(requestBody)
+                        .map(serialized -> route(serialized, url, routingKey, clientId))
+                        .orElse(empty()));
 
     }
 
     private <T> Mono<Void> route(T request, String url, String routingKey, String clientId) {
         return routingKey.equals(X_HIP_ID) || routingKey.equals(X_HIU_ID)
-                ? identityService.authenticate()
-                    .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, clientId)).then()
-                : identityService.authenticate()
-                    .flatMap(token -> cmWebClientBuilder(request, url, token)).then();
+               ? identityService.authenticate()
+                       .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, clientId)).then()
+               : identityService.authenticate()
+                       .flatMap(token -> cmWebClientBuilder(request, url, token)).then();
     }
 
     private <T> Mono<ResponseEntity<Void>> cmWebClientBuilder(T request, String url, String token) {
@@ -85,8 +87,7 @@ public abstract class ServiceClient {
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                         clientResponse -> clientResponse
                                 .bodyToMono(HashMap.class)
-                                .doOnSuccess(e -> logger.error("Error: {}, {}", clientResponse.statusCode().toString(),
-                                        e.toString()))
+                                .doOnSuccess(e -> logger.error("Error: {}, {}", clientResponse.statusCode(), e))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
@@ -107,8 +108,7 @@ public abstract class ServiceClient {
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                         clientResponse -> clientResponse.bodyToMono(HashMap.class)
-                                .doOnSuccess(e -> logger.error("Error: {} {}", clientResponse.statusCode().toString(),
-                                        e.toString()))
+                                .doOnSuccess(e -> logger.error("Error: {} {}", clientResponse.statusCode(), e))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
