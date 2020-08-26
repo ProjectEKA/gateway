@@ -63,6 +63,8 @@ public class Constants {
     public static final String PATH_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/add-contexts";
     public static final String PATH_ON_ADD_CARE_CONTEXTS = CURRENT_VERSION + "/links/link/on-add-contexts";
     public static final String INTERNAL_CM = "/internal/cm";
+    public static final String PATH_CONSENT_REQUEST_STATUS = CURRENT_VERSION + "/consent-requests/status";
+    public static final String PATH_CONSENT_REQUEST_ON_STATUS = CURRENT_VERSION + "/consent-requests/on-status";
 
     private Constants() {
     }
