@@ -42,6 +42,8 @@ import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUEST_ON_STATUS;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUEST_STATUS;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_ON_REQUEST;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_CM_REQUEST;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_ON_REQUEST;
@@ -79,7 +81,8 @@ public class SecurityConfiguration {
             PATH_CONSENT_REQUESTS_INIT,
             PATH_CONSENTS_FETCH,
             PATH_PATIENTS_FIND,
-            PATH_HEALTH_INFORMATION_CM_REQUEST
+            PATH_HEALTH_INFORMATION_CM_REQUEST,
+            PATH_CONSENT_REQUEST_STATUS
     };
     protected static final String[] HIP_APIS = new String[]{
             PATH_CARE_CONTEXTS_ON_DISCOVER,
@@ -109,7 +112,8 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
             USERS_AUTH_ON_CONFIRM,
             PATH_USERS_AUTH_ON_INIT,
-            PATH_ON_ADD_CARE_CONTEXTS
+            PATH_ON_ADD_CARE_CONTEXTS,
+            PATH_CONSENT_REQUEST_ON_STATUS
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
