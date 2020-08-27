@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
+import in.projecteka.gateway.clients.ConsentStatusServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -58,9 +59,16 @@ class ConsentControllerTest {
     @MockBean
     RequestOrchestrator<ConsentFetchServiceClient> consentFetchOrchestrator;
 
+    @MockBean
+    RequestOrchestrator<ConsentStatusServiceClient> consentStatusOrchestrator;
+
     @Qualifier("consentResponseOrchestrator")
     @MockBean
     ResponseOrchestrator consentResponseOrchestrator;
+
+    @Qualifier("consentStatusResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator consentStatusResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -170,5 +178,43 @@ class ConsentControllerTest {
                 .expectStatus()
                 .isAccepted();
         assertThat(httpEntityArgumentCaptor.getValue().getBody()).isEqualTo(body);
+    }
+
+    @Test
+    void shouldFireAndForgetForConsentStatus() {
+        var token = string();
+        var clientId = string();
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIU)).build()));
+        when(consentStatusOrchestrator
+                .handleThis(any(), eq(X_CM_ID), eq(X_HIU_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_CONSENT_REQUEST_STATUS)
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForConsentOnStatus() {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(consentStatusResponseOrchestrator.processResponse(any(), eq(X_HIU_ID))).thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_CONSENT_REQUEST_ON_STATUS)
+                .header(AUTHORIZATION, token)
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
     }
 }

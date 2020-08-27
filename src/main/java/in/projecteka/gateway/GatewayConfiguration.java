@@ -10,6 +10,7 @@ import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
+import in.projecteka.gateway.clients.ConsentStatusServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.GlobalExceptionHandler;
@@ -398,6 +399,16 @@ public class GatewayConfiguration {
         return new ConsentFetchServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
+    @Bean
+    public ConsentStatusServiceClient consentStatusServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new ConsentStatusServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
     @Bean("consentRequestAction")
     public DefaultValidatedRequestAction<ConsentRequestServiceClient> consentRequestAction(
             ConsentRequestServiceClient consentRequestServiceClient) {
@@ -450,6 +461,39 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<ConsentFetchServiceClient> consentFetchResponseAction) {
         return new ResponseOrchestrator(validator, consentFetchResponseAction);
+    }
+
+    @Bean("consentStatusRequestAction")
+    public DefaultValidatedRequestAction<ConsentStatusServiceClient> consentStatusRequestAction(
+            ConsentStatusServiceClient consentStatusServiceClient) {
+        return new DefaultValidatedRequestAction<>(consentStatusServiceClient);
+    }
+
+    @Bean("consentStatusRequestOrchestrator")
+    public RequestOrchestrator<ConsentStatusServiceClient> consentStatusOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            ConsentStatusServiceClient consentStatusServiceClient,
+            DefaultValidatedRequestAction<ConsentStatusServiceClient> consentStatusRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                consentStatusServiceClient,
+                consentStatusRequestAction);
+    }
+
+    @Bean("consentStatusResponseAction")
+    public DefaultValidatedResponseAction<ConsentStatusServiceClient> consentStatusResponseAction(
+            ConsentStatusServiceClient consentStatusServiceClient) {
+        return new DefaultValidatedResponseAction<>(consentStatusServiceClient);
+    }
+
+    @Bean("consentStatusResponseOrchestrator")
+    public ResponseOrchestrator consentStatusResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<ConsentStatusServiceClient> consentStatusResponseAction) {
+        return new ResponseOrchestrator(validator, consentStatusResponseAction);
     }
 
     @Bean("patientSearchRequestAction")
