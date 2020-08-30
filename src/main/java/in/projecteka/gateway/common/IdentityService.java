@@ -19,16 +19,19 @@ public class IdentityService {
     private final CacheAdapter<String, String> accessTokenCache;
 
     public Mono<String> authenticate() {
-        return accessTokenCache.get("gateway:accessToken")
+        return accessTokenCache.get(getKey())
                 .switchIfEmpty(Mono.defer(this::tokenUsingSecret))
                 .map(token -> format("%s %s", "Bearer", token));
     }
 
+    private String getKey() {
+        return "gateway:gateway:accessToken";
+    }
+
     private Mono<String> tokenUsingSecret() {
         return identityServiceClient.getTokenFor(properties.getClientId(), properties.getClientSecret())
-                .flatMap(session ->
-                        accessTokenCache.put("gateway:accessToken", session.getAccessToken())
-                                .thenReturn(session.getAccessToken()));
+                .flatMap(session -> accessTokenCache.put(getKey(), session.getAccessToken())
+                        .thenReturn(session.getAccessToken()));
     }
 
     public Mono<Session> getTokenFor(String clientId, String clientSecret) {

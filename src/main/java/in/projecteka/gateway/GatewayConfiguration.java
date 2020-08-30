@@ -54,7 +54,6 @@ import io.lettuce.core.ClientOptions;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisURI;
 import io.lettuce.core.SocketOptions;
-import io.lettuce.core.resource.ClientResources;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
@@ -112,9 +111,13 @@ public class GatewayConfiguration {
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean("accessToken")
-    public CacheAdapter<String, String> createRedisCacheAdapterForAccessToken(@Qualifier("Lettuce") RedisClient redisClient,
-                                                                RedisOptions redisOptions) {
-        return new RedisCacheAdapter(redisClient, redisOptions.getExpiry(), redisOptions.getRetry());
+    public CacheAdapter<String, String> createRedisCacheAdapterForAccessToken(
+            @Qualifier("Lettuce") RedisClient redisClient,
+            RedisOptions redisOptions,
+            IdentityProperties identityProperties) {
+        return new RedisCacheAdapter(redisClient,
+                identityProperties.getAccessTokenExpiryInMinutes(),
+                redisOptions.getRetry());
     }
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
@@ -707,7 +710,7 @@ public class GatewayConfiguration {
         return new HipDataFlowServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
     }
 
-    @Bean("defalutHipDataflowRequestAction")
+    @Bean("defaultHipDataflowRequestAction")
     public DefaultValidatedRequestAction<HipDataFlowServiceClient> defaultHipDataFlowRequestAction(
             HipDataFlowServiceClient hipDataFlowServiceClient) {
         return new DefaultValidatedRequestAction<>(hipDataFlowServiceClient);
@@ -715,13 +718,13 @@ public class GatewayConfiguration {
 
     @Bean("hipDataflowRequestAction")
     public RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction(
-            DefaultValidatedRequestAction<HipDataFlowServiceClient> defalutHipDataflowRequestAction,
+            DefaultValidatedRequestAction<HipDataFlowServiceClient> defaultHipDataflowRequestAction,
             AmqpTemplate amqpTemplate,
             Jackson2JsonMessageConverter converter,
             ServiceOptions serviceOptions) {
         return new RetryableValidatedRequestAction<>(amqpTemplate,
                 converter,
-                defalutHipDataflowRequestAction,
+                defaultHipDataflowRequestAction,
                 serviceOptions,
                 GW_DATAFLOW_QUEUE,
                 X_HIP_ID);
