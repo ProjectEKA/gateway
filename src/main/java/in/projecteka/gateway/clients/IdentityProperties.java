@@ -19,6 +19,7 @@ public class IdentityProperties {
     private final String realm;
     private final String userName;
     private final String password;
+    private final int accessTokenExpiryInMinutes;
 
     public String getJwkUrl() {
         return format("%s/realms/%s/protocol/openid-connect/certs", url, realm);

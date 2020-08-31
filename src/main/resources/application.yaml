@@ -43,5 +43,6 @@ identity:
   host: ${GATEWAY_HOST}
   userName: ${GATEWAY_ADMIN_USER}
   password: ${GATEWAY_ADMIN_PASSWORD}
+  access-token-expiry-in-minutes: ${TOKEN_EXPIRY:10}
 webclient:
   keepAlive: ${GATEWAY_KEEP_ALIVE:true}
