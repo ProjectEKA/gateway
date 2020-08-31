@@ -9,6 +9,7 @@ import in.projecteka.gateway.common.model.GatewayResponse;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
@@ -16,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.model.Error.unKnownError;
+import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.TIMESTAMP;
 import static in.projecteka.gateway.common.Constants.nameMap;
@@ -96,7 +98,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
                                 logger.error("Notifying caller about the failure", errorResult);
                                 serviceClient.notifyError(clientId, sourceRoutingKey, errorResult).subscribe();
                             });
-        }).subscribe();
+        }).subscriberContext(ctx -> ctx.put(Constants.CORRELATION_ID, MDC.get(CORRELATION_ID))).subscribe();
     }
 
     private ErrorResult from(Error error, UUID requestId) {

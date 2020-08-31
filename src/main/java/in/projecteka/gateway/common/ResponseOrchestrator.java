@@ -3,9 +3,11 @@ package in.projecteka.gateway.common;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.nameMap;
 import static in.projecteka.gateway.common.Utils.updateRequestId;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
@@ -34,6 +36,6 @@ public class ResponseOrchestrator {
                     , keyValue("targetId", response.getId())
                     , keyValue("apiCalled", apiCalled));
             return validatedResponseAction.execute(response.getId(), updatedJsonNode, routingKey);
-        }).subscribe();
+        }).subscriberContext(ctx -> ctx.put(Constants.CORRELATION_ID, MDC.get(CORRELATION_ID))).subscribe();
     }
 }
