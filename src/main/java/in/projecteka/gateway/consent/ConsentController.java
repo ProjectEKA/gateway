@@ -49,7 +49,7 @@ public class ConsentController {
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_CONSENT_REQUESTS_ON_INIT)
-    public Mono<Void> onDiscoverCareContext(HttpEntity<String> requestEntity) {
+    public Mono<Void> onCreateConsentRequest(HttpEntity<String> requestEntity) {
         return consentResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
                 .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENT_REQUESTS_ON_INIT));
     }
