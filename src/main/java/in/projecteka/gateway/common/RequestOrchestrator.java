@@ -13,6 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
@@ -98,7 +99,11 @@ public class RequestOrchestrator<T extends ServiceClient> {
                                 logger.error("Notifying caller about the failure", errorResult);
                                 serviceClient.notifyError(clientId, sourceRoutingKey, errorResult).subscribe();
                             });
-        }).subscriberContext(ctx -> ctx.put(Constants.CORRELATION_ID, MDC.get(CORRELATION_ID))).subscribe();
+        }).subscriberContext(ctx -> {
+            Optional<String> correlationId = Optional.ofNullable(MDC.get(CORRELATION_ID));
+            return correlationId.map(id -> ctx.put(CORRELATION_ID, id))
+                    .orElseGet(() -> ctx.put(CORRELATION_ID, UUID.randomUUID().toString()));
+        }).subscribe();
     }
 
     private ErrorResult from(Error error, UUID requestId) {
