@@ -6,6 +6,7 @@ import in.projecteka.gateway.common.cache.ServiceOptions;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Map;
 
+import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
 
 @AllArgsConstructor
@@ -37,7 +39,9 @@ public class RetryableValidatedResponseAction<T extends ServiceClient>
                 ParameterizedTypeReference.forType(JsonNode.class));
         String xCmId = message.getMessageProperties().getHeader(clientIdRequestHeader);
         try {
+            String correlationId = MDC.get(CORRELATION_ID);
             routeResponse(xCmId, jsonNode, clientIdRequestHeader).block();
+            MDC.put(CORRELATION_ID, correlationId);
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
                 logger.error("Exceeded retry attempts; parking the message");
