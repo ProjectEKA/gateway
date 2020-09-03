@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 public class MappingController {
     private static final Logger logger = LoggerFactory.getLogger(MappingController.class);
 
-    private MappingService mappingService;
+    private final MappingService mappingService;
 
     @GetMapping(Constants.PATH_SERVICE_URLS)
     public Mono<Service> fetchAllServiceUrls() {
