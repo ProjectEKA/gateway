@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
+import static in.projecteka.gateway.clients.model.Error.unKnownError;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.TIMESTAMP;
@@ -170,7 +171,7 @@ class RequestOrchestratorTest {
 
         verify(validator).validateRequest(requestEntity, routingKey);
         assertThat(errorResult.getValue().getResp().getRequestId()).isEqualTo(requestId);
-        assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Error in making call to target system");
+        assertThat(errorResult.getValue().getError().getMessage()).isEqualTo("Error in making call to target system "+new RuntimeException().getMessage());
         assertThat(errorResult.getValue().getError().getCode()).isEqualTo(UNKNOWN_ERROR_OCCURRED);
     }
 

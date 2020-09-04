@@ -91,7 +91,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
                     .onErrorMap(throwable -> throwable.getClass() != ErrorResult.class,
                             throwable -> {
                                 logger.error(throwable.getMessage(), throwable);
-                                return from(unKnownError("Error in making call to target system"),
+                                return from(unKnownError("Error in making call to target system " + throwable.getMessage()),
                                         upstreamRequestId);
                             })
                     .doOnError(ErrorResult.class,

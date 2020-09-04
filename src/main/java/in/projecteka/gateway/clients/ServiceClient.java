@@ -1,6 +1,7 @@
 package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import in.projecteka.gateway.clients.model.CmErrorResponse;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
@@ -16,6 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
@@ -89,9 +91,10 @@ public abstract class ServiceClient {
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
                         clientResponse -> clientResponse
-                                .bodyToMono(HashMap.class)
+                                .bodyToMono(CmErrorResponse.class)
                                 .doOnSuccess(e -> logger.error("Error: {}, {}", clientResponse.statusCode(), e))
-                                .then(error(unableToConnect())))
+                                .flatMap(cmErrorResponse -> error(invalidRequest(cmErrorResponse.getError().getMessage())))
+                )
                 .toBodilessEntity()
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
