@@ -8,6 +8,7 @@ import in.projecteka.gateway.common.model.ErrorResult;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -19,6 +20,7 @@ import java.util.function.Function;
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
+import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Serializer.from;
@@ -84,6 +86,7 @@ public abstract class ServiceClient {
                 .uri(url)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
+                .header(CORRELATION_ID, MDC.get(CORRELATION_ID))
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
@@ -106,6 +109,7 @@ public abstract class ServiceClient {
                 .uri(url)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
+                .header(CORRELATION_ID, MDC.get(CORRELATION_ID))
                 .header(routingKey, clientId)
                 .bodyValue(request)
                 .retrieve()
