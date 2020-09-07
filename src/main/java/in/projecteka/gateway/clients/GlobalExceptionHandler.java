@@ -51,7 +51,7 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
                 error.getMessage());
         logger.error(message, error);
         // Default error response
-        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        HttpStatus status = BAD_REQUEST;
         var bodyInserter = fromValue(unknownErrorOccurred().getError());
 
         if (error instanceof WebExchangeBindException) {
