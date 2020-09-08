@@ -35,7 +35,7 @@ public class PatientController {
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
                         patientRequestOrchestrator.handleThis(requestEntity, X_HIP_ID, X_CM_ID, clientId)
-                                .subscriberContext(context -> context.put(API_CALLED, PATH_CARE_CONTEXTS_DISCOVER)));
+                                .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENT_SHARE)));
 
     }
 
@@ -43,6 +43,6 @@ public class PatientController {
     @PostMapping(PATH_PATIENT_ON_SHARE)
     public Mono<Void> patientProfileOnShare(HttpEntity<String> requestEntity) {
         return patientResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
-                .subscriberContext(context -> context.put(API_CALLED, PATH_CARE_CONTEXTS_ON_DISCOVER));
+                .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENT_ON_SHARE));
     }
 }
