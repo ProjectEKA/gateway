@@ -18,6 +18,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
@@ -25,6 +26,7 @@ import static in.projecteka.gateway.clients.ClientError.unknownErrorOccurred;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.web.reactive.function.BodyInserters.fromValue;
 
@@ -51,8 +53,12 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
                 error.getMessage());
         logger.error(message, error);
         // Default error response
-        HttpStatus status = BAD_REQUEST;
+        HttpStatus status = INTERNAL_SERVER_ERROR;
         var bodyInserter = fromValue(unknownErrorOccurred().getError());
+
+        if(error instanceof ResponseStatusException) {
+            status = ((ResponseStatusException) error).getStatus();
+        }
 
         if (error instanceof WebExchangeBindException) {
             WebExchangeBindException bindException = (WebExchangeBindException) error;
