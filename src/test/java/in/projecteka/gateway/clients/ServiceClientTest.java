@@ -19,6 +19,7 @@ import reactor.test.StepVerifier;
 
 import java.util.HashMap;
 
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.testcommon.TestBuilders.errorResult;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -148,11 +149,11 @@ class ServiceClientTest {
         var sourceRoutingKey = string();
 
         when(identityService.authenticate()).thenReturn(just(token));
-        var error = OBJECT_MAPPER.createObjectNode().put("error", "something went wrong");
+        ClientError somethingWentWrong = invalidRequest("something went wrong");
         when(exchangeFunction.exchange(captor.capture()))
-                .thenReturn(just(ClientResponse.create(HttpStatus.GATEWAY_TIMEOUT)
+                .thenReturn(Mono.just(ClientResponse.create(HttpStatus.GATEWAY_TIMEOUT)
                         .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
-                        .body(OBJECT_MAPPER.writeValueAsString(error))
+                        .body(OBJECT_MAPPER.writeValueAsString(somethingWentWrong))
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
