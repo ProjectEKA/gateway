@@ -24,6 +24,7 @@ import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
+import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
@@ -1007,6 +1008,48 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<HipInitLinkServiceClient> hipInitLinkResponseAction) {
         return new ResponseOrchestrator(validator, hipInitLinkResponseAction);
+    }
+
+    @Bean("patientServiceClient")
+    public PatientServiceClient patientServiceClient(ServiceOptions serviceOptions,
+                                                     @Qualifier("customBuilder") WebClient.Builder builder,
+                                                     CMRegistry cmRegistry,
+                                                     IdentityService identityService,
+                                                     BridgeRegistry bridgeRegistry) {
+        return new PatientServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("patientRequestAction")
+    public DefaultValidatedRequestAction<PatientServiceClient> patientRequestAction(
+            PatientServiceClient patientServiceClient) {
+        return new DefaultValidatedRequestAction<>(patientServiceClient);
+    }
+
+    @Bean("patientRequestOrchestrator")
+    public RequestOrchestrator<PatientServiceClient> patientRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            PatientServiceClient patientServiceClient,
+            DefaultValidatedRequestAction<PatientServiceClient> patientRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                patientServiceClient,
+                patientRequestAction);
+    }
+
+    @Bean("patientResponseAction")
+    public DefaultValidatedResponseAction<PatientServiceClient> patientResponseAction(
+            PatientServiceClient patientServiceClient) {
+        return new DefaultValidatedResponseAction<>(patientServiceClient);
+    }
+
+    @Bean("patientResponseOrchestrator")
+    public ResponseOrchestrator patientResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<PatientServiceClient> patientResponseAction) {
+        return new ResponseOrchestrator(validator, patientResponseAction);
     }
 
     @Bean

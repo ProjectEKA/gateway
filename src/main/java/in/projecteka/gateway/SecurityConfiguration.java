@@ -56,6 +56,8 @@ import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
@@ -92,7 +94,8 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
             USERS_AUTH_CONFIRM,
             PATH_USERS_AUTH_INIT,
-            PATH_ADD_CARE_CONTEXTS
+            PATH_ADD_CARE_CONTEXTS,
+            PATH_PATIENT_ON_SHARE
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
@@ -113,7 +116,8 @@ public class SecurityConfiguration {
             USERS_AUTH_ON_CONFIRM,
             PATH_USERS_AUTH_ON_INIT,
             PATH_ON_ADD_CARE_CONTEXTS,
-            PATH_CONSENT_REQUEST_ON_STATUS
+            PATH_CONSENT_REQUEST_ON_STATUS,
+            PATH_PATIENT_SHARE
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
