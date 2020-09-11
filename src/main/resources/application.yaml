@@ -1,5 +1,6 @@
 server:
   port: 8000
+  forward-headers-strategy: ${FORWARD-HEADER-STRATEGY:NATIVE}
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
