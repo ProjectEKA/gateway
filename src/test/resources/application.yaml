@@ -19,3 +19,5 @@ gateway:
     user: dummy
     password: dummy_pwd
     poolSize: 5
+webclient:
+  use-connection-pool: ${USE_HTTP_CONNECTION_POOL:false}
