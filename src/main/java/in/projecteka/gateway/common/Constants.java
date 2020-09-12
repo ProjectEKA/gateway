@@ -75,8 +75,7 @@ public class Constants {
     public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";
 
     //APIs to be called on Gateway to send response back to respective bridges
-    public static final String PATH_ON_FETCH_AUTH_MODES_TO_HIP = CURRENT_VERSION + "/hip/users/auth/on-fetch-modes";
-    public static final String PATH_ON_FETCH_AUTH_MODES_TO_HIU = CURRENT_VERSION + "/hiu/users/auth/on-fetch-modes";
+    public static final String PATH_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";
 
     private Constants() {
     }

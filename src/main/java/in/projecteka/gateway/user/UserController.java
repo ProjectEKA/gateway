@@ -19,9 +19,7 @@ import java.util.Objects;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
 import static in.projecteka.gateway.common.Constants.PATH_FETCH_AUTH_MODES;
-import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES_TO_HIP;
-import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES_TO_HIU;
+import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
@@ -97,21 +95,19 @@ public class UserController {
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(PATH_ON_FETCH_AUTH_MODES_TO_HIP)
+    @PostMapping(PATH_ON_FETCH_AUTH_MODES)
     public Mono<Void> onFetchAuthModesHIP(HttpEntity<String> requestEntity){
-        return authModeFetchResponseOrchestrator.processResponse(requestEntity, X_HIP_ID)
-                .subscriberContext(context -> context.put(API_CALLED, PATH_ON_FETCH_AUTH_MODES_TO_HIP));
+        return authModeFetchResponseOrchestrator.processResponse(requestEntity, getTargetService(requestEntity))
+                .subscriberContext(context -> context.put(API_CALLED, PATH_ON_FETCH_AUTH_MODES));
     }
 
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(PATH_ON_FETCH_AUTH_MODES_TO_HIU)
-    public Mono<Void> onFetchAuthModesHIU(HttpEntity<String> requestEntity){
-        return authModeFetchResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
-                .subscriberContext(context -> context.put(API_CALLED, PATH_ON_FETCH_AUTH_MODES_TO_HIU));
-    }
 
     private boolean isRequestFromHIU(HttpEntity<String> requestEntity) {
         return requestEntity.hasBody() && Objects.requireNonNull(requestEntity.getBody())
                 .replaceAll("\\s+", "").contains("\"requester\":{\"type\":\"HIU\",");
+    }
+
+    private String getTargetService(HttpEntity<String> requestEntity){
+        return requestEntity.getHeaders().containsKey(X_HIP_ID) ? X_HIP_ID : X_HIU_ID;
     }
 }
