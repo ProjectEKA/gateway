@@ -82,6 +82,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import static com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS;
@@ -835,14 +836,30 @@ public class GatewayConfiguration {
         return new Heartbeat(rabbitmqOptions, identityProperties, cacheHealth);
     }
 
-    @Bean
-    @ConditionalOnProperty(value = "webclient.keepalive", havingValue = "false")
+    @Bean("gatewayHttpConnector")
+    @ConditionalOnProperty(value = "webclient.use-connection-pool", havingValue = "false")
     public ClientHttpConnector clientHttpConnector() {
         return new ReactorClientHttpConnector(HttpClient.create(ConnectionProvider.newConnection()));
     }
 
+    @Bean("gatewayHttpConnector")
+    @ConditionalOnProperty(value = "webclient.use-connection-pool", havingValue = "true")
+    public ClientHttpConnector pooledClientHttpConnector(WebClientOptions webClientOptions) {
+        return new ReactorClientHttpConnector(
+                HttpClient.create(
+                        ConnectionProvider.builder("gateway-http-connection-pool")
+                                .maxConnections(webClientOptions.getPoolSize())
+                                .maxLifeTime(Duration.ofMinutes(webClientOptions.getMaxLifeTime()))
+                                .maxIdleTime(Duration.ofMinutes(webClientOptions.getMaxIdleTimeout()))
+                                .build()
+                )
+        );
+    }
+
     @Bean("customBuilder")
-    public WebClient.Builder webClient(final ClientHttpConnector clientHttpConnector, ObjectMapper objectMapper) {
+    public WebClient.Builder webClient(
+            @Qualifier("gatewayHttpConnector") final ClientHttpConnector clientHttpConnector,
+            ObjectMapper objectMapper) {
         return WebClient
                 .builder()
                 .exchangeStrategies(exchangeStrategies(objectMapper))
