@@ -8,6 +8,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
+import in.projecteka.gateway.clients.AuthModeFetchClient;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.ConsentStatusServiceClient;
@@ -1067,6 +1068,48 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<PatientServiceClient> patientResponseAction) {
         return new ResponseOrchestrator(validator, patientResponseAction);
+    }
+
+    @Bean("authModeFetchClient")
+    public AuthModeFetchClient authModeFetchClient(ServiceOptions serviceOptions,
+                                                     @Qualifier("customBuilder") WebClient.Builder builder,
+                                                     CMRegistry cmRegistry,
+                                                     IdentityService identityService,
+                                                     BridgeRegistry bridgeRegistry) {
+        return new AuthModeFetchClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("authModeFetchRequestAction")
+    public DefaultValidatedRequestAction<AuthModeFetchClient> authModeFetchRequestAction(
+            AuthModeFetchClient authModeFetchClient) {
+        return new DefaultValidatedRequestAction<>(authModeFetchClient);
+    }
+
+    @Bean("authModeFetchRequestOrchestrator")
+    public RequestOrchestrator<AuthModeFetchClient> authModeFetchRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            AuthModeFetchClient authModeFetchClient,
+            DefaultValidatedRequestAction<AuthModeFetchClient> authModeFetchRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                authModeFetchClient,
+                authModeFetchRequestAction);
+    }
+
+    @Bean("authModeFetchResponseAction")
+    public DefaultValidatedResponseAction<AuthModeFetchClient> authModeFetchResponseAction(
+            AuthModeFetchClient authModeFetchClient) {
+        return new DefaultValidatedResponseAction<>(authModeFetchClient);
+    }
+
+    @Bean("authModeFetchResponseOrchestrator")
+    public ResponseOrchestrator authModeFetchResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<AuthModeFetchClient> authModeFetchResponseAction) {
+        return new ResponseOrchestrator(validator, authModeFetchResponseAction);
     }
 
     @Bean

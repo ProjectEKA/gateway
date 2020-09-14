@@ -69,6 +69,13 @@ public class Constants {
     public static final String PATH_CONSENT_REQUEST_ON_STATUS = CURRENT_VERSION + "/consent-requests/on-status";
     public static final String PATH_PATIENT_SHARE = CURRENT_VERSION + "/patients/profile/share";
     public static final String PATH_PATIENT_ON_SHARE = CURRENT_VERSION + "/patients/profile/on-share";
+    public static final String PATH_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/fetch-modes";
+
+    //API to be called on HIP/HIU bridge
+    public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";
+
+    //APIs to be called on Gateway to send response back to respective bridges
+    public static final String PATH_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";
 
     private Constants() {
     }
