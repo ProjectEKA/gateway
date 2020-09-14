@@ -104,7 +104,9 @@ public class UserController {
 
     private boolean isRequestFromHIU(HttpEntity<String> requestEntity) {
         return requestEntity.hasBody() && Objects.requireNonNull(requestEntity.getBody())
-                .replaceAll("\\s+", "").contains("\"requester\":{\"type\":\"HIU\",");
+                .replaceAll("\\s+", "")
+                .toLowerCase()
+                .contains("\"requester\":{\"type\":\"hiu\",");
     }
 
     private String getTargetService(HttpEntity<String> requestEntity){
