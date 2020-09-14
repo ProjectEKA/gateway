@@ -51,3 +51,6 @@ webclient:
     poolSize: ${HTTP_CONNECTION_POOL_SIZE:500}
     maxLifeTime: ${HTTP_CONNECTION_MAX_LIFETIME:10}
     maxIdleTimeout: ${HTTP_CONNECTION_MAX_IDLETIME:5}
+logging:
+  level:
+    ROOT: ${LOG_LEVEL:INFO}
