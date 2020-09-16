@@ -22,6 +22,8 @@ import static in.projecteka.gateway.common.Constants.PATH_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -60,25 +62,36 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(USERS_AUTH_CONFIRM)
-    public Mono<Void> authConfirm(HttpEntity<String> requestEntity){
+    public Mono<Void> authConfirm(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> authConfirmRequestOrchestrator
-                        .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
-                        .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_CONFIRM)));
+                .flatMap(clientId -> {
+                    if (isRequestFromHIU(requestEntity))
+                        return authConfirmRequestOrchestrator
+                                .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
+                                .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_CONFIRM));
+                    else
+                        return authConfirmRequestOrchestrator
+                                .handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
+                                .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_CONFIRM));
+                });
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(USERS_AUTH_ON_CONFIRM)
-    public Mono<Void> authOnConfirm(HttpEntity<String> requestEntity){
-        return authConfirmResponseOrchestrator.processResponse(requestEntity, X_HIP_ID)
-                .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_ON_CONFIRM));
+    public Mono<Void> authOnConfirm(HttpEntity<String> requestEntity) {
+        if (requestEntity.getHeaders().containsKey(X_HIU_ID))
+            return authConfirmResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
+                    .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_ON_CONFIRM));
+        else
+            return authConfirmResponseOrchestrator.processResponse(requestEntity, X_HIP_ID)
+                    .subscriberContext(context -> context.put(API_CALLED, USERS_AUTH_ON_CONFIRM));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_FETCH_AUTH_MODES)
-    public Mono<Void> fetchAuthModes(HttpEntity<String> requestEntity){
+    public Mono<Void> fetchAuthModes(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
@@ -96,7 +109,7 @@ public class UserController {
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_ON_FETCH_AUTH_MODES)
-    public Mono<Void> onFetchAuthModesHIP(HttpEntity<String> requestEntity){
+    public Mono<Void> onFetchAuthModesHIP(HttpEntity<String> requestEntity) {
         return authModeFetchResponseOrchestrator.processResponse(requestEntity, getTargetService(requestEntity))
                 .subscriberContext(context -> context.put(API_CALLED, PATH_ON_FETCH_AUTH_MODES));
     }
@@ -109,7 +122,7 @@ public class UserController {
                 .contains("\"requester\":{\"type\":\"hiu\",");
     }
 
-    private String getTargetService(HttpEntity<String> requestEntity){
+    private String getTargetService(HttpEntity<String> requestEntity) {
         return requestEntity.getHeaders().containsKey(X_HIP_ID) ? X_HIP_ID : X_HIU_ID;
     }
 }
