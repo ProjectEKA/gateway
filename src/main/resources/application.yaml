@@ -4,6 +4,7 @@ server:
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
+  disableHttpOptionsMethod: ${HTTP_OPTIONS_DISABLED:true}
   redis:
     #Will not be used if cacheMethod is guava
     host: ${REDIS_HOST:localhost}
