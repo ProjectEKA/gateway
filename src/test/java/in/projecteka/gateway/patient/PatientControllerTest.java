@@ -1,15 +1,12 @@
 package in.projecteka.gateway.patient;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
-import in.projecteka.gateway.common.ValidatedResponseAction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +22,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
@@ -79,7 +75,7 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isAccepted();
+                .isForbidden();
     }
 
     @Test
@@ -96,6 +92,6 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isAccepted();
+                .isForbidden();
     }
 }
