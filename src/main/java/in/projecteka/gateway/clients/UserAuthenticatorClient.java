@@ -9,8 +9,6 @@ import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.ServiceType.HIP;
-
 public class UserAuthenticatorClient extends ServiceClient{
 
     private final CMRegistry cmRegistry;

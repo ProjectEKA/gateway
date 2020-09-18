@@ -18,14 +18,12 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.PATH_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Constants.bridgeId;
-import static in.projecteka.gateway.common.Constants.nameMap;
 import static net.logstash.logback.argument.StructuredArguments.keyValue;
 
 @RestController
