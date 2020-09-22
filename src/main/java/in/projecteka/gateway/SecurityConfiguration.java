@@ -60,6 +60,8 @@ import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
@@ -206,6 +208,13 @@ public class SecurityConfiguration {
             if (!hasText(token)) {
                 return Mono.empty();
             }
+
+            //TODO: Remove Share and On-Share endpoint from here if story is unblocked
+            if(exchange.getRequest().getURI().getPath().contains(PATH_PATIENT_SHARE) ||
+                    exchange.getRequest().getURI().getPath().contains(PATH_PATIENT_ON_SHARE)) {
+                return Mono.empty();
+            }
+
             if (isAdminAuthenticatedOnlyRequest(exchange.getRequest().getPath().toString())) {
                 return checkGateway(token);
             }

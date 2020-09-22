@@ -75,7 +75,7 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isForbidden();
+                .isUnauthorized();
     }
 
     @Test
@@ -92,6 +92,6 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isForbidden();
+                .isUnauthorized();
     }
 }
