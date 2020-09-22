@@ -5,7 +5,7 @@ import lombok.Getter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 
-@ConfigurationProperties(prefix = "spring.shareprofile")
+@ConfigurationProperties(prefix = "gateway.shareprofile")
 @Getter
 @AllArgsConstructor
 @ConstructorBinding

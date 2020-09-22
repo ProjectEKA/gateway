@@ -5,6 +5,8 @@ gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
   disableHttpOptionsMethod: ${HTTP_OPTIONS_DISABLED:true}
+  shareprofile:
+    enable: ${ENABLE_SHARE_PROFILE:false}
   redis:
     #Will not be used if cacheMethod is guava
     host: ${REDIS_HOST:localhost}
@@ -37,8 +39,6 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
-  shareprofile:
-    enable: ${ENABLE_SHARE_PROFILE:false}
 identity:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}
