@@ -6,6 +6,8 @@ spring:
     port: 5672
     username: guest
     password: guest
+  shareprofile:
+    enable: false
 identity:
   clientId: gateway
   clientSecret: ${CLIENT_SECRET}

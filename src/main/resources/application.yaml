@@ -37,6 +37,8 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+  shareprofile:
+    enable: ${ENABLE_SHARE_PROFILE:false}
 identity:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}

@@ -7,6 +7,7 @@ import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.ShareProfile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -59,6 +60,9 @@ public class PatientControllerTest {
     @MockBean
     Authenticator authenticator;
 
+    @MockBean
+    ShareProfile shareProfile;
+
     @Test
     void shouldFireAndForgetForPatientProfileShare() {
         var token = string();
@@ -66,6 +70,7 @@ public class PatientControllerTest {
         when(requestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
+        when(shareProfile.isEnable()).thenReturn(Boolean.FALSE);
 
         webTestClient
                 .post()
@@ -83,6 +88,7 @@ public class PatientControllerTest {
         var token = string();
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
         when(patientResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(Mono.empty());
+        when(shareProfile.isEnable()).thenReturn(Boolean.FALSE);
 
         webTestClient
                 .post()
