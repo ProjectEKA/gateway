@@ -14,8 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -27,7 +25,7 @@ public class PatientController {
     RequestOrchestrator<PatientServiceClient> patientRequestOrchestrator;
     ResponseOrchestrator patientResponseOrchestrator;
 
-    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @PostMapping(PATH_PATIENT_SHARE)
     public Mono<Void> patientProfileShare(HttpEntity<String> requestEntity) {
         return ReactiveSecurityContextHolder.getContext()
@@ -39,7 +37,7 @@ public class PatientController {
 
     }
 
-    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @PostMapping(PATH_PATIENT_ON_SHARE)
     public Mono<Void> patientProfileOnShare(HttpEntity<String> requestEntity) {
         return patientResponseOrchestrator.processResponse(requestEntity, X_CM_ID)

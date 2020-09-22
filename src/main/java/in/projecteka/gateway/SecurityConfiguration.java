@@ -210,13 +210,6 @@ public class SecurityConfiguration {
             if (!hasText(token)) {
                 return Mono.empty();
             }
-
-            //TODO: Remove Share and On-Share endpoint from here if story is unblocked
-            if(exchange.getRequest().getURI().getPath().contains(PATH_PATIENT_SHARE) ||
-                    exchange.getRequest().getURI().getPath().contains(PATH_PATIENT_ON_SHARE)) {
-                return Mono.empty();
-            }
-
             if (isAdminAuthenticatedOnlyRequest(exchange.getRequest().getPath().toString())) {
                 return checkGateway(token);
             }
