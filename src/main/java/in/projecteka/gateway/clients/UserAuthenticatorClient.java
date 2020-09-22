@@ -5,10 +5,9 @@ import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-
-import static in.projecteka.gateway.registry.ServiceType.HIP;
 
 public class UserAuthenticatorClient extends ServiceClient{
 
@@ -25,9 +24,16 @@ public class UserAuthenticatorClient extends ServiceClient{
         this.bridgeRegistry = bridgeRegistry;
     }
 
+    private Mono<String> getHIUHost(String clientId){
+        return bridgeRegistry.getHostFor(clientId, ServiceType.HIU)
+                .map(host -> host);
+    }
+
     @Override
     protected Mono<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + Constants.PATH_USERS_AUTH_ON_INIT);
+        return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
+                .switchIfEmpty(this.getHIUHost(clientId))
+                .map(host -> host + Constants.PATH_USERS_AUTH_ON_INIT);
     }
 
     @Override

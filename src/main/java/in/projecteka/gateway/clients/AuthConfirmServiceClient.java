@@ -23,9 +23,16 @@ public class AuthConfirmServiceClient extends ServiceClient {
         this.cmRegistry = cmRegistry;
     }
 
+    private Mono<String> getHIUHost(String clientId){
+        return bridgeRegistry.getHostFor(clientId, ServiceType.HIU)
+                .map(host -> host);
+    }
+
     @Override
     protected Mono<String> getResponseUrl(String clientId) {
-        return bridgeRegistry.getHostFor(clientId, ServiceType.HIP).map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
+        return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
+                .switchIfEmpty(this.getHIUHost(clientId))
+                .map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
     }
 
     @Override
