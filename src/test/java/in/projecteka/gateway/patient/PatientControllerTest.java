@@ -1,15 +1,13 @@
 package in.projecteka.gateway.patient;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.DiscoveryServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
-import in.projecteka.gateway.common.ValidatedResponseAction;
+import in.projecteka.gateway.common.ShareProfile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -25,7 +23,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Role.CM;
@@ -63,6 +60,9 @@ public class PatientControllerTest {
     @MockBean
     Authenticator authenticator;
 
+    @MockBean
+    ShareProfile shareProfile;
+
     @Test
     void shouldFireAndForgetForPatientProfileShare() {
         var token = string();
@@ -70,6 +70,7 @@ public class PatientControllerTest {
         when(requestOrchestrator.handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId))).thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
+        when(shareProfile.isEnable()).thenReturn(Boolean.FALSE);
 
         webTestClient
                 .post()
@@ -79,7 +80,7 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isAccepted();
+                .isNotFound();
     }
 
     @Test
@@ -87,6 +88,7 @@ public class PatientControllerTest {
         var token = string();
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
         when(patientResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(Mono.empty());
+        when(shareProfile.isEnable()).thenReturn(Boolean.FALSE);
 
         webTestClient
                 .post()
@@ -96,6 +98,6 @@ public class PatientControllerTest {
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
-                .isAccepted();
+                .isNotFound();
     }
 }

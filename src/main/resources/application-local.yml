@@ -16,6 +16,8 @@ identity:
   password: welcome
 gateway:
   disableHttpOptionsMethod: true
+  shareprofile:
+    enable: false
   db:
     host: localhost
     port: 5432
