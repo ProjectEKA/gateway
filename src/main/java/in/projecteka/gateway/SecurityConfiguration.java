@@ -102,8 +102,7 @@ public class SecurityConfiguration {
 
     protected static final String[] HIU_HIP_APIS = new String[]{
             PATH_HEALTH_INFORMATION_NOTIFY,
-            PATH_FETCH_AUTH_MODES,
-            PATH_PATIENT_SHARE
+            PATH_FETCH_AUTH_MODES
     };
 
     protected static final String[] CM_APIS = new String[]{
@@ -122,6 +121,7 @@ public class SecurityConfiguration {
             PATH_ON_ADD_CARE_CONTEXTS,
             PATH_CONSENT_REQUEST_ON_STATUS,
             PATH_ON_FETCH_AUTH_MODES,
+            PATH_PATIENT_SHARE
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
