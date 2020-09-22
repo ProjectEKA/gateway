@@ -70,6 +70,7 @@ import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
@@ -129,6 +130,7 @@ public class SecurityConfiguration {
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
             PATH_HEARTBEAT,
+            PATH_READINESS,
             PATH_SERVICE_URLS,
             USER_SESSION
     };
