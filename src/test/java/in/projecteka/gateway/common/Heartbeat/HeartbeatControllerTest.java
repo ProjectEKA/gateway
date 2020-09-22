@@ -17,6 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
+import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.TestBuilders.OBJECT_MAPPER;
 import static in.projecteka.gateway.common.heartbeat.model.Status.DOWN;
 import static in.projecteka.gateway.common.heartbeat.model.Status.UP;
@@ -55,12 +56,21 @@ class HeartbeatControllerTest {
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri(PATH_HEARTBEAT)
+                .uri(PATH_READINESS)
                 .exchange()
                 .expectStatus()
                 .isOk()
                 .expectBody()
                 .json(heartbeatResponseJson);
+    }
+
+    @Test
+    void shouldGiveCMStatusAsUpForLiveliness() throws JsonProcessingException {
+        webTestClient.get()
+                .uri(PATH_HEARTBEAT)
+                .exchange()
+                .expectStatus()
+                .isOk();
     }
 
     @Test
@@ -71,7 +81,7 @@ class HeartbeatControllerTest {
         when(heartbeat.getStatus()).thenReturn(Mono.just(heartbeatResponse));
 
         webTestClient.get()
-                .uri(PATH_HEARTBEAT)
+                .uri(PATH_READINESS)
                 .exchange()
                 .expectStatus()
                 .is5xxServerError()

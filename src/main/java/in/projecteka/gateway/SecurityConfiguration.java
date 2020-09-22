@@ -69,6 +69,11 @@ import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
@@ -120,8 +125,8 @@ public class SecurityConfiguration {
             PATH_USERS_AUTH_ON_INIT,
             PATH_ON_ADD_CARE_CONTEXTS,
             PATH_CONSENT_REQUEST_ON_STATUS,
+            PATH_PATIENT_SHARE,
             PATH_ON_FETCH_AUTH_MODES,
-            PATH_PATIENT_SHARE
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
@@ -129,6 +134,7 @@ public class SecurityConfiguration {
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
             PATH_HEARTBEAT,
+            PATH_READINESS,
             PATH_SERVICE_URLS,
             USER_SESSION
     };
