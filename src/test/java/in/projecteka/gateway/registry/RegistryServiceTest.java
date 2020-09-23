@@ -61,7 +61,7 @@ class RegistryServiceTest {
     void init() {
         initMocks(this);
         registryService = Mockito.spy(new RegistryService(
-                registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
+                false, registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
         ));
     }
 

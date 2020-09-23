@@ -19,5 +19,6 @@ gateway:
     user: dummy
     password: dummy_pwd
     poolSize: 5
+  deploy-enabled: ${DEPLOY_ENABLED:false}
 webclient:
   use-connection-pool: ${USE_HTTP_CONNECTION_POOL:false}
