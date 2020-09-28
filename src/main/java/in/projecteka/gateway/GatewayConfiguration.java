@@ -195,14 +195,15 @@ public class GatewayConfiguration {
     }
 
     @Bean({"bridgeMappings"})
-    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
-        return new LoadingCacheAdapter<>(createMappingCacheForBridge(12));
+    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(
+            @Value("${gateway.bridgeCacheExpiry}") int expiry) {
+        return new LoadingCacheAdapter<>(createMappingCacheForBridge(expiry));
     }
 
     public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
         return CacheBuilder
                 .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.HOURS)
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
                 .build(new CacheLoader<>() {
                     public String load(Pair<String, ServiceType> key) {
                         return "";
