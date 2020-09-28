@@ -101,6 +101,10 @@ public class RegistryService {
                 .flatMap(bridge -> bridge.getId() != null
                         ? bridgeRequest(bridge, bridgeRegistryRequest)
                         .flatMap(req -> registryRepository.updateBridgeEntry(req)
+                                .then(registryRepository.fetchBridgeServicesIfPresent(req.getId()).collectList()
+                                .flatMap(services -> Flux.fromIterable(services)
+                                        .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
+                                                service.getType()))).then()))
                                 .then(req.getActive()
                                         ? createClient(bridgeRegistryRequest.getId())
                                         : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
