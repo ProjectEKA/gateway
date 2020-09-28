@@ -196,7 +196,7 @@ public class GatewayConfiguration {
 
     @Bean({"bridgeMappings"})
     public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(
-            @Value("${gateway.cacheExpiry}") int expiry) {
+            @Value("${gateway.bridgeCacheExpiry}") int expiry) {
         return new LoadingCacheAdapter<>(createMappingCacheForBridge(expiry));
     }
 
