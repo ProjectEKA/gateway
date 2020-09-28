@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.Properties;
 
+import static in.projecteka.gateway.clients.ClientError.refreshTokenNotFound;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
 import static reactor.core.publisher.Mono.error;
@@ -37,6 +38,8 @@ public class IdentityServiceClient {
             formData.set("grant_type", request.getGrantType().getValue());
             if(!StringUtils.isEmpty(request.getRefreshToken())) {
                 formData.add("refresh_token", request.getRefreshToken());
+            }else{
+                return error(refreshTokenNotFound());
             }
         }
         return getToken(formData);

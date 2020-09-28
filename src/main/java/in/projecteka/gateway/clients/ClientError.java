@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_BRIDGE_SERVICE_REQUEST;
 import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_CM_SERVICE_REQUEST;
+import static in.projecteka.gateway.clients.model.ErrorCode.INVALID_TOKEN;
 import static in.projecteka.gateway.clients.model.ErrorCode.TOO_MANY_REQUESTS_FOUND;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
 import static java.lang.String.format;
@@ -56,6 +57,10 @@ public class ClientError extends Throwable {
 
     public static ClientError notFound(String message) {
         return new ClientError(NOT_FOUND, errorOf(message, UNKNOWN_ERROR_OCCURRED));
+    }
+
+    public static ClientError refreshTokenNotFound() {
+        return new ClientError(BAD_REQUEST, errorOf("Refresh token not found", INVALID_TOKEN));
     }
 
     public static ClientError invalidBridgeRegistryRequest(String message) {
