@@ -3,15 +3,18 @@ package in.projecteka.gateway.registry;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
+import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 
@@ -45,6 +48,8 @@ public class RegistryRepository {
             "active = $2, name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
             "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND " +
             "bridge_service.service_id = $5 AND bridge_service.type = $6";
+    private static final String SELECT_BRIDGE_SERVICES = "select service_id, type FROM bridge_service " +
+            "WHERE bridge_id = $1 AND active = $2";
 
 
     private final PgPool readWriteClient;
@@ -211,6 +216,28 @@ public class RegistryRepository {
                                 return;
                             }
                             monoSink.success(true);
+                        }));
+    }
+
+    public Flux<BridgeService> fetchBridgeServicesIfPresent(String bridgeId) {
+        return Flux.create(fluxSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_SERVICES)
+                .execute(Tuple.of(bridgeId, true),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                fluxSink.error(new DbOperationError("Failed to fetch bridge services"));
+                                return;
+                            }
+                            RowSet<Row> results = handler.result();
+                            if (results.iterator().hasNext()) {
+                                results.forEach(row -> {
+                                    fluxSink.next(BridgeService.builder()
+                                            .id(row.getString("service_id"))
+                                            .type(ServiceType.valueOf(row.getString("type")))
+                                            .build());
+                                });
+                            }
+                            fluxSink.complete();
                         }));
     }
 }
