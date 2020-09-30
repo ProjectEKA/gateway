@@ -77,7 +77,7 @@ public class MappingRepository {
                                             .name(row.getString(0))
                                             .id(row.getString(1))
                                             .url(row.getString(2))
-                                            .type("Bridge")
+                                            .type("BRIDGE")
                                             .build());
                                 }
                             }
