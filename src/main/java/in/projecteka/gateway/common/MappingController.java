@@ -17,7 +17,7 @@ public class MappingController {
 
     @GetMapping(Constants.PATH_SERVICE_URLS)
     public Mono<Service> fetchAllServiceUrls() {
-        logger.info("Request for getting URLs: {}",Constants.PATH_SERVICE_URLS );
+        logger.info("Request for getting URLs: {}", Constants.PATH_SERVICE_URLS);
         return mappingService.fetchDependentServiceUrls();
     }
 }
