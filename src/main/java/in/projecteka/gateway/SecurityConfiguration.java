@@ -32,6 +32,7 @@ import java.util.List;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
+import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CERTS;
@@ -55,21 +56,21 @@ import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
+import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
-import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
-import static in.projecteka.gateway.common.Constants.USER_SESSION;
-import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
-import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
-import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
-import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
+import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
+import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
+import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
+import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
@@ -129,6 +130,7 @@ public class SecurityConfiguration {
             PATH_WELL_KNOWN_OPENID_CONFIGURATION,
             PATH_SESSIONS,
             PATH_HEARTBEAT,
+            PATH_READINESS,
             PATH_SERVICE_URLS,
             USER_SESSION
     };

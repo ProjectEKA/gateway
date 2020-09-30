@@ -6,6 +6,7 @@ import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.model.Session;
 import in.projecteka.gateway.common.cache.CacheAdapter;
+import in.projecteka.gateway.session.SessionRequest;
 import lombok.AllArgsConstructor;
 import reactor.core.publisher.Mono;
 
@@ -34,8 +35,8 @@ public class IdentityService {
                         .thenReturn(session.getAccessToken()));
     }
 
-    public Mono<Session> getTokenFor(String clientId, String clientSecret) {
-        return identityServiceClient.getTokenFor(clientId, clientSecret);
+    public Mono<Session> getTokenFor(SessionRequest request) {
+        return identityServiceClient.getTokenFor(request);
     }
 
     public Mono<JsonNode> configuration(String host) {

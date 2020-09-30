@@ -2,12 +2,15 @@ package in.projecteka.gateway.clients;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.projecteka.gateway.clients.model.Session;
+import in.projecteka.gateway.common.model.GrantType;
+import in.projecteka.gateway.session.SessionRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -26,6 +29,17 @@ public class IdentityServiceClient {
 
     public Mono<Session> getTokenFor(String clientId, String clientSecret) {
         return getToken(loginRequestWith(clientId, clientSecret));
+    }
+
+    public Mono<Session> getTokenFor(SessionRequest request) {
+        MultiValueMap<String, String> formData = loginRequestWith(request.getClientId(), request.getClientSecret());
+        if (request.getGrantType() == GrantType.REFRESH_TOKEN){
+            formData.set("grant_type", request.getGrantType().getValue());
+            if(!StringUtils.isEmpty(request.getRefreshToken())) {
+                formData.add("refresh_token", request.getRefreshToken());
+            }
+        }
+        return getToken(formData);
     }
 
     public IdentityServiceClient(WebClient.Builder webClientBuilder, String baseUrl, String realm) {

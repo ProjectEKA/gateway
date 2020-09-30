@@ -73,6 +73,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.data.util.Pair;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.ServerCodecConfigurer;
@@ -80,6 +82,8 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.WebFilter;
+import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
@@ -191,14 +195,15 @@ public class GatewayConfiguration {
     }
 
     @Bean({"bridgeMappings"})
-    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings() {
-        return new LoadingCacheAdapter<>(createMappingCacheForBridge(12));
+    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(
+            @Value("${gateway.bridgeCacheExpiry}") int expiry) {
+        return new LoadingCacheAdapter<>(createMappingCacheForBridge(expiry));
     }
 
     public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
         return CacheBuilder
                 .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.HOURS)
+                .expireAfterWrite(duration, TimeUnit.MINUTES)
                 .build(new CacheLoader<>() {
                     public String load(Pair<String, ServiceType> key) {
                         return "";
@@ -940,8 +945,9 @@ public class GatewayConfiguration {
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
-                                           AdminServiceClient adminServiceClient) {
-        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
+                                           AdminServiceClient adminServiceClient,
+                                           @Value("${gateway.deploy-enabled}") boolean deployEnabled) {
+        return new RegistryService(deployEnabled, registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
     @Bean("userAuthenticatorClient")
@@ -1124,5 +1130,17 @@ public class GatewayConfiguration {
                 resourceProperties, applicationContext);
         globalExceptionHandler.setMessageWriters(serverCodecConfigurer.getWriters());
         return globalExceptionHandler;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "gateway.disableHttpOptionsMethod", havingValue = "true")
+    public WebFilter disableOptionsMethodFilter(){
+        return (exchange, chain) -> {
+            if(exchange.getRequest().getMethod().equals(HttpMethod.OPTIONS)) {
+                exchange.getResponse().setStatusCode(HttpStatus.METHOD_NOT_ALLOWED);
+                return Mono.empty();
+            }
+            return chain.filter(exchange);
+        };
     }
 }

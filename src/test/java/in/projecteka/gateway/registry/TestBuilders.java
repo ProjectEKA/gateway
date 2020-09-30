@@ -4,6 +4,7 @@ import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
+import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import org.jeasy.random.EasyRandom;
@@ -37,5 +38,9 @@ public class TestBuilders {
 
     public static Bridge.BridgeBuilder bridge() {
         return easyRandom.nextObject(Bridge.BridgeBuilder.class);
+    }
+
+    public static BridgeService.BridgeServiceBuilder bridgeService() {
+        return easyRandom.nextObject(BridgeService.BridgeServiceBuilder.class);
     }
 }

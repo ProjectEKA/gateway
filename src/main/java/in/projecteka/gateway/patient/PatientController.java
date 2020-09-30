@@ -1,9 +1,11 @@
 package in.projecteka.gateway.patient;
 
+import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
+import in.projecteka.gateway.common.ShareProfile;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -14,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
-import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
@@ -26,10 +26,14 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 public class PatientController {
     RequestOrchestrator<PatientServiceClient> patientRequestOrchestrator;
     ResponseOrchestrator patientResponseOrchestrator;
+    ShareProfile shareProfileFeature;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_PATIENT_SHARE)
     public Mono<Void> patientProfileShare(HttpEntity<String> requestEntity) {
+        if(!shareProfileFeature.isEnable()) {
+            return Mono.error(ClientError.notFound("Request not found"));
+        }
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
@@ -42,6 +46,9 @@ public class PatientController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_PATIENT_ON_SHARE)
     public Mono<Void> patientProfileOnShare(HttpEntity<String> requestEntity) {
+        if(!shareProfileFeature.isEnable()) {
+            return Mono.error(ClientError.notFound("Request not found"));
+        }
         return patientResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
                 .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENT_ON_SHARE));
     }

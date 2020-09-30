@@ -4,6 +4,10 @@ server:
 gateway:
   #Valid values are guava(for local), redis
   cacheMethod: ${CACHE_METHOD:guava}
+  bridgeCacheExpiry: ${BRIDGE_CACHE_EXPIRY:5}
+  disableHttpOptionsMethod: ${HTTP_OPTIONS_DISABLED:true}
+  shareprofile:
+    enable: ${ENABLE_SHARE_PROFILE:false}
   redis:
     #Will not be used if cacheMethod is guava
     host: ${REDIS_HOST:localhost}
@@ -30,6 +34,7 @@ gateway:
       user: ${REPLICA_POSTGRES_USER}
       password: ${REPLICA_POSTGRES_PASSWORD}
       poolSize: ${REPLICA_POOL_SIZE:3}
+  deploy-enabled: ${DEPLOY_ENABLED:false}
 spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}

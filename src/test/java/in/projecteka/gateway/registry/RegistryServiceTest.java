@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.util.Pair;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
 import reactor.test.StepVerifier;
@@ -25,6 +26,7 @@ import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.TestBuilders.bridge;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
+import static in.projecteka.gateway.registry.TestBuilders.bridgeService;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
@@ -61,7 +63,7 @@ class RegistryServiceTest {
     void init() {
         initMocks(this);
         registryService = Mockito.spy(new RegistryService(
-                registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
+                false, registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
         ));
     }
 
@@ -203,10 +205,16 @@ class RegistryServiceTest {
         var request = bridgeRegistryRequest().active(true).build();
         var bridgeId = request.getId();
         var clientSecret = clientSecret().build();
+        var serviceAccount = serviceAccount().build();
+        var realmRoles = List.of(realmRole().name("healthId").build());
         var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(Bridge.builder().build()));
         when(registryRepository.insertBridgeEntry(request)).thenReturn(empty());
         when(adminServiceClient.createClientIfNotExists(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.getServiceAccount(bridgeId)).thenReturn(just(serviceAccount));
+        when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
+        when(adminServiceClient.assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId()))
+                .thenReturn(empty());
         when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
 
         var producer = registryService.populateBridgeEntry(request);
@@ -239,8 +247,11 @@ class RegistryServiceTest {
         var request = bridgeRegistryRequest().active(false).build();
         var bridgeId = request.getId();
         var bridge = bridge().build();
+        var bridgeService = bridgeService().build();
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(bridge));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
+        when(registryRepository.fetchBridgeServicesIfPresent(bridgeId)).thenReturn(Flux.just(bridgeService));
+        when(bridgeMappings.invalidate(Pair.of(bridgeService.getId(), bridgeService.getType()))).thenReturn(empty());
         when(adminServiceClient.deleteClientIfExists(bridgeId)).thenReturn(empty());
 
         var producer = registryService.populateBridgeEntry(request);
@@ -258,10 +269,17 @@ class RegistryServiceTest {
         var bridgeId = request.getId();
         var bridge = bridge().build();
         var clientSecret = clientSecret().build();
+        var serviceAccount = serviceAccount().build();
+        var realmRoles = List.of(realmRole().name("healthId").build());
         var clientResponse = ClientResponse.builder().id(bridgeId).secret(clientSecret.getValue()).build();
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(bridge));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
+        when(registryRepository.fetchBridgeServicesIfPresent(bridgeId)).thenReturn(Flux.empty());
         when(adminServiceClient.createClientIfNotExists(bridgeId)).thenReturn(empty());
+        when(adminServiceClient.getServiceAccount(bridgeId)).thenReturn(just(serviceAccount));
+        when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
+        when(adminServiceClient.assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId()))
+                .thenReturn(empty());
         when(adminServiceClient.getClientSecret(bridgeId)).thenReturn(just(clientSecret));
 
         var producer = registryService.populateBridgeEntry(request);

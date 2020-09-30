@@ -23,6 +23,8 @@ import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest
 
 @AllArgsConstructor
 public class RegistryService {
+    private final boolean deployEnabled;
+    public static final String HEALTH_ID_ROLE = "healthId";
     private static final String CM_REALM_ROLE = "CM";
     private final RegistryRepository registryRepository;
     private final CacheAdapter<String, String> consentManagerMappings;
@@ -99,6 +101,10 @@ public class RegistryService {
                 .flatMap(bridge -> bridge.getId() != null
                         ? bridgeRequest(bridge, bridgeRegistryRequest)
                         .flatMap(req -> registryRepository.updateBridgeEntry(req)
+                                .then(registryRepository.fetchBridgeServicesIfPresent(req.getId()).collectList()
+                                .flatMap(services -> Flux.fromIterable(services)
+                                        .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
+                                                service.getType()))).then()))
                                 .then(req.getActive()
                                         ? createClient(bridgeRegistryRequest.getId())
                                         : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
@@ -125,6 +131,12 @@ public class RegistryService {
 
     private Mono<ClientResponse> createClient(String bridgeId) {
         return adminServiceClient.createClientIfNotExists(bridgeId)
+                .then(Mono.defer(() -> {
+                    if(deployEnabled) {
+                        return addRole(bridgeId, HEALTH_ID_ROLE);
+                    }
+                    return Mono.empty();
+                }))
                 .then(adminServiceClient.getClientSecret(bridgeId)
                         .map(clientSecret -> ClientResponse.builder()
                                 .id(bridgeId)
