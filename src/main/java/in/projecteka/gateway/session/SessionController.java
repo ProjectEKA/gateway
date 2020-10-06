@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import javax.validation.Valid;
+
 import static in.projecteka.gateway.common.Constants.PATH_CERTS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
@@ -29,7 +31,7 @@ public class SessionController {
     private final IdentityProperties centralRegistryProperties;
 
     @PostMapping(PATH_SESSIONS)
-    public Mono<Session> with(@RequestBody SessionRequest session) {
+    public Mono<Session> with(@Valid @RequestBody SessionRequest session) {
         logger.info("Session request received {}", keyValue("clientId", session.getClientId()));
         return identityService.getTokenFor(session);
     }
