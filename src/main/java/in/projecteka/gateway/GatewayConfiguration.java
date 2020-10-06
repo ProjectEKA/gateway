@@ -20,6 +20,7 @@ import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
+import in.projecteka.gateway.clients.HiuSubscriptionNotifyServiceClient;
 import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
@@ -1142,5 +1143,49 @@ public class GatewayConfiguration {
             }
             return chain.filter(exchange);
         };
+    }
+
+
+    @Bean
+    public HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            CMRegistry cmRegistry,
+            BridgeRegistry bridgeRegistry) {
+        return new HiuSubscriptionNotifyServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hiuSubscriptionNotifyResponseAction")
+    public DefaultValidatedResponseAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyResponseAction(
+            HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(hiuSubscriptionNotifyServiceClient);
+    }
+
+    @Bean("hiuSubscriptionNotifyResponseOrchestrator")
+    public ResponseOrchestrator hiuSubscriptionNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, hiuSubscriptionNotifyResponseAction);
+    }
+
+    @Bean("hiuSubscriptionNotifyRequestAction")
+    public DefaultValidatedRequestAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestAction(
+            HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(hiuSubscriptionNotifyServiceClient);
+    }
+
+    @Bean("hiuSubscriptionNotifyRequestOrchestrator")
+    public RequestOrchestrator<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            HiuSubscriptionNotifyServiceClient hiuConsentNotifyServiceClient,
+            DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuSubscriptionNotifyRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                hiuConsentNotifyServiceClient,
+                hiuSubscriptionNotifyRequestAction);
     }
 }
