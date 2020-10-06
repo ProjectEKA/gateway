@@ -55,7 +55,7 @@ public class IdentityServiceClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.value() == 401,
+                .onStatus(httpStatus -> httpStatus.value() == 401 || httpStatus.value() == 400,
                         clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                 .flatMap(keyCloakError -> {
                                     logger.error(keyCloakError.getError(), keyCloakError);
