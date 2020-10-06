@@ -18,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 import java.util.Properties;
 
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.clients.ClientError.unknownUnAuthorizedError;
 import static reactor.core.publisher.Mono.error;
@@ -55,11 +56,17 @@ public class IdentityServiceClient {
                 .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromFormData(formData))
                 .retrieve()
-                .onStatus(httpStatus -> httpStatus.value() == 401 || httpStatus.value() == 400,
+                .onStatus(httpStatus -> httpStatus.value() == 401,
                         clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
                                 .flatMap(keyCloakError -> {
                                     logger.error(keyCloakError.getError(), keyCloakError);
                                     return error(unknownUnAuthorizedError(keyCloakError.getErrorDescription()));
+                                }))
+                .onStatus(httpStatus -> httpStatus.value() == 400,
+                        clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+                                .flatMap(keyCloakError -> {
+                                    logger.error(keyCloakError.getError(), keyCloakError);
+                                    return error(invalidRequest(keyCloakError.getErrorDescription()));
                                 }))
                 .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
                         .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
