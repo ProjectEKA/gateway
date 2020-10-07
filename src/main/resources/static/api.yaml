@@ -171,6 +171,46 @@ paths:
               application/xml:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
+  /internal/hi-services/{service-id}:
+    get:
+      tags:
+        - registration
+      summary: Get bridge service details/profile by the serviceId provided.
+      description: >
+        This API is meant for displaying the bridge service details by the serviceId provided .
+      parameters:
+        - $ref: "#/components/parameters/service-id"
+      responses:
+        '200':
+          description: service details fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceProfileResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ServiceProfileResponse'
+        '404':
+          description: Service doesn't exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >
+            **Causes:**
+              * Downstream system(s) is down.
+              * Unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /user/sessions:
     post:
       tags:
@@ -234,6 +274,12 @@ components:
         type: string
     bridgeId:
       name: bridgeId
+      in: path
+      required: true
+      schema:
+        type: string
+    service-id:
+      name: service-id
       in: path
       required: true
       schema:
@@ -302,7 +348,7 @@ components:
         name: BridgeServiceRequest
     ServiceType:
       type: string
-      enum: [HIP, HIU]
+      enum: [HIP, HIU, LOCKER]
     ClientResponse:
       type: object
       properties:
@@ -343,6 +389,19 @@ components:
           example: bearer
       xml:
         name: UserSessionResponse
+    ServiceProfileResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        active:
+          type: boolean
+      xml:
+        name: ServiceProfileResponse
     ErrorResponse:
       type: object
       properties:
