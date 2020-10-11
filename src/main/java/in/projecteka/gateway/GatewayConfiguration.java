@@ -27,6 +27,7 @@ import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
+import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
@@ -613,6 +614,29 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<ConsentRequestServiceClient> consentResponseAction) {
         return new ResponseOrchestrator(validator, consentResponseAction);
+    }
+
+    @Bean
+    public SubscriptionRequestServiceClient subscriptionRequestServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new SubscriptionRequestServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("subscriptionResponseAction")
+    public DefaultValidatedResponseAction<SubscriptionRequestServiceClient> subscriptionResponseAction(
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient) {
+        return new DefaultValidatedResponseAction<>(subscriptionRequestServiceClient);
+    }
+
+    @Bean("subscriptionResponseOrchestrator")
+    public ResponseOrchestrator subscriptionResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<SubscriptionRequestServiceClient> subscriptionResponseAction) {
+        return new ResponseOrchestrator(validator, subscriptionResponseAction);
     }
 
     @Bean
