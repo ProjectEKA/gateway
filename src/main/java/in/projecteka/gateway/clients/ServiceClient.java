@@ -5,6 +5,7 @@ import in.projecteka.gateway.clients.model.CmErrorResponse;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.model.ErrorResult;
+import in.projecteka.gateway.registry.ServiceType;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
@@ -52,16 +54,17 @@ public abstract class ServiceClient {
         return routeCommon(request, clientId, this::getResponseUrl, sourceRoutingKey);
     }
 
-    protected abstract Mono<String> getResponseUrl(String clientId);
+    protected abstract Mono<String> getResponseUrl(String clientId, ServiceType routingKey);
 
-    protected abstract Mono<String> getRequestUrl(String clientId);
+    protected abstract Mono<String> getRequestUrl(String clientId, ServiceType routingKey);
 
 
     private <T> Mono<Void> routeCommon(T requestBody,
                                        String clientId,
-                                       Function<String, Mono<String>> urlGetter,
+                                       BiFunction<String,ServiceType, Mono<String>> urlGetter,
                                        String routingKey) {
-        return urlGetter.apply(clientId)
+        var targetRoutingKey = routingKey.equals(X_HIP_ID)? ServiceType.HIP : ServiceType.HIU;
+        return urlGetter.apply(clientId, targetRoutingKey)
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
                     return error(mappingNotFoundForId(clientId));

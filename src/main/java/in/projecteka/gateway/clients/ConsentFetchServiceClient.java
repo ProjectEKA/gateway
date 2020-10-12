@@ -5,6 +5,7 @@ import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -25,12 +26,12 @@ public class ConsentFetchServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Mono<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
         return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_CONSENTS_ON_FETCH);
     }
 
     @Override
-    protected Mono<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
         return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_CONSENTS_FETCH);
     }
 }

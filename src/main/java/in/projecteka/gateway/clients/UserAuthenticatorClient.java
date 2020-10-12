@@ -30,14 +30,14 @@ public class UserAuthenticatorClient extends ServiceClient{
     }
 
     @Override
-    protected Mono<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
         return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
                 .switchIfEmpty(this.getHIUHost(clientId))
                 .map(host -> host + Constants.PATH_USERS_AUTH_ON_INIT);
     }
 
     @Override
-    protected Mono<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
         return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_USERS_AUTH_INIT);
     }
 }

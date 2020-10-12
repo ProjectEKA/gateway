@@ -92,4 +92,26 @@ public class UserAuthenticationControllerTest {
                 .expectStatus()
                 .isAccepted();
     }
+
+    @Test
+    void shouldFireAndForgetForUsersAuthNotify() {
+        var token = string();
+        var clientId = string();
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
+        when(userAuthenticationRequestOrchestrator
+                .handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId)))
+                .thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_USERS_AUTH_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .header(X_HIP_ID, "hip-id")
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
 }

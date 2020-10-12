@@ -3,6 +3,7 @@ package in.projecteka.gateway.clients;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import in.projecteka.gateway.common.IdentityService;
 import in.projecteka.gateway.common.cache.ServiceOptions;
+import in.projecteka.gateway.registry.ServiceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -65,12 +66,12 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Mono<String> getResponseUrl(String clientId) {
+            protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
 
             @Override
-            protected Mono<String> getRequestUrl(String clientId) {
+            protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
                 return Mono.just(url);
             }
         };
@@ -94,12 +95,12 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Mono<String> getResponseUrl(String clientId) {
+            protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
                 return Mono.just(url);
             }
 
             @Override
-            protected Mono<String> getRequestUrl(String clientId) {
+            protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
         };
@@ -125,12 +126,12 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Mono<String> getResponseUrl(String clientId) {
+            protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
                 return Mono.just(url);
             }
 
             @Override
-            protected Mono<String> getRequestUrl(String clientId) {
+            protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
         };
@@ -157,12 +158,12 @@ class ServiceClientTest {
                         .build()));
         var serviceClient = new ServiceClient(SERVICE_OPTIONS, webClientBuilder, identityService) {
             @Override
-            protected Mono<String> getResponseUrl(String clientId) {
+            protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
                 return Mono.just(url);
             }
 
             @Override
-            protected Mono<String> getRequestUrl(String clientId) {
+            protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
         };
@@ -178,12 +179,12 @@ class ServiceClientTest {
     void returnErrorIfUnableToFindAHostForAClient() {
         var serviceClient = new ServiceClient(serviceOptions().timeout(10000).build(), webClientBuilder, identityService) {
             @Override
-            protected Mono<String> getResponseUrl(String clientId) {
+            protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
 
             @Override
-            protected Mono<String> getRequestUrl(String clientId) {
+            protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
                 return Mono.empty();
             }
         };

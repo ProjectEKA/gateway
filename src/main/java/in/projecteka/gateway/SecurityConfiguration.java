@@ -66,6 +66,7 @@ import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
@@ -119,6 +120,7 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
             USERS_AUTH_ON_CONFIRM,
             PATH_USERS_AUTH_ON_INIT,
+            PATH_USERS_AUTH_NOTIFY,
             PATH_ON_ADD_CARE_CONTEXTS,
             PATH_CONSENT_REQUEST_ON_STATUS,
             PATH_PATIENT_SHARE,
