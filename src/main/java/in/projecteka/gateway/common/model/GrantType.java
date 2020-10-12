@@ -3,7 +3,8 @@ package in.projecteka.gateway.common.model;
 import com.fasterxml.jackson.annotation.JsonValue;
 public enum GrantType {
     CLIENT_CREDENTIALS("client_credentials"),
-    REFRESH_TOKEN("refresh_token");
+    REFRESH_TOKEN("refresh_token"),
+    NONE("");
 
     private final String grantType;
 

@@ -39,6 +39,8 @@ public class IdentityServiceClient {
             if(!StringUtils.isEmpty(request.getRefreshToken())) {
                 formData.add("refresh_token", request.getRefreshToken());
             }
+        } else if(request.getGrantType() == GrantType.NONE && !StringUtils.isEmpty(request.getRefreshToken())){
+            return error(invalidRequest("Please mention grant type"));
         }
         return getToken(formData);
     }
