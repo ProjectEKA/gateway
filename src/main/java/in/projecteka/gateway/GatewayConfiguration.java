@@ -626,6 +626,26 @@ public class GatewayConfiguration {
         return new SubscriptionRequestServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
     }
 
+    @Bean("subscriptionRequestAction")
+    public DefaultValidatedRequestAction<SubscriptionRequestServiceClient> subscriptionRequestAction(
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient) {
+        return new DefaultValidatedRequestAction<>(subscriptionRequestServiceClient);
+    }
+
+    @Bean("subscriptionRequestOrchestrator")
+    public RequestOrchestrator<SubscriptionRequestServiceClient> subscriptionRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient,
+            DefaultValidatedRequestAction<SubscriptionRequestServiceClient> subscriptionRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                subscriptionRequestServiceClient,
+                subscriptionRequestAction);
+    }
+
     @Bean("subscriptionResponseAction")
     public DefaultValidatedResponseAction<SubscriptionRequestServiceClient> subscriptionResponseAction(
             SubscriptionRequestServiceClient subscriptionRequestServiceClient) {
