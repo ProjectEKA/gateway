@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.hiplink;
+package in.projecteka.gateway.userauth;
 
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.Caller;
