@@ -7,6 +7,8 @@ import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.ServiceProfile;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
@@ -16,6 +18,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static in.projecteka.gateway.common.Serializer.to;
 
 
 @AllArgsConstructor
@@ -50,6 +57,8 @@ public class RegistryRepository {
             "bridge_service.service_id = $5 AND bridge_service.type = $6";
     private static final String SELECT_BRIDGE_SERVICES = "select service_id, type FROM bridge_service " +
             "WHERE bridge_id = $1 AND active = $2";
+    private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "select service_id, name, type, active, endpoints " +
+            "FROM bridge_service WHERE service_id = $1 AND active = $2";
 
 
     private final PgPool readWriteClient;
@@ -238,6 +247,43 @@ public class RegistryRepository {
                                 });
                             }
                             fluxSink.complete();
+                        }));
+    }
+
+    public Mono<ServiceProfile> fetchServiceEntries(String serviceId) {
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_SERVICES_BY_SERVICE_ID)
+                .execute(Tuple.of(serviceId, true),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to fetch services by service id"));
+                                return;
+                            }
+                            RowSet<Row> results = handler.result();
+                            List<ServiceType> types = new ArrayList<>();
+                            List<Endpoint> endpoints = new ArrayList<>();
+                            final ServiceProfile.ServiceProfileBuilder[] serviceProfile = new ServiceProfile.ServiceProfileBuilder[1];
+                            if (results.iterator().hasNext()) {
+                                results.forEach(row -> {
+                                    Object endpointJson = row.getValue("endpoints");
+                                    List<Endpoint> endpointList = new ArrayList<>();
+                                    if (endpointJson != null) {
+                                        endpointList = to(endpointJson);
+                                    }
+                                    serviceProfile[0] = ServiceProfile.builder()
+                                            .id(row.getString("service_id"))
+                                            .name(row.getString("name"))
+                                            .active(row.getBoolean("active"));
+                                    types.add(ServiceType.valueOf(row.getString("type")));
+                                    endpoints.addAll(endpointList);
+                                });
+                                serviceProfile[0].types(types);
+                                serviceProfile[0].endpoints(endpoints);
+                            } else {
+                                monoSink.success();
+                                return;
+                            }
+                            monoSink.success(serviceProfile[0].build());
                         }));
     }
 }

@@ -1,17 +1,20 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.util.Pair;
+import org.springframework.http.HttpStatus;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoSink;
@@ -31,6 +34,7 @@ import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
+import static in.projecteka.gateway.registry.TestBuilders.serviceProfile;
 import static in.projecteka.gateway.registry.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestBuilders.clientSecret;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -395,5 +399,32 @@ class RegistryServiceTest {
         verify(adminServiceClient).getServiceAccount(bridgeId);
         verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());
         verify(adminServiceClient).assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId());
+    }
+
+    @Test
+    void shouldReturnServiceProfileForGivenServiceId() {
+        var serviceId = string();
+        var serviceProfile = serviceProfile().build();
+        when(registryRepository.fetchServiceEntries(serviceId)).thenReturn(Mono.just(serviceProfile));
+
+        var profileProducer = registryService.serviceProfile(serviceId);
+        StepVerifier.create(profileProducer)
+                .assertNext(response -> assertThat(response).isInstanceOf(ServiceProfileResponse.class))
+                .verifyComplete();
+
+        verify(registryRepository).fetchServiceEntries(serviceId);
+    }
+
+    @Test
+    void shouldThrowNotFoundIfServiceIdIsNotPresent() {
+        var serviceId = string();
+        when(registryRepository.fetchServiceEntries(serviceId)).thenReturn(Mono.empty());
+
+        var profileProducer = registryService.serviceProfile(serviceId);
+        StepVerifier.create(profileProducer)
+                .verifyErrorMatches(throwable -> throwable instanceof ClientError &&
+                        ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND);
+
+        verify(registryRepository).fetchServiceEntries(serviceId);
     }
 }

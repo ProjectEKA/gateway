@@ -1,6 +1,7 @@
 package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
+import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
@@ -9,6 +10,8 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.ServiceProfileResponse;
+import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
 import reactor.core.publisher.Flux;
@@ -20,6 +23,9 @@ import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryReq
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
+import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
+import static in.projecteka.gateway.registry.ServiceType.HIP;
+import static in.projecteka.gateway.registry.ServiceType.HIU;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -181,4 +187,29 @@ public class RegistryService {
     private Mono<RealmRole> ifPresent(String type, List<RealmRole> realmRoles) {
         return Mono.justOrEmpty(realmRoles.stream().filter(realmRole -> realmRole.getName().equalsIgnoreCase(type)).findFirst());
     }
+
+    public Mono<ServiceProfileResponse> serviceProfile(String serviceId) {
+        return registryRepository.fetchServiceEntries(serviceId)
+                .flatMap(profile -> {
+                    ServiceRole type;
+                    var serviceProfileResponse = ServiceProfileResponse.builder()
+                            .id(profile.getId())
+                            .name(profile.getName())
+                            .active(profile.isActive())
+                            .endpoints(profile.getEndpoints());
+                    if (profile.getTypes().contains(HEALTH_LOCKER)) {
+                        type = ServiceRole.HEALTH_LOCKER;
+                    } else if (profile.getTypes().contains(HIP) && profile.getTypes().contains(HIU)) {
+                        type = ServiceRole.HIP_AND_HIU;
+                    } else if (profile.getTypes().contains(HIP)) {
+                        type = ServiceRole.HIP;
+                    } else {
+                        type = ServiceRole.HIU;
+                    }
+                    serviceProfileResponse.type(type);
+                    return Mono.just(serviceProfileResponse.build());
+                })
+                .switchIfEmpty(Mono.error(ClientError.notFound("Service Id not found")));
+    }
 }
+

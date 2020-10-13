@@ -146,7 +146,7 @@ public class SecurityConfiguration {
             ServerHttpSecurity httpSecurity,
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
-        return httpSecurity
+        httpSecurity
                 .httpBasic().disable()
                 .formLogin().disable()
                 .csrf().disable()
@@ -160,7 +160,9 @@ public class SecurityConfiguration {
                 .pathMatchers(HIU_HIP_APIS).hasAnyRole(HIU.name(), HIP.name())
                 .pathMatchers(HIP_APIS).hasAnyRole(HIP.name())
                 .pathMatchers(HIU_APIS).hasAnyRole(HIU.name())
-                .and()
+                .pathMatchers("/**")
+                .authenticated();
+        return httpSecurity
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
                 .build();

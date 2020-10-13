@@ -71,6 +71,7 @@ public class Constants {
     public static final String PATH_PATIENT_ON_SHARE = CURRENT_VERSION + "/patients/profile/on-share";
     public static final String PATH_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/fetch-modes";
     public static final String PATH_READINESS = CURRENT_VERSION + "/readiness";
+    public static final String HI_SERVICES_SERVICE_ID = CURRENT_VERSION + "/hi-services/{service-id}";
 
     //API to be called on HIP/HIU bridge
     public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";
