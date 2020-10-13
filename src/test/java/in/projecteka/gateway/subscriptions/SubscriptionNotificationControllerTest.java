@@ -1,7 +1,7 @@
-package in.projecteka.gateway.link.hiplink;
+package in.projecteka.gateway.subscriptions;
 
 import com.nimbusds.jose.jwk.JWKSet;
-import in.projecteka.gateway.clients.UserAuthenticatorClient;
+import in.projecteka.gateway.clients.HiuSubscriptionNotifyServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -19,11 +19,11 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
+import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,13 +37,17 @@ import static reactor.core.publisher.Mono.just;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-public class UserAuthenticationControllerTest {
-    @MockBean
-    RequestOrchestrator<UserAuthenticatorClient> userAuthenticationRequestOrchestrator;
+class SubscriptionNotificationControllerTest {
 
-    @Qualifier("userAuthenticationResponseOrchestrator")
     @MockBean
-    ResponseOrchestrator userAuthenticationResponseOrchestrator;
+    RequestOrchestrator<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestOrchestrator;
+
+    @Qualifier("hiuSubscriptionNotifyResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator hiuSubscriptionNotifyResponseOrchestrator;
+
+    @MockBean
+    Authenticator authenticator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -51,22 +55,19 @@ public class UserAuthenticationControllerTest {
     @MockBean(name = "centralRegistryJWKSet")
     JWKSet centralRegistryJWKSet;
 
-    @MockBean
-    Authenticator authenticator;
-
     @Test
-    void shouldFireAndForgetForUsersAuthInit() {
+    void shouldRouteNotifySubscriptionToHIU() {
         var token = string();
         var clientId = string();
         when(authenticator.verify(token))
-                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
-        when(userAuthenticationRequestOrchestrator
-                .handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(BRIDGE_ID_PREFIX + clientId)))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
+        when(hiuSubscriptionNotifyRequestOrchestrator
+                .handleThis(any(), eq(X_HIU_ID), eq(X_CM_ID), eq(clientId)))
                 .thenReturn(empty());
 
         webTestClient
                 .post()
-                .uri(Constants.PATH_USERS_AUTH_INIT)
+                .uri(Constants.PATH_HIU_SUBSCRIPTION_NOTIFY)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
@@ -76,15 +77,14 @@ public class UserAuthenticationControllerTest {
     }
 
     @Test
-    public void shouldFireAndForgetForLinkOnInit() {
+    void shouldRouteOnNotifySubscriptionToHIU() {
         var token = string();
-        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
-        when(userAuthenticationResponseOrchestrator.processResponse(any(), eq(X_HIP_ID)))
-                .thenReturn(Mono.empty());
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIU)).build()));
+        when(hiuSubscriptionNotifyResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(Mono.empty());
 
         webTestClient
                 .post()
-                .uri(Constants.PATH_USERS_AUTH_ON_INIT)
+                .uri(Constants.PATH_HIU_SUBSCRIPTION_ON_NOTIFY)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
