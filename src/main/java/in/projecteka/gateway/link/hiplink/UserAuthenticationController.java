@@ -36,8 +36,8 @@ public class UserAuthenticationController {
     private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationController.class);
     RequestOrchestrator<UserAuthenticatorClient> userAuthenticationRequestOrchestrator;
     ResponseOrchestrator userAuthenticationResponseOrchestrator;
-    RequestOrchestrator<AuthNotifyServiceClient> userAuthNotifyRequestOrchestrator;
-    ResponseOrchestrator userAuthNotifyResponseOrchestrator;
+    RequestOrchestrator<AuthNotifyServiceClient> authNotifyRequestOrchestrator;
+    ResponseOrchestrator authNotifyResponseOrchestrator;
 
 
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -80,11 +80,11 @@ public class UserAuthenticationController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_USERS_AUTH_NOTIFY)
     public Mono<Void> userAuthNotify(HttpEntity<String> requestEntity) {
-        logger.debug("Request from cm: {}", keyValue("users auth notify request:", requestEntity.getBody()));
+        logger.info("Request from cm: users auth notify");
         return ReactiveSecurityContextHolder.getContext()
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
-                .flatMap(clientId -> userAuthNotifyRequestOrchestrator
+                .flatMap(clientId -> authNotifyRequestOrchestrator
                         .handleThis(requestEntity, getTargetService(requestEntity), X_CM_ID, clientId)
                         .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_NOTIFY)));
     }
@@ -96,7 +96,8 @@ public class UserAuthenticationController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_USERS_AUTH_ON_NOTIFY)
     public Mono<Void> authOnNotify(HttpEntity<String> requestEntity) {
-        return userAuthNotifyResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
+        logger.info("Request from cm: users auth on-notify");
+        return authNotifyResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
                 .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_ON_NOTIFY));
     }
 }

@@ -25,12 +25,12 @@ public class AuthNotifyServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, serviceType)
-                .map(host -> host + Constants.PATH_USERS_AUTH_ON_NOTIFY);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_USERS_AUTH_ON_NOTIFY);
     }
 
     @Override
     protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_USERS_AUTH_NOTIFY);
+        return bridgeRegistry.getHostFor(clientId, serviceType)
+                .map(host -> host + Constants.PATH_USERS_AUTH_NOTIFY);
     }
 }

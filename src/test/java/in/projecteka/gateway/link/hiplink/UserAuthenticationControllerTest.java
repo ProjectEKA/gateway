@@ -1,6 +1,7 @@
 package in.projecteka.gateway.link.hiplink;
 
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.AuthNotifyServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
@@ -17,6 +18,9 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
@@ -44,6 +48,14 @@ public class UserAuthenticationControllerTest {
     @Qualifier("userAuthenticationResponseOrchestrator")
     @MockBean
     ResponseOrchestrator userAuthenticationResponseOrchestrator;
+
+    @Qualifier("authNotifyRequestOrchestrator")
+    @MockBean
+    RequestOrchestrator<AuthNotifyServiceClient> authNotifyRequestOrchestrator;
+
+    @Qualifier("authNotifyResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator authNotifyResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -99,7 +111,7 @@ public class UserAuthenticationControllerTest {
         var clientId = string();
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
-        when(userAuthenticationRequestOrchestrator
+        when(authNotifyRequestOrchestrator
                 .handleThis(any(), eq(X_HIP_ID), eq(X_CM_ID), eq(clientId)))
                 .thenReturn(empty());
 
@@ -109,6 +121,24 @@ public class UserAuthenticationControllerTest {
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .header(X_HIP_ID, "hip-id")
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    public void shouldFireAndForgetForAuthOnNotify() {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
+        when(authNotifyResponseOrchestrator.processResponse(any(), eq(X_CM_ID)))
+                .thenReturn(Mono.empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_USERS_AUTH_ON_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()

@@ -68,6 +68,7 @@ import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_WELL_KNOWN_OPENID_CONFIGURATION;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_CONFIRM;
 import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
@@ -104,7 +105,8 @@ public class SecurityConfiguration {
 
     protected static final String[] HIU_HIP_APIS = new String[]{
             PATH_HEALTH_INFORMATION_NOTIFY,
-            PATH_FETCH_AUTH_MODES
+            PATH_FETCH_AUTH_MODES,
+            PATH_USERS_AUTH_ON_NOTIFY
     };
 
     protected static final String[] CM_APIS = new String[]{
