@@ -76,6 +76,7 @@ public class Constants {
     public static final String PATH_HIU_SUBSCRIPTION_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/notify";
     public static final String PATH_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/on-notify";
     public static final String ROUTE_PATH_CM_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/on-notify";
+    public static final String HI_SERVICES_SERVICE_ID = CURRENT_VERSION + "/hi-services/{service-id}";
 
     //API to be called on HIP/HIU bridge
     public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";

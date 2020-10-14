@@ -1,8 +1,10 @@
 package in.projecteka.gateway.registry;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.common.AdminAuthenticator;
+import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,11 +20,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static in.projecteka.gateway.common.Constants.HI_SERVICES_SERVICE_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Role.ADMIN;
+import static in.projecteka.gateway.common.TestBuilders.OBJECT_MAPPER;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.serviceProfileResponse;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.Mockito.when;
@@ -45,6 +50,9 @@ class RegistryControllerTest {
 
     @MockBean
     RegistryService registryService;
+
+    @MockBean
+    Authenticator authenticator;
 
     @Test
     void shouldPopulateBridgeEntryAndCreateClient() {
@@ -85,5 +93,27 @@ class RegistryControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk();
+    }
+
+    @Test
+    void shouldGetServiceProfileForGivenServiceId() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        var serviceId = string();
+        var caller = caller().clientId(clientId).build();
+        var serviceProfileResponse = serviceProfileResponse().build();
+        var serviceProfileJson = OBJECT_MAPPER.writeValueAsString(serviceProfileResponse);
+        when(authenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.serviceProfile(serviceId)).thenReturn(Mono.just(serviceProfileResponse));
+
+        webTestClient
+                .get()
+                .uri(HI_SERVICES_SERVICE_ID, serviceId)
+                .header(AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json(serviceProfileJson);
     }
 }
