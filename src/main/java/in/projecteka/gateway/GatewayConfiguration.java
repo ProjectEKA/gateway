@@ -21,12 +21,14 @@ import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
 import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
+import in.projecteka.gateway.clients.HiuSubscriptionNotifyServiceClient;
 import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
+import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
 import in.projecteka.gateway.common.DefaultValidatedResponseAction;
@@ -616,6 +618,49 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    public SubscriptionRequestServiceClient subscriptionRequestServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new SubscriptionRequestServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("subscriptionRequestAction")
+    public DefaultValidatedRequestAction<SubscriptionRequestServiceClient> subscriptionRequestAction(
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient) {
+        return new DefaultValidatedRequestAction<>(subscriptionRequestServiceClient);
+    }
+
+    @Bean("subscriptionRequestOrchestrator")
+    public RequestOrchestrator<SubscriptionRequestServiceClient> subscriptionRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient,
+            DefaultValidatedRequestAction<SubscriptionRequestServiceClient> subscriptionRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                subscriptionRequestServiceClient,
+                subscriptionRequestAction);
+    }
+
+    @Bean("subscriptionResponseAction")
+    public DefaultValidatedResponseAction<SubscriptionRequestServiceClient> subscriptionResponseAction(
+            SubscriptionRequestServiceClient subscriptionRequestServiceClient) {
+        return new DefaultValidatedResponseAction<>(subscriptionRequestServiceClient);
+    }
+
+    @Bean("subscriptionResponseOrchestrator")
+    public ResponseOrchestrator subscriptionResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<SubscriptionRequestServiceClient> subscriptionResponseAction) {
+        return new ResponseOrchestrator(validator, subscriptionResponseAction);
+    }
+
+    @Bean
     public PatientSearchServiceClient patientSearchServiceClient(
             ServiceOptions serviceOptions,
             @Qualifier("customBuilder") WebClient.Builder builder,
@@ -1185,5 +1230,49 @@ public class GatewayConfiguration {
             }
             return chain.filter(exchange);
         };
+    }
+
+
+    @Bean
+    public HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            IdentityService identityService,
+            CMRegistry cmRegistry,
+            BridgeRegistry bridgeRegistry) {
+        return new HiuSubscriptionNotifyServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hiuSubscriptionNotifyResponseAction")
+    public DefaultValidatedResponseAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyResponseAction(
+            HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(hiuSubscriptionNotifyServiceClient);
+    }
+
+    @Bean("hiuSubscriptionNotifyResponseOrchestrator")
+    public ResponseOrchestrator hiuSubscriptionNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, hiuSubscriptionNotifyResponseAction);
+    }
+
+    @Bean("hiuSubscriptionNotifyRequestAction")
+    public DefaultValidatedRequestAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestAction(
+            HiuSubscriptionNotifyServiceClient hiuSubscriptionNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(hiuSubscriptionNotifyServiceClient);
+    }
+
+    @Bean("hiuSubscriptionNotifyRequestOrchestrator")
+    public RequestOrchestrator<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            HiuSubscriptionNotifyServiceClient hiuConsentNotifyServiceClient,
+            DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuSubscriptionNotifyRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                hiuConsentNotifyServiceClient,
+                hiuSubscriptionNotifyRequestAction);
     }
 }

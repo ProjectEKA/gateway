@@ -7,6 +7,8 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.ServiceProfile;
+import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import org.jeasy.random.EasyRandom;
 
 public class TestBuilders {
@@ -42,5 +44,13 @@ public class TestBuilders {
 
     public static BridgeService.BridgeServiceBuilder bridgeService() {
         return easyRandom.nextObject(BridgeService.BridgeServiceBuilder.class);
+    }
+
+    public static ServiceProfileResponse.ServiceProfileResponseBuilder serviceProfileResponse() {
+        return easyRandom.nextObject(ServiceProfileResponse.ServiceProfileResponseBuilder .class);
+    }
+
+    public static ServiceProfile.ServiceProfileBuilder serviceProfile() {
+        return easyRandom.nextObject(ServiceProfile.ServiceProfileBuilder .class);
     }
 }

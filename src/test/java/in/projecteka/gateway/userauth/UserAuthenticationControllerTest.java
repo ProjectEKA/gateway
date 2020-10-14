@@ -1,4 +1,4 @@
-package in.projecteka.gateway.link.hiplink;
+package in.projecteka.gateway.userauth;
 
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.AuthNotifyServiceClient;

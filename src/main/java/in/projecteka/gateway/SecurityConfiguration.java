@@ -52,6 +52,8 @@ import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
+import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_ON_CONFIRM;
@@ -65,6 +67,8 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
@@ -86,10 +90,12 @@ public class SecurityConfiguration {
 
     protected static final String[] HIU_APIS = new String[]{
             PATH_CONSENT_REQUESTS_INIT,
+            PATH_SUBSCRIPTION_REQUESTS_INIT,
             PATH_CONSENTS_FETCH,
             PATH_PATIENTS_FIND,
             PATH_HEALTH_INFORMATION_CM_REQUEST,
-            PATH_CONSENT_REQUEST_STATUS
+            PATH_CONSENT_REQUEST_STATUS,
+            PATH_HIU_SUBSCRIPTION_ON_NOTIFY
     };
     protected static final String[] HIP_APIS = new String[]{
             PATH_CARE_CONTEXTS_ON_DISCOVER,
@@ -117,6 +123,7 @@ public class SecurityConfiguration {
             PATH_CONSENTS_HIP_NOTIFY,
             PATH_CONSENTS_HIU_NOTIFY,
             PATH_CONSENT_REQUESTS_ON_INIT,
+            PATH_SUBSCRIPTION_REQUESTS_ON_INIT,
             PATH_PATIENTS_ON_FIND,
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST,
@@ -127,6 +134,7 @@ public class SecurityConfiguration {
             PATH_CONSENT_REQUEST_ON_STATUS,
             PATH_PATIENT_SHARE,
             PATH_ON_FETCH_AUTH_MODES,
+            PATH_HIU_SUBSCRIPTION_NOTIFY
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
@@ -150,7 +158,7 @@ public class SecurityConfiguration {
             ServerHttpSecurity httpSecurity,
             ReactiveAuthenticationManager authenticationManager,
             ServerSecurityContextRepository securityContextRepository) {
-        return httpSecurity
+        httpSecurity
                 .httpBasic().disable()
                 .formLogin().disable()
                 .csrf().disable()
@@ -164,7 +172,9 @@ public class SecurityConfiguration {
                 .pathMatchers(HIU_HIP_APIS).hasAnyRole(HIU.name(), HIP.name())
                 .pathMatchers(HIP_APIS).hasAnyRole(HIP.name())
                 .pathMatchers(HIU_APIS).hasAnyRole(HIU.name())
-                .and()
+                .pathMatchers("/**")
+                .authenticated();
+        return httpSecurity
                 .authenticationManager(authenticationManager)
                 .securityContextRepository(securityContextRepository)
                 .build();
