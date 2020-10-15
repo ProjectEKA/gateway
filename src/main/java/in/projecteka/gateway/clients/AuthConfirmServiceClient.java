@@ -29,14 +29,14 @@ public class AuthConfirmServiceClient extends ServiceClient {
     }
 
     @Override
-    protected Mono<String> getResponseUrl(String clientId) {
+    protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
         return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
                 .switchIfEmpty(this.getHIUHost(clientId))
                 .map(host -> host + Constants.USERS_AUTH_ON_CONFIRM);
     }
 
     @Override
-    protected Mono<String> getRequestUrl(String clientId) {
+    protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
         return cmRegistry.getHostFor(clientId).map(host -> host + Constants.USERS_AUTH_CONFIRM);
     }
 }

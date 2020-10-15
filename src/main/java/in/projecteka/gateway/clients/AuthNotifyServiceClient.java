@@ -9,17 +9,15 @@ import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.ServiceType.HIU;
-
-public class PatientSearchServiceClient extends ServiceClient {
+public class AuthNotifyServiceClient extends ServiceClient {
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
 
-    public PatientSearchServiceClient(ServiceOptions serviceOptions,
-                                      WebClient.Builder webClientBuilder,
-                                      IdentityService identityService,
-                                      BridgeRegistry bridgeRegistry,
-                                      CMRegistry cmRegistry) {
+    public AuthNotifyServiceClient(ServiceOptions serviceOptions,
+                                    WebClient.Builder webClientBuilder,
+                                    IdentityService identityService,
+                                    CMRegistry cmRegistry,
+                                   BridgeRegistry bridgeRegistry) {
         super(serviceOptions, webClientBuilder, identityService);
         this.bridgeRegistry = bridgeRegistry;
         this.cmRegistry = cmRegistry;
@@ -27,11 +25,12 @@ public class PatientSearchServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_PATIENTS_ON_FIND);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_USERS_AUTH_ON_NOTIFY);
     }
 
     @Override
     protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_PATIENTS_FIND);
+        return bridgeRegistry.getHostFor(clientId, serviceType)
+                .map(host -> host + Constants.PATH_USERS_AUTH_NOTIFY);
     }
 }

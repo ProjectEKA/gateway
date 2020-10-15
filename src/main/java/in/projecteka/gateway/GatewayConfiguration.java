@@ -9,6 +9,7 @@ import com.google.common.cache.LoadingCache;
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
 import in.projecteka.gateway.clients.AuthModeFetchClient;
+import in.projecteka.gateway.clients.AuthNotifyServiceClient;
 import in.projecteka.gateway.clients.ConsentFetchServiceClient;
 import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.ConsentStatusServiceClient;
@@ -1161,6 +1162,48 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<AuthModeFetchClient> authModeFetchResponseAction) {
         return new ResponseOrchestrator(validator, authModeFetchResponseAction);
+    }
+
+    @Bean("authNotifyServiceClient")
+    public AuthNotifyServiceClient authNotifyServiceClient(ServiceOptions serviceOptions,
+                                                           @Qualifier("customBuilder") WebClient.Builder builder,
+                                                           CMRegistry cmRegistry,
+                                                           IdentityService identityService,
+                                                           BridgeRegistry bridgeRegistry) {
+        return new AuthNotifyServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("authNotifyRequestAction")
+    public DefaultValidatedRequestAction<AuthNotifyServiceClient> authNotifyRequestAction(
+            AuthNotifyServiceClient authNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(authNotifyServiceClient);
+    }
+
+    @Bean("authNotifyRequestOrchestrator")
+    public RequestOrchestrator<AuthNotifyServiceClient> authNotifyHelper(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            AuthNotifyServiceClient authNotifyServiceClient,
+            DefaultValidatedRequestAction<AuthNotifyServiceClient> authNotifyRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                authNotifyServiceClient,
+                authNotifyRequestAction);
+    }
+
+    @Bean("authNotifyResponseAction")
+    public DefaultValidatedResponseAction<AuthNotifyServiceClient> authNotifyResponseAction(
+            AuthNotifyServiceClient authNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(authNotifyServiceClient);
+    }
+
+    @Bean("authNotifyResponseOrchestrator")
+    public ResponseOrchestrator authNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<AuthNotifyServiceClient> authNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, authNotifyResponseAction);
     }
 
     @Bean

@@ -1,5 +1,6 @@
 package in.projecteka.gateway.userauth;
 
+import in.projecteka.gateway.clients.AuthNotifyServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
@@ -18,8 +19,11 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 import static in.projecteka.gateway.common.Constants.API_CALLED;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -32,6 +36,9 @@ public class UserAuthenticationController {
     private static final Logger logger = LoggerFactory.getLogger(UserAuthenticationController.class);
     RequestOrchestrator<UserAuthenticatorClient> userAuthenticationRequestOrchestrator;
     ResponseOrchestrator userAuthenticationResponseOrchestrator;
+    RequestOrchestrator<AuthNotifyServiceClient> authNotifyRequestOrchestrator;
+    ResponseOrchestrator authNotifyResponseOrchestrator;
+
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_USERS_AUTH_INIT)
@@ -68,5 +75,29 @@ public class UserAuthenticationController {
         else
             return userAuthenticationResponseOrchestrator.processResponse(requestEntity, X_HIP_ID)
                     .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_ON_INIT));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(PATH_USERS_AUTH_NOTIFY)
+    public Mono<Void> userAuthNotify(HttpEntity<String> requestEntity) {
+        logger.info("Request from cm: users auth notify");
+        return ReactiveSecurityContextHolder.getContext()
+                .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
+                .map(Caller::getClientId)
+                .flatMap(clientId -> authNotifyRequestOrchestrator
+                        .handleThis(requestEntity, getTargetService(requestEntity), X_CM_ID, clientId)
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_NOTIFY)));
+    }
+
+    private String getTargetService(HttpEntity<String> requestEntity) {
+        return requestEntity.getHeaders().containsKey(X_HIP_ID) ? X_HIP_ID : X_HIU_ID;
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(PATH_USERS_AUTH_ON_NOTIFY)
+    public Mono<Void> authOnNotify(HttpEntity<String> requestEntity) {
+        logger.info("Request from cm: users auth on-notify");
+        return authNotifyResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
+                .subscriberContext(context -> context.put(API_CALLED, PATH_USERS_AUTH_ON_NOTIFY));
     }
 }
