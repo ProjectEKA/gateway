@@ -27,11 +27,11 @@ public class HipConsentNotifyServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_CONSENTS_HIP_ON_NOTIFY);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_HIU_SUBSCRIPTION_ON_NOTIFY);
     }
 
     @Override
     protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + Constants.PATH_CONSENTS_HIP_NOTIFY);
+        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + Constants.PATH_HIU_SUBSCRIPTION_NOTIFY);
     }
 }
