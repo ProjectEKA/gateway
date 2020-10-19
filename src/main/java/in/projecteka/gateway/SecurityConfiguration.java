@@ -40,6 +40,7 @@ import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_ON_FETCH;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENT_REQUESTS_ON_INIT;
@@ -112,6 +113,7 @@ public class SecurityConfiguration {
     protected static final String[] HIU_HIP_APIS = new String[]{
             PATH_HEALTH_INFORMATION_NOTIFY,
             PATH_FETCH_AUTH_MODES,
+            PATH_CONSENTS_HIU_ON_NOTIFY,
             PATH_USERS_AUTH_ON_NOTIFY
     };
 

@@ -1,8 +1,8 @@
 package in.projecteka.gateway.consent;
 
-import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
+import in.projecteka.gateway.common.Caller;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
 import lombok.AllArgsConstructor;
@@ -14,13 +14,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
+import static in.projecteka.gateway.common.Constants.API_CALLED;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIP_ON_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_CONSENTS_HIU_ON_NOTIFY;
+import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
-import static in.projecteka.gateway.common.Constants.X_CM_ID;
-import static in.projecteka.gateway.common.Constants.API_CALLED;
 
 @RestController
 @AllArgsConstructor
@@ -28,6 +29,7 @@ public class ConsentArtefactController {
     RequestOrchestrator<HipConsentNotifyServiceClient> hipConsentNotifyRequestOrchestrator;
     RequestOrchestrator<HiuConsentNotifyServiceClient> hiuConsentNotifyRequestOrchestrator;
     ResponseOrchestrator hipConsentNotifyResponseOrchestrator;
+    ResponseOrchestrator hiuConsentNotifyResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
     @PostMapping(PATH_CONSENTS_HIP_NOTIFY)
@@ -56,5 +58,12 @@ public class ConsentArtefactController {
                 .flatMap(clientId -> hiuConsentNotifyRequestOrchestrator
                         .handleThis(requestEntity, X_HIU_ID, X_CM_ID, clientId))
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_HIU_NOTIFY));
+    }
+
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @PostMapping(PATH_CONSENTS_HIU_ON_NOTIFY)
+    public Mono<Void> consentOnNotifyToHIU(HttpEntity<String> requestEntity) {
+        return hiuConsentNotifyResponseOrchestrator.processResponse(requestEntity, X_CM_ID)
+                .subscriberContext(context -> context.put(API_CALLED, PATH_CONSENTS_HIU_ON_NOTIFY));
     }
 }
