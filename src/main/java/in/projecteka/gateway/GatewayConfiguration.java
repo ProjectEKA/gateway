@@ -28,6 +28,7 @@ import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
+import in.projecteka.gateway.clients.SubscriptionRequestNotifyServiceClient;
 import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
 import in.projecteka.gateway.clients.UserAuthenticatorClient;
 import in.projecteka.gateway.common.DefaultValidatedRequestAction;
@@ -661,6 +662,49 @@ public class GatewayConfiguration {
     }
 
     @Bean
+    public SubscriptionRequestNotifyServiceClient subscriptionRequestNotifyServiceClient(
+            ServiceOptions serviceOptions,
+            @Qualifier("customBuilder") WebClient.Builder builder,
+            BridgeRegistry bridgeRegistry,
+            IdentityService identityService,
+            CMRegistry cmRegistry) {
+        return new SubscriptionRequestNotifyServiceClient(serviceOptions, builder, identityService, bridgeRegistry, cmRegistry);
+    }
+
+    @Bean("subscriptionRequestNotifyAction")
+    public DefaultValidatedRequestAction<SubscriptionRequestNotifyServiceClient> subscriptionRequestNotifyAction(
+            SubscriptionRequestNotifyServiceClient subscriptionRequestNotifyServiceClient) {
+        return new DefaultValidatedRequestAction<>(subscriptionRequestNotifyServiceClient);
+    }
+
+    @Bean("subscriptionRequestNotifyOrchestrator")
+    public RequestOrchestrator<SubscriptionRequestNotifyServiceClient> subscriptionRequestNotifyOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            SubscriptionRequestNotifyServiceClient subscriptionRequestNotifyServiceClient,
+            DefaultValidatedRequestAction<SubscriptionRequestNotifyServiceClient> subscriptionRequestNotifyAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                subscriptionRequestNotifyServiceClient,
+                subscriptionRequestNotifyAction);
+    }
+
+    @Bean("subscriptionRequestNotifyResponseAction")
+    public DefaultValidatedResponseAction<SubscriptionRequestNotifyServiceClient> subscriptionRequestNotifyResponseAction(
+            SubscriptionRequestNotifyServiceClient subscriptionRequestNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(subscriptionRequestNotifyServiceClient);
+    }
+
+    @Bean("subscriptionRequestNotifyResponseOrchestrator")
+    public ResponseOrchestrator subscriptionRequestNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<SubscriptionRequestNotifyServiceClient> subscriptionRequestNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, subscriptionRequestNotifyResponseAction);
+    }
+
+    @Bean
     public PatientSearchServiceClient patientSearchServiceClient(
             ServiceOptions serviceOptions,
             @Qualifier("customBuilder") WebClient.Builder builder,
@@ -1268,7 +1312,7 @@ public class GatewayConfiguration {
             RedundantRequestValidator redundantRequestValidator,
             Validator validator,
             HiuSubscriptionNotifyServiceClient hiuConsentNotifyServiceClient,
-            DefaultValidatedRequestAction<HiuConsentNotifyServiceClient> hiuSubscriptionNotifyRequestAction) {
+            DefaultValidatedRequestAction<HiuSubscriptionNotifyServiceClient> hiuSubscriptionNotifyRequestAction) {
         return new RequestOrchestrator<>(requestIdMappings,
                 redundantRequestValidator,
                 validator,

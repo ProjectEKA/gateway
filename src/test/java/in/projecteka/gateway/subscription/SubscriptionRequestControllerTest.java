@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.SubscriptionRequestNotifyServiceClient;
 import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,13 +52,20 @@ import static reactor.core.publisher.Mono.just;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
-class SubscriptionControllerTest {
+class SubscriptionRequestControllerTest {
     @MockBean
     RequestOrchestrator<SubscriptionRequestServiceClient> requestOrchestrator;
 
     @Qualifier("subscriptionResponseOrchestrator")
     @MockBean
     ResponseOrchestrator subscriptionResponseOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<SubscriptionRequestNotifyServiceClient> notifyRequestOrchestrator;
+
+    @Qualifier("subscriptionRequestNotifyResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator subscriptionNotifyResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -66,10 +75,6 @@ class SubscriptionControllerTest {
 
     @MockBean
     Validator subscriptionRequestValidator;
-
-    @MockBean
-    @Qualifier("subscriptionResponseAction")
-    ValidatedResponseAction validatedResponseAction;
 
     @MockBean
     Authenticator authenticator;
@@ -106,6 +111,44 @@ class SubscriptionControllerTest {
                 .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldRouteNotifySubscriptionToHIU() {
+        var token = string();
+        var clientId = string();
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(CM)).build()));
+        when(notifyRequestOrchestrator
+                .handleThis(any(), eq(X_HIU_ID), eq(X_CM_ID), eq(clientId)))
+                .thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldRouteOnNotifySubscriptionToHIU() {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIU)).build()));
+        when(subscriptionNotifyResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(Mono.empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
                 .bodyValue("{}")
                 .exchange()
                 .expectStatus()
