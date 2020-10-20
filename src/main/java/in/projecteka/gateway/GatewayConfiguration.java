@@ -918,11 +918,24 @@ public class GatewayConfiguration {
         return new DefaultValidatedResponseAction<>(hipConsentNotifyServiceClient);
     }
 
+    @Bean("hiuConsentNotifyResponseAction")
+    public DefaultValidatedResponseAction<HiuConsentNotifyServiceClient> hiuConsentNotifyResponseAction(
+            HiuConsentNotifyServiceClient hiuConsentNotifyServiceClient) {
+        return new DefaultValidatedResponseAction<>(hiuConsentNotifyServiceClient);
+    }
+
     @Bean("hipConsentNotifyResponseOrchestrator")
     public ResponseOrchestrator hipConsentNotifyResponseOrchestrator(
             Validator validator,
             DefaultValidatedResponseAction<HipConsentNotifyServiceClient> hipConsentNotifyResponseAction) {
         return new ResponseOrchestrator(validator, hipConsentNotifyResponseAction);
+    }
+
+    @Bean("hiuConsentNotifyResponseOrchestrator")
+    public ResponseOrchestrator hiuConsentNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HiuConsentNotifyServiceClient> hiuConsentNotifyResponseAction) {
+        return new ResponseOrchestrator(validator, hiuConsentNotifyResponseAction);
     }
 
     @Bean

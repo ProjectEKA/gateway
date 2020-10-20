@@ -27,6 +27,7 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
+import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +51,10 @@ public class ConsentArtefactControllerTest {
     @Qualifier("hipConsentNotifyResponseOrchestrator")
     @MockBean
     ResponseOrchestrator hipConsentNotifyResponseOrchestrator;
+
+    @Qualifier("hiuConsentNotifyResponseOrchestrator")
+    @MockBean
+    ResponseOrchestrator hiuConsentNotifyResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -104,7 +109,7 @@ public class ConsentArtefactControllerTest {
     }
 
     @Test
-    void shouldFireAndForgetForOnDiscover() {
+    void shouldFireAndForgetForHIPOnConsentNotify() {
         var token = string();
 
         when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIP)).build()));
@@ -113,6 +118,24 @@ public class ConsentArtefactControllerTest {
         webTestClient
                 .post()
                 .uri(Constants.PATH_CONSENTS_HIP_ON_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForHIUOnConsentNotify() {
+        var token = string();
+
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(HIU)).build()));
+        when(hiuConsentNotifyResponseOrchestrator.processResponse(any(), eq(X_CM_ID))).thenReturn(empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_CONSENTS_HIU_ON_NOTIFY)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .bodyValue("{}")
