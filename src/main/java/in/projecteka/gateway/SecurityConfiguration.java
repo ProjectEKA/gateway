@@ -99,6 +99,7 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_CM_REQUEST,
             PATH_CONSENT_REQUEST_STATUS,
             PATH_HIU_SUBSCRIPTION_ON_NOTIFY,
+            PATH_CONSENTS_HIU_ON_NOTIFY,
             PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY
     };
     protected static final String[] HIP_APIS = new String[]{
@@ -116,7 +117,6 @@ public class SecurityConfiguration {
     protected static final String[] HIU_HIP_APIS = new String[]{
             PATH_HEALTH_INFORMATION_NOTIFY,
             PATH_FETCH_AUTH_MODES,
-            PATH_CONSENTS_HIU_ON_NOTIFY,
             PATH_USERS_AUTH_ON_NOTIFY
     };
 
