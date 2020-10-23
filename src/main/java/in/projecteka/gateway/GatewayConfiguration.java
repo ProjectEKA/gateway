@@ -1048,9 +1048,8 @@ public class GatewayConfiguration {
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
-                                           AdminServiceClient adminServiceClient,
-                                           @Value("${gateway.deploy-enabled}") boolean deployEnabled) {
-        return new RegistryService(deployEnabled, registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
+                                           AdminServiceClient adminServiceClient) {
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
     }
 
     @Bean("userAuthenticatorClient")

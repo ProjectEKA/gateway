@@ -34,7 +34,6 @@ gateway:
       user: ${REPLICA_POSTGRES_USER}
       password: ${REPLICA_POSTGRES_PASSWORD}
       poolSize: ${REPLICA_POOL_SIZE:3}
-  deploy-enabled: ${DEPLOY_ENABLED:false}
 spring:
   rabbitmq:
     host: ${RABBITMQ_HOST}
