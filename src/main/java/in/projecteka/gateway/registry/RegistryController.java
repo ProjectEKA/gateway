@@ -17,8 +17,8 @@ import reactor.core.publisher.Mono;
 import javax.validation.Valid;
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.APP_PATH_HI_SERVICES;
-import static in.projecteka.gateway.common.Constants.HI_SERVICES_SERVICE_ID;
+import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICES;
+import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICE_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
@@ -46,12 +46,12 @@ public class RegistryController {
         return registryService.populateBridgeServicesEntries(bridgeId, bridgeServicesRequest);
     }
 
-    @GetMapping(HI_SERVICES_SERVICE_ID)
+    @GetMapping(GW_PATH_HI_SERVICE_BY_ID)
     public Mono<ServiceProfileResponse> serviceProfile(@PathVariable("service-id") String serviceId) {
         return registryService.serviceProfile(serviceId);
     }
 
-    @GetMapping(APP_PATH_HI_SERVICES)
+    @GetMapping(GW_PATH_HI_SERVICES)
     public Mono<List<ServiceProfileResponse>> serviceProfilesForType(@RequestParam(defaultValue = UNSPECIFIED_SERVICE_TYPE) String type) {
         return registryService.servicesOfType(type);
     }

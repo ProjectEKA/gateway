@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static in.projecteka.gateway.common.Constants.HI_SERVICES_SERVICE_ID;
+import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICE_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Role.ADMIN;
@@ -108,7 +108,7 @@ class RegistryControllerTest {
 
         webTestClient
                 .get()
-                .uri(HI_SERVICES_SERVICE_ID, serviceId)
+                .uri(GW_PATH_HI_SERVICE_BY_ID, serviceId)
                 .header(AUTHORIZATION, token)
                 .exchange()
                 .expectStatus()
