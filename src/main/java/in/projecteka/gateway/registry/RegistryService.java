@@ -203,5 +203,9 @@ public class RegistryService {
                 })
                 .switchIfEmpty(Mono.error(ClientError.notFound("Service Id not found")));
     }
+
+    public Mono<List<ServiceProfileResponse>> servicesOfType(String serviceType) {
+        return registryRepository.fetchServicesOfType(serviceType);
+    }
 }
 
