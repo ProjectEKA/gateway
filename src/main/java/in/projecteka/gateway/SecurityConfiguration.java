@@ -68,9 +68,9 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_READINESS;
 import static in.projecteka.gateway.common.Constants.PATH_SERVICE_URLS;
 import static in.projecteka.gateway.common.Constants.PATH_SESSIONS;
-import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW;
 import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW;
 import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_INIT;
 import static in.projecteka.gateway.common.Constants.PATH_USERS_AUTH_NOTIFY;
@@ -93,7 +93,7 @@ public class SecurityConfiguration {
 
     protected static final String[] HIU_APIS = new String[]{
             PATH_CONSENT_REQUESTS_INIT,
-            PATH_SUBSCRIPTION_REQUESTS_INIT,
+            PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW,
             PATH_CONSENTS_FETCH,
             PATH_PATIENTS_FIND,
             PATH_HEALTH_INFORMATION_CM_REQUEST,
@@ -128,7 +128,7 @@ public class SecurityConfiguration {
             PATH_CONSENTS_HIP_NOTIFY,
             PATH_CONSENTS_HIU_NOTIFY,
             PATH_CONSENT_REQUESTS_ON_INIT,
-            PATH_SUBSCRIPTION_REQUESTS_ON_INIT,
+            PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW,
             PATH_PATIENTS_ON_FIND,
             PATH_HEALTH_INFORMATION_HIP_REQUEST,
             PATH_HEALTH_INFORMATION_CM_ON_REQUEST,

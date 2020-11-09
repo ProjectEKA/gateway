@@ -1,8 +1,5 @@
-package in.projecteka.gateway.subscription;
+package in.projecteka.gateway.subscriptions;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.jwk.JWKSet;
 import in.projecteka.gateway.clients.SubscriptionRequestNotifyServiceClient;
 import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
@@ -10,37 +7,27 @@ import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
 import in.projecteka.gateway.common.RequestOrchestrator;
 import in.projecteka.gateway.common.ResponseOrchestrator;
-import in.projecteka.gateway.common.ValidatedResponse;
-import in.projecteka.gateway.common.ValidatedResponseAction;
 import in.projecteka.gateway.common.Validator;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.BRIDGE_ID_PREFIX;
-import static in.projecteka.gateway.common.Constants.REQUEST_ID;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIU;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
-import static in.projecteka.gateway.testcommon.TestEssentials.OBJECT_MAPPER;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -91,7 +78,7 @@ class SubscriptionRequestControllerTest {
 
         webTestClient
                 .post()
-                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_INIT)
+                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")
@@ -108,7 +95,7 @@ class SubscriptionRequestControllerTest {
 
         webTestClient
                 .post()
-                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT)
+                .uri(Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW)
                 .header(AUTHORIZATION, token)
                 .contentType(APPLICATION_JSON)
                 .bodyValue("{}")

@@ -73,8 +73,10 @@ public class Constants {
     public static final String PATH_PATIENT_ON_SHARE = CURRENT_VERSION + "/patients/profile/on-share";
     public static final String PATH_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/fetch-modes";
     public static final String PATH_READINESS = CURRENT_VERSION + "/readiness";
-    public static final String PATH_SUBSCRIPTION_REQUESTS_INIT = CURRENT_VERSION + "/subscription-requests/cm/init";
-    public static final String PATH_SUBSCRIPTION_REQUESTS_ON_INIT = CURRENT_VERSION + "/subscription-requests/cm/on-init";
+    public static final String PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW = CURRENT_VERSION + "/subscription-requests/cm/init";
+    public static final String PATH_SUBSCRIPTION_REQUESTS_INIT_ON_CM = CURRENT_VERSION + "/subscription-requests/hiu/init";
+    public static final String PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW = CURRENT_VERSION + "/subscription-requests/cm/on-init";
+    public static final String PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_HIU = CURRENT_VERSION + "/subscription-requests/hiu/on-init";
     public static final String PATH_SUBSCRIPTION_REQUESTS_NOTIFY = CURRENT_VERSION + "/subscription-requests/hiu/notify";
     public static final String PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY = CURRENT_VERSION + "/subscription-requests/hiu/on-notify";
     public static final String PATH_HIU_SUBSCRIPTION_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/notify";

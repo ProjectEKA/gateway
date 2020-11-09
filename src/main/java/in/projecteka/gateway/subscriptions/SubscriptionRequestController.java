@@ -1,4 +1,4 @@
-package in.projecteka.gateway.subscription;
+package in.projecteka.gateway.subscriptions;
 
 import in.projecteka.gateway.clients.SubscriptionRequestNotifyServiceClient;
 import in.projecteka.gateway.clients.SubscriptionRequestServiceClient;
@@ -19,9 +19,9 @@ import reactor.core.publisher.Mono;
 import static in.projecteka.gateway.common.Constants.API_CALLED;
 import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_ON_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW;
 import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_NOTIFY;
-import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT;
+import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW;
 import static in.projecteka.gateway.common.Constants.PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
@@ -38,7 +38,7 @@ public class SubscriptionRequestController {
     ResponseOrchestrator subscriptionRequestNotifyResponseOrchestrator;
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(PATH_SUBSCRIPTION_REQUESTS_INIT)
+    @PostMapping(PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW)
     public Mono<Void> createSubscriptionRequest(HttpEntity<String> requestEntity) {
         logger.debug("Request from hiu: {}", keyValue("Subscription Init", requestEntity.getBody()));
         return ReactiveSecurityContextHolder.getContext()
@@ -46,15 +46,15 @@ public class SubscriptionRequestController {
                 .map(Caller::getClientId)
                 .flatMap(clientId -> subscriptionRequestOrchestrator
                         .handleThis(requestEntity, X_CM_ID, X_HIU_ID, bridgeId(clientId))
-                        .subscriberContext(context -> context.put(API_CALLED, PATH_SUBSCRIPTION_REQUESTS_INIT)));
+                        .subscriberContext(context -> context.put(API_CALLED, PATH_SUBSCRIPTION_REQUESTS_INIT_ON_GW)));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
-    @PostMapping(PATH_SUBSCRIPTION_REQUESTS_ON_INIT)
+    @PostMapping(PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW)
     public Mono<Void> onCreateSubscriptionRequest(HttpEntity<String> requestEntity) {
         logger.debug("Response from CM: {}", keyValue("Subscription On Init", requestEntity.getBody()));
         return subscriptionResponseOrchestrator.processResponse(requestEntity, X_HIU_ID)
-                .subscriberContext(context -> context.put(API_CALLED, PATH_SUBSCRIPTION_REQUESTS_ON_INIT));
+                .subscriberContext(context -> context.put(API_CALLED, PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_GW));
     }
 
     @ResponseStatus(HttpStatus.ACCEPTED)
