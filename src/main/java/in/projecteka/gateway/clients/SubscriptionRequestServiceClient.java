@@ -27,11 +27,11 @@ public class SubscriptionRequestServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
-        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_SUBSCRIPTION_REQUESTS_INIT);
+        return cmRegistry.getHostFor(clientId).map(host -> host + Constants.PATH_SUBSCRIPTION_REQUESTS_INIT_ON_CM);
     }
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT);
+        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_SUBSCRIPTION_REQUESTS_ON_INIT_ON_HIU);
     }
 }
