@@ -9,8 +9,6 @@ import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.ServiceType.HIU;
-
 public class PatientSearchServiceClient extends ServiceClient {
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
@@ -27,7 +25,7 @@ public class PatientSearchServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_PATIENTS_ON_FIND);
+        return bridgeRegistry.getHostFor(clientId, serviceType).map(host -> host + Constants.PATH_PATIENTS_ON_FIND);
     }
 
     @Override
