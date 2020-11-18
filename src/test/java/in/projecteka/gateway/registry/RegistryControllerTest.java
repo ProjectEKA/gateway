@@ -22,6 +22,7 @@ import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICE_BY_ID;
 import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Role.ADMIN;
@@ -141,4 +142,26 @@ class RegistryControllerTest {
                 .expectBody()
                 .json(bridgeProfileJson);
     }
+
+    @Test
+    void shouldPopulateBridgeServicesEntriesAndAddRolesforHFR() {
+        var token = string();
+        var clientId = string();
+        var bridgeId = string();
+        var bridgeServiceRequest = bridgeServiceRequest().build();
+        var caller = caller().clientId(clientId).roles(List.of(HFR)).build();
+        when(authenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.populateBridgeServicesEntries(bridgeId, List.of(bridgeServiceRequest))).thenReturn(Mono.empty());
+
+        webTestClient
+                .put()
+                .uri(HFR_BRIDGES_BRIDGE_ID_SERVICES, bridgeId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .body(Mono.just(List.of(bridgeServiceRequest)), BridgeServiceRequest.class)
+                .exchange()
+                .expectStatus()
+                .isOk();
+    }
+
 }
