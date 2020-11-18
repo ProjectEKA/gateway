@@ -32,6 +32,7 @@ import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeService;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.hfrBridgeResponse;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
 import static in.projecteka.gateway.registry.TestBuilders.serviceProfile;
@@ -426,5 +427,27 @@ class RegistryServiceTest {
                         ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND);
 
         verify(registryRepository).fetchServiceEntries(serviceId);
+    }
+
+    @Test
+    void shouldReturnBridgeProfileForValidBridgeId() {
+        var bridgeId = string();
+        var bridgeProfileResponse = hfrBridgeResponse().id(bridgeId).build();
+        when(registryRepository.bridgeProfile(bridgeId)).thenReturn(Mono.just(bridgeProfileResponse));
+
+        StepVerifier.create(registryService.bridgeProfile(bridgeId))
+                .expectNext(bridgeProfileResponse)
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldThrowNotFoundForInvalidBridgeId() {
+        var bridgeId = string();
+        when(registryRepository.bridgeProfile(bridgeId)).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.bridgeProfile(bridgeId))
+                .expectErrorMatches(throwable -> throwable instanceof ClientError
+                && ((ClientError) throwable).getHttpStatus()  == HttpStatus.NOT_FOUND)
+                .verify();
     }
 }

@@ -21,12 +21,15 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICE_BY_ID;
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Role.ADMIN;
+import static in.projecteka.gateway.common.Role.HFR;
 import static in.projecteka.gateway.common.TestBuilders.OBJECT_MAPPER;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.hfrBridgeResponse;
 import static in.projecteka.gateway.registry.TestBuilders.serviceProfileResponse;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -115,5 +118,27 @@ class RegistryControllerTest {
                 .isOk()
                 .expectBody()
                 .json(serviceProfileJson);
+    }
+
+    @Test
+    void shouldGetBridgeProfileForGivenBridgeId() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        var bridgeId = string();
+        var caller = caller().clientId(clientId).roles(List.of(HFR)).build();
+        var bridgeProfileResponse = hfrBridgeResponse().build();
+        var bridgeProfileJson = OBJECT_MAPPER.writeValueAsString(bridgeProfileResponse);
+        when(authenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.bridgeProfile(bridgeId)).thenReturn(Mono.just(bridgeProfileResponse));
+
+        webTestClient
+                .get()
+                .uri(HFR_BRIDGES_BRIDGE_ID, bridgeId)
+                .header(AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json(bridgeProfileJson);
     }
 }
