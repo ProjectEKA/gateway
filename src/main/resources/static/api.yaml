@@ -119,6 +119,58 @@ paths:
             application/xml:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /internal/bridges/{bridgeId}/services:
+    put:
+      tags:
+        - registration
+      summary: creation of bridge services entries in DB by admin
+      description: >
+        This API is meant for creating bridge services entries in database.
+      parameters:
+        - $ref: "#/components/parameters/authorization"
+        - $ref: "#/components/parameters/bridgeId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BridgeServiceRequest'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/BridgeServiceRequest'
+      responses:
+        '200':
+          description: Bridge Services entries created/updated successfully
+        '400':
+          description: >
+            Invalid request, required attributes not provided
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: >
+            **Causes:**
+              * Unauthorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: >
+            **Causes:**
+              * Downstream system(s) is down.
+              * Unhandled exceptions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /bridges/{bridgeId}/services:
       put:
         tags:
