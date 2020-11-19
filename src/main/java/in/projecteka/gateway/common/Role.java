@@ -8,13 +8,15 @@ public enum Role {
     HIU,
     CM,
     GATEWAY,
+    HFR,
     ADMIN;
 
     public static Optional<Role> valueOfIgnoreCase(String mayBeRole) {
         var hip = Map.of(HIP.name().toLowerCase(), HIP,
                 HIU.name().toLowerCase(), HIU,
                 CM.name().toLowerCase(), CM,
-                GATEWAY.name().toLowerCase(), GATEWAY);
+                GATEWAY.name().toLowerCase(), GATEWAY,
+                HFR.name().toLowerCase(), HFR);
         return mayBeRole == null
                 ? Optional.empty()
                 : Optional.ofNullable(hip.getOrDefault(mayBeRole.toLowerCase(), null));
