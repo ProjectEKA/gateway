@@ -9,6 +9,7 @@ servers:
 tags:
   - name: registration
   - name: session
+  - name: bridges
 paths:
   /internal/cm:
     put:
@@ -223,10 +224,10 @@ paths:
               application/xml:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
-  /bridge/{bridgeId}:
+  /bridges/{bridgeId}:
       get:
         tags:
-          - bridge
+          - bridges
         summary: Details of Bridge in gateway
         description: >
           This API is meant for giving bridge details by given id.
