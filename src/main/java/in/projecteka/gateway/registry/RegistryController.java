@@ -4,6 +4,7 @@ import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,6 +20,8 @@ import java.util.List;
 
 import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICES;
 import static in.projecteka.gateway.common.Constants.GW_PATH_HI_SERVICE_BY_ID;
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
@@ -40,7 +43,7 @@ public class RegistryController {
         return registryService.populateBridgeEntry(bridgeRegistryRequest);
     }
 
-    @PutMapping(INTERNAL_BRIDGES_BRIDGE_ID_SERVICES)
+    @PutMapping(value = {INTERNAL_BRIDGES_BRIDGE_ID_SERVICES, HFR_BRIDGES_BRIDGE_ID_SERVICES})
     public Mono<Void> bridgeServiceEntries(@PathVariable("bridgeId") String bridgeId,
                                            @RequestBody List<BridgeServiceRequest> bridgeServicesRequest) {
         return registryService.populateBridgeServicesEntries(bridgeId, bridgeServicesRequest);
@@ -54,5 +57,10 @@ public class RegistryController {
     @GetMapping(GW_PATH_HI_SERVICES)
     public Mono<List<ServiceProfileResponse>> serviceProfilesForType(@RequestParam(defaultValue = UNSPECIFIED_SERVICE_TYPE) String type) {
         return registryService.servicesOfType(type);
+    }
+
+    @GetMapping(HFR_BRIDGES_BRIDGE_ID)
+    public Mono<HFRBridgeResponse> bridgeProfile(@PathVariable("bridgeId") String bridgeId) {
+        return registryService.bridgeProfile(bridgeId);
     }
 }

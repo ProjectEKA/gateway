@@ -8,6 +8,7 @@ import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
@@ -64,7 +65,8 @@ public class RegistryRepository {
             "FROM bridge_service WHERE service_id = $1 AND active = $2";
     private static final String SELECT_BRIDGE_SERVICES_OF_TYPE = "SELECT service_id, name, type, active, endpoints " +
             "FROM bridge_service WHERE type = $1 AND active = $2";
-
+    private static final String SELECT_BRIDGE_PROFILE = "SELECT name, url, bridge_id, active, blocklisted, " +
+            "date_created, date_modified FROM bridge WHERE bridge_id = $1";
 
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
@@ -318,5 +320,33 @@ public class RegistryRepository {
                             monoSink.success(results);
                         })
         );
+    }
+
+    public Mono<HFRBridgeResponse> bridgeProfile(String bridgeId) {
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_PROFILE)
+                .execute(Tuple.of(bridgeId),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to fetch bridge profile"));
+                                return;
+                            }
+                            var iterator = handler.result().iterator();
+                            if (!iterator.hasNext()) {
+                                monoSink.success();
+                                return;
+                            }
+                            var row = iterator.next();
+                            var bridgeProfile = HFRBridgeResponse.builder()
+                                    .id(row.getString("bridge_id"))
+                                    .name(row.getString("name"))
+                                    .url(row.getString("url"))
+                                    .active(row.getBoolean("active"))
+                                    .blocklisted(row.getBoolean("blocklisted"))
+                                    .createdAt(row.getLocalDateTime("date_created"))
+                                    .modifiedAt(row.getLocalDateTime("date_modified"))
+                                    .build();
+                            monoSink.success(bridgeProfile);
+                        }));
     }
 }
