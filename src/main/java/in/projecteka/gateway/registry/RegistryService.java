@@ -10,6 +10,7 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
@@ -206,6 +207,11 @@ public class RegistryService {
 
     public Mono<List<ServiceProfileResponse>> servicesOfType(String serviceType) {
         return registryRepository.fetchServicesOfType(serviceType);
+    }
+
+    public Mono<HFRBridgeResponse> bridgeProfile(String bridgeId) {
+        return registryRepository.bridgeProfile(bridgeId)
+                .switchIfEmpty(Mono.error(ClientError.notFound("Bridge Id not found")));
     }
 }
 

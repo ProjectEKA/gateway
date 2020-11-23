@@ -29,6 +29,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
+import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
@@ -82,6 +84,7 @@ import static in.projecteka.gateway.common.Constants.USERS_AUTH_ON_CONFIRM;
 import static in.projecteka.gateway.common.Constants.USER_SESSION;
 import static in.projecteka.gateway.common.Role.ADMIN;
 import static in.projecteka.gateway.common.Role.CM;
+import static in.projecteka.gateway.common.Role.HFR;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.common.Role.HIU;
 import static java.util.stream.Collectors.toList;
@@ -159,6 +162,10 @@ public class SecurityConfiguration {
             INTERNAL_CM
     };
 
+    protected static final String[] HFR_APIS = {
+            HFR_BRIDGES_BRIDGE_ID,
+            HFR_BRIDGES_BRIDGE_ID_SERVICES
+    };
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity httpSecurity,
@@ -178,6 +185,7 @@ public class SecurityConfiguration {
                 .pathMatchers(HIU_HIP_APIS).hasAnyRole(HIU.name(), HIP.name())
                 .pathMatchers(HIP_APIS).hasAnyRole(HIP.name())
                 .pathMatchers(HIU_APIS).hasAnyRole(HIU.name())
+                .pathMatchers(HFR_APIS).hasAnyRole(HFR.name())
                 .pathMatchers("/**")
                 .authenticated();
         return httpSecurity
