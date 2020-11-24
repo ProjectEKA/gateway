@@ -4,7 +4,6 @@ import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
-import in.projecteka.gateway.clients.model.FacilitySearchResponse;
 import in.projecteka.gateway.clients.model.HFRFacilityRepresentation;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;

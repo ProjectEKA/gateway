@@ -29,7 +29,7 @@ import static reactor.core.publisher.Mono.error;
 public class FacilityRegistryClient {
     private static final Logger logger = LoggerFactory.getLogger(FacilityRegistryClient.class);
     public static final String FACILITY_SEARCH_INCLUDE_PHOTO = "N"; //"N" for no, "Y" for yes
-    public static final String FACILITY_TOKEN_CACHE_KEY = "facilityRegistry:accessToken"; //"N" for no, "Y" for yes
+    public static final String FACILITY_TOKEN_CACHE_KEY = "facilityRegistry:accessToken";
 
     private final WebClient registryWebClient;
     private final WebClient authWebClient;
