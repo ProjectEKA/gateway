@@ -133,6 +133,23 @@ public class GatewayConfiguration {
                 redisOptions.getRetry());
     }
 
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
+    @Bean("facilityTokenCache")
+    public CacheAdapter<String, String> createLoadingCacheAdapterForFacilityAccessToken() {
+        return new LoadingCacheAdapter<>(stringStringLoadingCache(5));
+    }
+
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("facilityTokenCache")
+    public CacheAdapter<String, String> createRedisCacheAdapterForFacilityAccessToken(
+            @Qualifier("Lettuce") RedisClient redisClient,
+            RedisOptions redisOptions,
+            FacilityRegistryProperties facilityRegistryProperties) {
+        return new RedisCacheAdapter(redisClient,
+                facilityRegistryProperties.getTokenExpiry(),
+                redisOptions.getRetry());
+    }
+
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
     @Bean({"requestIdMappings", "requestIdTimestampMappings"})
     public CacheAdapter<String, String> createRedisCacheAdapter(@Qualifier("Lettuce") RedisClient redisClient,
@@ -1337,7 +1354,8 @@ public class GatewayConfiguration {
 
     @Bean("facilityRegistryClient")
     public FacilityRegistryClient facilityRegistryClient(@Qualifier("customBuilder") WebClient.Builder builder,
-                                                         FacilityRegistryProperties facilityRegistryProperties){
-        return new FacilityRegistryClient(builder, facilityRegistryProperties);
+                                                         FacilityRegistryProperties facilityRegistryProperties,
+                                                         @Qualifier("facilityTokenCache") CacheAdapter<String, String> facilityTokenCache){
+        return new FacilityRegistryClient(builder, facilityRegistryProperties, facilityTokenCache);
     }
 }

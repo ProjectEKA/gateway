@@ -15,4 +15,5 @@ public class FacilityRegistryProperties {
     private final String clientSecret;
     private final String clientId;
     private final String authUrl;
+    private final int tokenExpiry;
 }

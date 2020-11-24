@@ -54,6 +54,7 @@ facility-registry:
   authUrl: ${FACILITY_REGISTRY_AUTH_URL}
   clientId: ${FACILITY_REGISTRY_CLIENT_ID}
   clientSecret: ${FACILITY_REGISTRY_CLIENT_SECRET}
+  tokenExpiry: ${TOKEN_EXPIRY:2}
 
 webclient:
   use-connection-pool: ${USE_HTTP_CONNECTION_POOL:true}

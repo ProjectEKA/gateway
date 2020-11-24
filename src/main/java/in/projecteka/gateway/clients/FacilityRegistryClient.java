@@ -2,6 +2,7 @@ package in.projecteka.gateway.clients;
 
 import in.projecteka.gateway.clients.model.FacilitySearchByNameResponse;
 import in.projecteka.gateway.clients.model.Session;
+import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.FacilityRegistryProperties;
 import lombok.AllArgsConstructor;
 import lombok.Value;
@@ -29,25 +30,29 @@ import static reactor.core.publisher.Mono.error;
 public class FacilityRegistryClient {
     private static final Logger logger = LoggerFactory.getLogger(FacilityRegistryClient.class);
     public static final String FACILITY_SEARCH_INCLUDE_PHOTO = "N"; //"N" for no, "Y" for yes
+    public static final String FACILITY_TOKEN_CACHE_KEY = "facilityRegistry:accessToken"; //"N" for no, "Y" for yes
 
     private final WebClient registryWebClient;
     private final WebClient authWebClient;
     private final FacilityRegistryProperties properties;
+    private final CacheAdapter<String, String> facilityTokenCache;
 
 
-    public FacilityRegistryClient(WebClient.Builder webClientBuilder, FacilityRegistryProperties properties) {
+    public FacilityRegistryClient(WebClient.Builder webClientBuilder, FacilityRegistryProperties properties,
+                                  CacheAdapter<String, String> facilityTokenCache) {
         this.registryWebClient = webClientBuilder.baseUrl(properties.getUrl()).build();
         this.authWebClient = webClientBuilder.baseUrl(properties.getAuthUrl()).build();
         this.properties = properties;
+        this.facilityTokenCache = facilityTokenCache;
     }
 
-    public Mono<Session> getToken(String clientId, String clientSecret) {
+    private Mono<String> getTokenFromGateway() {
         return authWebClient
                 .post()
                 .uri("/sessions")
                 .contentType(APPLICATION_JSON)
                 .accept(APPLICATION_JSON)
-                .body(BodyInserters.fromValue(requestWith(clientId, clientSecret)))
+                .body(BodyInserters.fromValue(requestWith(properties.getClientId(), properties.getClientSecret())))
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, clientResponse -> clientResponse.bodyToMono(String.class)
                         .doOnNext(logger::error).then(Mono.error(ClientError.unknownUnAuthorizedError("Unable to get token for facility registry"))))
@@ -55,16 +60,24 @@ public class FacilityRegistryClient {
                         .doOnNext(logger::error)
                         .then(Mono.error(ClientError.unableToConnect())))
                 .bodyToMono(Session.class)
+                .flatMap(session -> facilityTokenCache.put(FACILITY_TOKEN_CACHE_KEY, session.getAccessToken())
+                        .thenReturn(session.getAccessToken()))
                 .doOnSubscribe(subscription -> logger.info("About to get token for facility registry"));
     }
 
+    public Mono<String> getToken() {
+        return facilityTokenCache.get(FACILITY_TOKEN_CACHE_KEY)
+                .switchIfEmpty(getTokenFromGateway())
+                .map(token -> String.format("%s %s", "Bearer", token));
+    }
+
     public Mono<FacilitySearchByNameResponse> searchFacilityByName(String name, String state, String district) {
-        return getToken(properties.getClientId(), properties.getClientSecret())
-                .flatMap(session -> registryWebClient.post()
+        return getToken()
+                .flatMap(token -> registryWebClient.post()
                         .uri("/v1.0/facility/search-facilities")
                         .contentType(MediaType.APPLICATION_JSON)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("Authorization", format("Bearer %s", session.getAccessToken()))
+                        .header("Authorization", token)
                         .body(BodyInserters.fromValue(searchByNameRequest(name, state, district)))
                         .retrieve()
                         .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)

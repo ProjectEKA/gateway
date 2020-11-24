@@ -22,7 +22,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
