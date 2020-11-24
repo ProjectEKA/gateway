@@ -3,17 +3,12 @@ package in.projecteka.gateway.clients;
 import in.projecteka.gateway.clients.model.FacilitySearchByNameResponse;
 import in.projecteka.gateway.clients.model.Session;
 import in.projecteka.gateway.registry.FacilityRegistryProperties;
-import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cglib.core.Local;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -33,6 +28,8 @@ import static reactor.core.publisher.Mono.error;
 
 public class FacilityRegistryClient {
     private static final Logger logger = LoggerFactory.getLogger(FacilityRegistryClient.class);
+    public static final String FACILITY_SEARCH_INCLUDE_PHOTO = "N"; //"N" for no, "Y" for yes
+
     private final WebClient registryWebClient;
     private final WebClient authWebClient;
     private final FacilityRegistryProperties properties;
@@ -82,6 +79,7 @@ public class FacilityRegistryClient {
         var requestData = new HashMap<String, Object>();
         var facilityInfo = new HashMap<String, String>();
         facilityInfo.put("facilityName", name);
+        facilityInfo.put("photo", FACILITY_SEARCH_INCLUDE_PHOTO);
 
         if (!StringUtils.isEmpty(state)) {
             facilityInfo.put("state", state);

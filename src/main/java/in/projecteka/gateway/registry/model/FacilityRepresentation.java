@@ -1,5 +1,6 @@
 package in.projecteka.gateway.registry.model;
 
+import in.projecteka.gateway.registry.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Value;
@@ -10,16 +11,16 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 public class FacilityRepresentation {
-    IdentifierRepresentation identifier;
+    Identifier identifier;
     String city;
     String telephone;
-    List<String> facilityType;
+    List<ServiceType> facilityType;
     Boolean isHIP;
 
     @AllArgsConstructor
     @Value
     @Builder
-    public static class IdentifierRepresentation {
+    public static class Identifier {
         String name;
         String id;
     }

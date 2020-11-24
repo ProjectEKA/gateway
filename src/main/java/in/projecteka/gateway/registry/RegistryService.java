@@ -4,6 +4,7 @@ import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
+import in.projecteka.gateway.clients.model.FacilitySearchByNameResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.Bridge;
@@ -220,14 +221,28 @@ public class RegistryService {
 
     public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
-                .map(response -> response.getFacilities().stream()
-                        .map(facility -> FacilityRepresentation.builder()
-                                .city(facility.getAddress().getCity())
-                                .facilityType(List.of("HIP"))
-                                .isHIP(true)
-                                .telephone(facility.getContactNumber())
-                                .identifier(new FacilityRepresentation.IdentifierRepresentation(facility.getName(), facility.getId()))
-                                .build()).collect(Collectors.toList()));
+                .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
+                .flatMap(this::toFacilityRepresentation)
+                .collectList();
+    }
+
+    private Mono<FacilityRepresentation> toFacilityRepresentation(FacilitySearchByNameResponse.HFRFacilityRepresentation facility) {
+        var facilityRepresentationBuilder =  FacilityRepresentation.builder()
+                .isHIP(false)
+                .identifier(new FacilityRepresentation.Identifier(facility.getName(), facility.getId()))
+                .telephone(facility.getContactNumber())
+                .facilityType(List.of())
+                .city(facility.getAddress().getCity());
+
+        return registryRepository.fetchServiceEntries(facility.getId())
+                .map(serviceProfile -> {
+                    var isHIP = serviceProfile.getTypes().contains(HIP);
+                    return facilityRepresentationBuilder
+                            .isHIP(isHIP)
+                            .facilityType(serviceProfile.getTypes())
+                            .build();
+                })
+                .switchIfEmpty(Mono.just(facilityRepresentationBuilder.build()));
     }
 }
 
