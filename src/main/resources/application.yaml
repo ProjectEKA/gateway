@@ -55,8 +55,8 @@ facility-registry:
   clientId: ${FACILITY_REGISTRY_CLIENT_ID}
   clientSecret: ${FACILITY_REGISTRY_CLIENT_SECRET}
   tokenExpiry: ${TOKEN_EXPIRY:2}
-
 webclient:
+  maxInMemorySize: ${MAX_IN_MEMORY_SIZE:1048576}
   use-connection-pool: ${USE_HTTP_CONNECTION_POOL:true}
   connection-pool:
     poolSize: ${HTTP_CONNECTION_POOL_SIZE:500}

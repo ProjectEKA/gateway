@@ -26,6 +26,7 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVI
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
+import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
 
 
@@ -71,5 +72,10 @@ public class RegistryController {
                                                                    @RequestParam(required = false) String state,
                                                                    @RequestParam(required = false) String district) {
         return registryService.searchFacilityByName(name, state, district);
+    }
+
+    @GetMapping(INTERNAL_GET_FACILITY_BY_ID)
+    public Mono<FacilityRepresentation> searchFacilityByName(@PathVariable String serviceId) {
+        return registryService.getFacilityById(serviceId);
     }
 }

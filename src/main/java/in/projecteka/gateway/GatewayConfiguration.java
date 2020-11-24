@@ -104,6 +104,8 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
+    @Value("${webclient.maxInMemorySize}")
+    private int maxInMemorySize;
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean("accessToken")
@@ -991,7 +993,10 @@ public class GatewayConfiguration {
         return WebClient
                 .builder()
                 .exchangeStrategies(exchangeStrategies(objectMapper))
-                .clientConnector(clientHttpConnector);
+                .clientConnector(clientHttpConnector)
+                .codecs(configurer -> configurer
+                        .defaultCodecs()
+                        .maxInMemorySize(maxInMemorySize));
     }
 
     private ExchangeStrategies exchangeStrategies(ObjectMapper objectMapper) {

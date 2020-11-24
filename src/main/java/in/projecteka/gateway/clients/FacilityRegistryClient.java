@@ -1,6 +1,7 @@
 package in.projecteka.gateway.clients;
 
-import in.projecteka.gateway.clients.model.FacilitySearchByNameResponse;
+import in.projecteka.gateway.clients.model.FacilitySearchResponse;
+import in.projecteka.gateway.clients.model.FindFacilityByIDResponse;
 import in.projecteka.gateway.clients.model.Session;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.FacilityRegistryProperties;
@@ -18,11 +19,9 @@ import reactor.core.publisher.Mono;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.UUID;
 
 import static in.projecteka.gateway.clients.ClientError.unableToConnect;
-import static java.lang.String.format;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.error;
 
@@ -71,7 +70,7 @@ public class FacilityRegistryClient {
                 .map(token -> String.format("%s %s", "Bearer", token));
     }
 
-    public Mono<FacilitySearchByNameResponse> searchFacilityByName(String name, String state, String district) {
+    public Mono<FacilitySearchResponse> searchFacilityByName(String name, String state, String district) {
         return getToken()
                 .flatMap(token -> registryWebClient.post()
                         .uri("/v1.0/facility/search-facilities")
@@ -80,12 +79,29 @@ public class FacilityRegistryClient {
                         .header("Authorization", token)
                         .body(BodyInserters.fromValue(searchByNameRequest(name, state, district)))
                         .retrieve()
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
                                         clientResponse.statusCode(),
                                         properties))
                                 .then(error(unableToConnect())))
-                        .bodyToMono(FacilitySearchByNameResponse.class));
+                        .bodyToMono(FacilitySearchResponse.class));
+    }
+
+    public Mono<FindFacilityByIDResponse> getFacilityById(String facilityId) {
+        return getToken()
+                .flatMap(token -> registryWebClient.post()
+                        .uri("/v1.0/facility/fetch-facility-info")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", token)
+                        .body(BodyInserters.fromValue(getFacilityByIdRequest(facilityId)))
+                        .retrieve()
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
+                                .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
+                                        clientResponse.statusCode(),
+                                        properties))
+                                .then(error(unableToConnect())))
+                        .bodyToMono(FindFacilityByIDResponse.class));
     }
 
     private HashMap<String, Object> searchByNameRequest(String name, String state, String district) {
@@ -101,6 +117,16 @@ public class FacilityRegistryClient {
             facilityInfo.put("district", district);
         }
 
+        requestData.put("requestId", UUID.randomUUID().toString());
+        requestData.put("timestamp", LocalDateTime.now(ZoneOffset.UTC));
+        requestData.put("facility", facilityInfo);
+        return requestData;
+    }
+
+    private HashMap<String, Object> getFacilityByIdRequest(String facilityId) {
+        var requestData = new HashMap<String, Object>();
+        var facilityInfo = new HashMap<String, String>();
+        facilityInfo.put("id", facilityId);
         requestData.put("requestId", UUID.randomUUID().toString());
         requestData.put("timestamp", LocalDateTime.now(ZoneOffset.UTC));
         requestData.put("facility", facilityInfo);

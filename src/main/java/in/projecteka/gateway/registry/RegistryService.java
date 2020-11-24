@@ -4,7 +4,8 @@ import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
-import in.projecteka.gateway.clients.model.FacilitySearchByNameResponse;
+import in.projecteka.gateway.clients.model.FacilitySearchResponse;
+import in.projecteka.gateway.clients.model.HFRFacilityRepresentation;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.Bridge;
@@ -18,6 +19,7 @@ import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -219,14 +221,17 @@ public class RegistryService {
     }
 
     public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
+        if(StringUtils.isEmpty(name)){
+            return Mono.just(List.of());
+        }
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
                 .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
                 .flatMap(this::toFacilityRepresentation)
                 .collectList();
     }
 
-    private Mono<FacilityRepresentation> toFacilityRepresentation(FacilitySearchByNameResponse.HFRFacilityRepresentation facility) {
-        var facilityRepresentationBuilder =  FacilityRepresentation.builder()
+    private Mono<FacilityRepresentation> toFacilityRepresentation(HFRFacilityRepresentation facility) {
+        var facilityRepresentationBuilder = FacilityRepresentation.builder()
                 .isHIP(false)
                 .identifier(new FacilityRepresentation.Identifier(facility.getName(), facility.getId()))
                 .telephone(facility.getContactNumber())
@@ -242,6 +247,16 @@ public class RegistryService {
                             .build();
                 })
                 .switchIfEmpty(Mono.just(facilityRepresentationBuilder.build()));
+    }
+
+    public Mono<FacilityRepresentation> getFacilityById(String serviceId) {
+        return facilityRegistryClient.getFacilityById(serviceId)
+                .flatMap(response -> {
+                    if (StringUtils.isEmpty(response.getFacility().getId())) {
+                        return Mono.error(ClientError.notFound("Could not find facility with give ID"));
+                    }
+                    return toFacilityRepresentation(response.getFacility());
+                });
     }
 }
 
