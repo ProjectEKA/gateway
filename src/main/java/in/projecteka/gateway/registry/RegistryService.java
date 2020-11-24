@@ -2,6 +2,7 @@ package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
+import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
@@ -10,6 +11,7 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
@@ -19,6 +21,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
@@ -35,6 +38,7 @@ public class RegistryService {
     private final CacheAdapter<String, String> consentManagerMappings;
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
+    private final FacilityRegistryClient facilityRegistryClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
         return Mono.just(request)
@@ -212,6 +216,18 @@ public class RegistryService {
     public Mono<HFRBridgeResponse> bridgeProfile(String bridgeId) {
         return registryRepository.bridgeProfile(bridgeId)
                 .switchIfEmpty(Mono.error(ClientError.notFound("Bridge Id not found")));
+    }
+
+    public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
+        return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
+                .map(response -> response.getFacilities().stream()
+                        .map(facility -> FacilityRepresentation.builder()
+                                .city(facility.getAddress().getCity())
+                                .facilityType(List.of("HIP"))
+                                .isHIP(true)
+                                .telephone(facility.getContactNumber())
+                                .identifier(new FacilityRepresentation.IdentifierRepresentation(facility.getName(), facility.getId()))
+                                .build()).collect(Collectors.toList()));
     }
 }
 

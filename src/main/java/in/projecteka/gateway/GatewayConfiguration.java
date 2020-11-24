@@ -15,6 +15,7 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.ConsentStatusServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.GlobalExceptionHandler;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
@@ -53,6 +54,7 @@ import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.FacilityRegistryProperties;
 import in.projecteka.gateway.registry.RegistryRepository;
 import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
@@ -1048,8 +1050,9 @@ public class GatewayConfiguration {
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
-                                           AdminServiceClient adminServiceClient) {
-        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
+                                           AdminServiceClient adminServiceClient,
+                                           FacilityRegistryClient facilityRegistryClient) {
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient, facilityRegistryClient);
     }
 
     @Bean("userAuthenticatorClient")
@@ -1330,5 +1333,11 @@ public class GatewayConfiguration {
                 validator,
                 hiuConsentNotifyServiceClient,
                 hiuSubscriptionNotifyRequestAction);
+    }
+
+    @Bean("facilityRegistryClient")
+    public FacilityRegistryClient facilityRegistryClient(@Qualifier("customBuilder") WebClient.Builder builder,
+                                                         FacilityRegistryProperties facilityRegistryProperties){
+        return new FacilityRegistryClient(builder, facilityRegistryProperties);
     }
 }

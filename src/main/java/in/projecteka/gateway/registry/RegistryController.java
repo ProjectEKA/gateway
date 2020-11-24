@@ -4,6 +4,7 @@ import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,7 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVI
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
+import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
 
 
 @AllArgsConstructor
@@ -62,5 +64,12 @@ public class RegistryController {
     @GetMapping(HFR_BRIDGES_BRIDGE_ID)
     public Mono<HFRBridgeResponse> bridgeProfile(@PathVariable("bridgeId") String bridgeId) {
         return registryService.bridgeProfile(bridgeId);
+    }
+
+    @GetMapping(INTERNAL_SEARCH_FACILITY_BY_NAME)
+    public Mono<List<FacilityRepresentation>> searchFacilityByName(@RequestParam String name,
+                                                                   @RequestParam(required = false) String state,
+                                                                   @RequestParam(required = false) String district) {
+        return registryService.searchFacilityByName(name, state, district);
     }
 }

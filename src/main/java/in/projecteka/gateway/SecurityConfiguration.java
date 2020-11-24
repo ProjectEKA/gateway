@@ -34,6 +34,7 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVI
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
+import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
 import static in.projecteka.gateway.common.Constants.PATH_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_DISCOVER;
 import static in.projecteka.gateway.common.Constants.PATH_CARE_CONTEXTS_ON_DISCOVER;
@@ -153,7 +154,8 @@ public class SecurityConfiguration {
             PATH_HEARTBEAT,
             PATH_READINESS,
             PATH_SERVICE_URLS,
-            USER_SESSION
+            USER_SESSION,
+            INTERNAL_SEARCH_FACILITY_BY_NAME
     };
 
     protected static final String[] INTERNAL_APIS = {

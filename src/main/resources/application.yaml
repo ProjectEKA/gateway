@@ -49,6 +49,12 @@ identity:
   userName: ${GATEWAY_ADMIN_USER}
   password: ${GATEWAY_ADMIN_PASSWORD}
   access-token-expiry-in-minutes: ${TOKEN_EXPIRY:2}
+facility-registry:
+  url: ${FACILITY_REGISTRY_URL}
+  authUrl: ${FACILITY_REGISTRY_AUTH_URL}
+  clientId: ${FACILITY_REGISTRY_CLIENT_ID}
+  clientSecret: ${FACILITY_REGISTRY_CLIENT_SECRET}
+
 webclient:
   use-connection-pool: ${USE_HTTP_CONNECTION_POOL:true}
   connection-pool:
