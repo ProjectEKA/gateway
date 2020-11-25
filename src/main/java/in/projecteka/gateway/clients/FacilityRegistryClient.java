@@ -45,7 +45,7 @@ public class FacilityRegistryClient {
         this.facilityTokenCache = facilityTokenCache;
     }
 
-    private Mono<String> getTokenFromGateway() {
+    private Mono<String> getTokenForFacilityRegistry() {
         return authWebClient
                 .post()
                 .uri("/sessions")
@@ -66,7 +66,7 @@ public class FacilityRegistryClient {
 
     public Mono<String> getToken() {
         return facilityTokenCache.get(FACILITY_TOKEN_CACHE_KEY)
-                .switchIfEmpty(getTokenFromGateway())
+                .switchIfEmpty(getTokenForFacilityRegistry())
                 .map(token -> String.format("%s %s", "Bearer", token));
     }
 

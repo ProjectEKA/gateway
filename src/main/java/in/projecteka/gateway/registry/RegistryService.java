@@ -35,6 +35,7 @@ import static in.projecteka.gateway.registry.ServiceType.HIU;
 @AllArgsConstructor
 public class RegistryService {
     private static final String CM_REALM_ROLE = "CM";
+    private static final String FACILITY_ACTIVE = "Y";
     private final RegistryRepository registryRepository;
     private final CacheAdapter<String, String> consentManagerMappings;
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
@@ -239,7 +240,7 @@ public class RegistryService {
 
         return registryRepository.fetchServiceEntries(facility.getId())
                 .map(serviceProfile -> {
-                    var isActive = facility.getActive().equals("Y");
+                    var isActive = facility.getActive().equals(FACILITY_ACTIVE);
                     var isHIP = serviceProfile.getTypes().contains(HIP) && isActive;
                     return facilityRepresentationBuilder
                             .isHIP(isHIP)
@@ -253,7 +254,7 @@ public class RegistryService {
         return facilityRegistryClient.getFacilityById(serviceId)
                 .flatMap(response -> {
                     if (StringUtils.isEmpty(response.getFacility().getId())) {
-                        return Mono.error(ClientError.notFound("Could not find facility with give ID"));
+                        return Mono.error(ClientError.notFound("Could not find facility with given ID"));
                     }
                     return toFacilityRepresentation(response.getFacility());
                 });
