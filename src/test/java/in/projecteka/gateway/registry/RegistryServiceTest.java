@@ -477,7 +477,7 @@ class RegistryServiceTest {
         var state = string();
         var district = string();
 
-        var hfrFacility = hfrFacilityRepresentationBuilder().build();
+        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
         var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
         var serviceProfile = serviceProfile().types(List.of(HIP)).build();
 
@@ -498,7 +498,7 @@ class RegistryServiceTest {
         var state = string();
         var district = string();
 
-        var hfrFacility = hfrFacilityRepresentationBuilder().build();
+        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
         var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
         var serviceProfile = serviceProfile().types(List.of(HIU)).build();
 
@@ -534,6 +534,27 @@ class RegistryServiceTest {
     }
 
     @Test
+    void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotActiveWhenSearchingFacility() {
+        var name = string();
+        var state = string();
+        var district = string();
+
+        var hfrFacility = hfrFacilityRepresentationBuilder().active("N").build();
+        var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
+        var serviceProfile = serviceProfile().types(List.of(HIP)).build();
+
+        when(facilityRegistryClient.searchFacilityByName(eq(name), eq(state), eq(district))).thenReturn(Mono.just(facilitySearchResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.searchFacilityByName(name, state, district))
+                .expectNextMatches(facilities -> {
+                    var facility = facilities.get(0);
+                    return facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
     void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredOnGatewayWhenFetchingFacilityById() {
         var facilityId = string();
 
@@ -554,8 +575,8 @@ class RegistryServiceTest {
     void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredAsHIPWhenFetchingFacilityById() {
         var facilityId = string();
 
-        var facilityByIdResponse = facilityByIDResponseBuilder().build();
-        var hfrFacility = facilityByIdResponse.getFacility();
+        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
+        var facilityByIdResponse = facilityByIDResponseBuilder().facility(hfrFacility).build();
         var serviceProfile = serviceProfile().types(List.of(HIU)).build();
 
         when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
@@ -572,8 +593,8 @@ class RegistryServiceTest {
     void shouldReturnIsHIPAsFalseIfTheFacilityIsRegisteredAsHIPWhenFetchingFacilityById() {
         var facilityId = string();
 
-        var facilityByIdResponse = facilityByIDResponseBuilder().build();
-        var hfrFacility = facilityByIdResponse.getFacility();
+        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
+        var facilityByIdResponse = facilityByIDResponseBuilder().facility(hfrFacility).build();
         var serviceProfile = serviceProfile().types(List.of(HIP)).build();
 
         when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));

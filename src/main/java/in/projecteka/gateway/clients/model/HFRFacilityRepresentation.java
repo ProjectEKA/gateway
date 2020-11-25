@@ -11,6 +11,7 @@ public class HFRFacilityRepresentation {
     private String id;
     private String name;
     private String contactNumber;
+    private String active;
     private Address address;
 
     @AllArgsConstructor

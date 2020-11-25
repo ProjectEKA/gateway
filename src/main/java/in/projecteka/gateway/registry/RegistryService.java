@@ -239,7 +239,8 @@ public class RegistryService {
 
         return registryRepository.fetchServiceEntries(facility.getId())
                 .map(serviceProfile -> {
-                    var isHIP = serviceProfile.getTypes().contains(HIP);
+                    var isActive = facility.getActive().equals("Y");
+                    var isHIP = serviceProfile.getTypes().contains(HIP) && isActive;
                     return facilityRepresentationBuilder
                             .isHIP(isHIP)
                             .facilityType(serviceProfile.getTypes())
