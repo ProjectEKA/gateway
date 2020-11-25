@@ -2,6 +2,7 @@ package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
+import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
 import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
@@ -27,18 +28,23 @@ import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequ
 import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
+import static in.projecteka.gateway.registry.ServiceType.HIU;
 import static in.projecteka.gateway.registry.TestBuilders.bridge;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeService;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.facilityByIDResponseBuilder;
+import static in.projecteka.gateway.registry.TestBuilders.facilitySearchResponseBuilder;
 import static in.projecteka.gateway.registry.TestBuilders.hfrBridgeResponse;
+import static in.projecteka.gateway.registry.TestBuilders.hfrFacilityRepresentationBuilder;
 import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
 import static in.projecteka.gateway.registry.TestBuilders.serviceProfile;
 import static in.projecteka.gateway.registry.TestBuilders.string;
 import static in.projecteka.gateway.testcommon.TestBuilders.clientSecret;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,11 +70,14 @@ class RegistryServiceTest {
     @Mock
     RegistryService registryService;
 
+    @Mock
+    FacilityRegistryClient facilityRegistryClient;
+
     @BeforeEach
     void init() {
         initMocks(this);
         registryService = Mockito.spy(new RegistryService(
-                registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient
+                registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient, facilityRegistryClient
         ));
     }
 
@@ -447,7 +456,149 @@ class RegistryServiceTest {
 
         StepVerifier.create(registryService.bridgeProfile(bridgeId))
                 .expectErrorMatches(throwable -> throwable instanceof ClientError
-                && ((ClientError) throwable).getHttpStatus()  == HttpStatus.NOT_FOUND)
+                        && ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND)
                 .verify();
+    }
+
+    @Test
+    void shouldReturnEmptyListIfFacilityNameIsNotProvided() {
+        var name = "";
+        var state = string();
+        var district = string();
+
+        StepVerifier.create(registryService.searchFacilityByName(name, state, district))
+                .expectNext(List.of())
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsTrueIfTheSearchedFacilityIsRegisteredAsHIPWhenSearchingFacility() {
+        var name = string();
+        var state = string();
+        var district = string();
+
+        var hfrFacility = hfrFacilityRepresentationBuilder().build();
+        var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
+        var serviceProfile = serviceProfile().types(List.of(HIP)).build();
+
+        when(facilityRegistryClient.searchFacilityByName(eq(name), eq(state), eq(district))).thenReturn(Mono.just(facilitySearchResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.searchFacilityByName(name, state, district))
+                .expectNextMatches(facilities -> {
+                    var facility = facilities.get(0);
+                    return facility.getIsHIP() && facility.getIdentifier().getId().equals(hfrFacility.getId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotRegisteredAsHIPWhenSearchingFacility() {
+        var name = string();
+        var state = string();
+        var district = string();
+
+        var hfrFacility = hfrFacilityRepresentationBuilder().build();
+        var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
+        var serviceProfile = serviceProfile().types(List.of(HIU)).build();
+
+        when(facilityRegistryClient.searchFacilityByName(eq(name), eq(state), eq(district))).thenReturn(Mono.just(facilitySearchResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.searchFacilityByName(name, state, district))
+                .expectNextMatches(facilities -> {
+                    var facility = facilities.get(0);
+                    return facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotRegisteredOnGatewayWhenSearchingFacility() {
+        var name = string();
+        var state = string();
+        var district = string();
+
+        var hfrFacility = hfrFacilityRepresentationBuilder().build();
+        var facilitySearchResponse = facilitySearchResponseBuilder().facilities(List.of(hfrFacility)).build();
+
+        when(facilityRegistryClient.searchFacilityByName(eq(name), eq(state), eq(district))).thenReturn(Mono.just(facilitySearchResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.searchFacilityByName(name, state, district))
+                .expectNextMatches(facilities -> {
+                    var facility = facilities.get(0);
+                    return facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredOnGatewayWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        var facilityByIdResponse = facilityByIDResponseBuilder().build();
+        var hfrFacility = facilityByIdResponse.getFacility();
+
+        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .expectNextMatches(facility ->
+                        facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId())
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredAsHIPWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        var facilityByIdResponse = facilityByIDResponseBuilder().build();
+        var hfrFacility = facilityByIdResponse.getFacility();
+        var serviceProfile = serviceProfile().types(List.of(HIU)).build();
+
+        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .expectNextMatches(facility ->
+                        facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId())
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheFacilityIsRegisteredAsHIPWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        var facilityByIdResponse = facilityByIDResponseBuilder().build();
+        var hfrFacility = facilityByIdResponse.getFacility();
+        var serviceProfile = serviceProfile().types(List.of(HIP)).build();
+
+        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
+        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .expectNextMatches(facility ->
+                        facility.getIsHIP() && facility.getIdentifier().getId().equals(hfrFacility.getId())
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldThrowErrorIfFacilityNotFoundWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        var hfrFacility = hfrFacilityRepresentationBuilder().id(null).build();
+        var facilityByIdResponse = facilityByIDResponseBuilder()
+                .facility(hfrFacility)
+                .build();
+
+        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .verifyErrorMatches(throwable -> throwable instanceof ClientError &&
+                        ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND);
     }
 }
