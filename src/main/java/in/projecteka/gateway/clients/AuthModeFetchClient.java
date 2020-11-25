@@ -23,15 +23,9 @@ public class AuthModeFetchClient extends ServiceClient {
         this.cmRegistry = cmRegistry;
     }
 
-    private Mono<String> getHIUHost(String clientId){
-        return bridgeRegistry.getHostFor(clientId, ServiceType.HIU)
-                .map(host -> host + Constants.PATH_BRIDGE_ON_FETCH_AUTH_MODES);
-    }
-
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, ServiceType.HIP)
-                .switchIfEmpty(this.getHIUHost(clientId))
+        return bridgeRegistry.getHostFor(clientId, serviceType)
                 .map(host -> host + Constants.PATH_BRIDGE_ON_FETCH_AUTH_MODES);
     }
 

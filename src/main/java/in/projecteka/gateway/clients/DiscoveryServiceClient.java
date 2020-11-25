@@ -9,8 +9,6 @@ import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.ServiceType.HIP;
-
 public class DiscoveryServiceClient extends ServiceClient {
     private final CMRegistry cmRegistry;
     private final BridgeRegistry bridgeRegistry;
@@ -32,6 +30,6 @@ public class DiscoveryServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getRequestUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIP).map(host -> host + Constants.PATH_CARE_CONTEXTS_DISCOVER);
+        return bridgeRegistry.getHostFor(clientId, serviceType).map(host -> host + Constants.PATH_CARE_CONTEXTS_DISCOVER);
     }
 }

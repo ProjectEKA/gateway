@@ -9,8 +9,6 @@ import in.projecteka.gateway.registry.ServiceType;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static in.projecteka.gateway.registry.ServiceType.HIU;
-
 public class ConsentRequestServiceClient extends ServiceClient {
     private final BridgeRegistry bridgeRegistry;
     private final CMRegistry cmRegistry;
@@ -32,6 +30,6 @@ public class ConsentRequestServiceClient extends ServiceClient {
 
     @Override
     protected Mono<String> getResponseUrl(String clientId, ServiceType serviceType) {
-        return bridgeRegistry.getHostFor(clientId, HIU).map(host -> host + Constants.PATH_CONSENT_REQUESTS_ON_INIT);
+        return bridgeRegistry.getHostFor(clientId, serviceType).map(host -> host + Constants.PATH_CONSENT_REQUESTS_ON_INIT);
     }
 }
