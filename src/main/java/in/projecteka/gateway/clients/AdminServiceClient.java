@@ -92,7 +92,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getErrorMessage(), keyCloakError);
                                             return error(clientAlreadyExists(keyCloakError.getErrorMessage()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
@@ -123,7 +123,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return error(notFound(keyCloakError.getError()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
@@ -153,7 +153,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return error(notFound(keyCloakError.getError()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
@@ -186,7 +186,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return error(notFound(keyCloakError.getError()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
@@ -217,7 +217,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return error(notFound(keyCloakError.getError()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
@@ -248,7 +248,7 @@ public class AdminServiceClient {
                                             logger.error(keyCloakError.getError(), keyCloakError);
                                             return error(notFound(keyCloakError.getError()));
                                         }))
-                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                                 .doOnNext(properties -> logger.error(ERROR_MESSAGE,
                                         clientResponse.statusCode(),
                                         properties))
