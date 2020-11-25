@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
@@ -63,8 +62,8 @@ public abstract class ServiceClient {
                                        String clientId,
                                        BiFunction<String,ServiceType, Mono<String>> urlGetter,
                                        String routingKey) {
-        var targetRoutingKey = routingKey.equals(X_HIP_ID)? ServiceType.HIP : ServiceType.HIU;
-        return urlGetter.apply(clientId, targetRoutingKey)
+        var serviceType = routingKey.equals(X_HIP_ID)? ServiceType.HIP : ServiceType.HIU;
+        return urlGetter.apply(clientId, serviceType)
                 .switchIfEmpty(Mono.defer(() -> {
                     logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
                     return error(mappingNotFoundForId(clientId));
