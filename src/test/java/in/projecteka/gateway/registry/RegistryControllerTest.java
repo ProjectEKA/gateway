@@ -25,15 +25,20 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
 import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
+import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
 import static in.projecteka.gateway.common.Role.ADMIN;
+import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HFR;
 import static in.projecteka.gateway.common.TestBuilders.OBJECT_MAPPER;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
+import static in.projecteka.gateway.registry.TestBuilders.facilityRepresentationBuilder;
 import static in.projecteka.gateway.registry.TestBuilders.hfrBridgeResponse;
 import static in.projecteka.gateway.registry.TestBuilders.serviceProfileResponse;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static reactor.core.publisher.Mono.just;
@@ -162,6 +167,59 @@ class RegistryControllerTest {
                 .exchange()
                 .expectStatus()
                 .isOk();
+    }
+
+    @Test
+    void shouldReturnListOfProvidersByName() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        var name = string();
+        var state = string();
+        var district = string();
+        var facilities = List.of(facilityRepresentationBuilder().build());
+        var caller = caller().clientId(clientId).roles(List.of(CM)).build();
+
+        var response = OBJECT_MAPPER.writeValueAsString(facilities);
+        when(authenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.searchFacilityByName(eq(name), eq(state), eq(district))).thenReturn(Mono.just(facilities));
+
+        webTestClient
+                .get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(INTERNAL_SEARCH_FACILITY_BY_NAME)
+                        .queryParam("name", name)
+                        .queryParam("district", district)
+                        .queryParam("state", state)
+                        .build())
+                .header(AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json(response);
+    }
+
+    @Test
+    void shouldReturnFacilityById() throws JsonProcessingException {
+        var token = string();
+        var clientId = string();
+        var facilityId = string();
+        var facility = facilityRepresentationBuilder().build();
+        var caller = caller().clientId(clientId).roles(List.of(CM)).build();
+
+        var response = OBJECT_MAPPER.writeValueAsString(facility);
+        when(authenticator.verify(token)).thenReturn(just(caller));
+        when(registryService.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facility));
+
+        webTestClient
+                .get()
+                .uri(INTERNAL_GET_FACILITY_BY_ID, facilityId)
+                .header(AUTHORIZATION, token)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody()
+                .json(response);
     }
 
 }

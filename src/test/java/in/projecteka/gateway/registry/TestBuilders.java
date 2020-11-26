@@ -1,5 +1,8 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.clients.model.FacilitySearchResponse;
+import in.projecteka.gateway.clients.model.FindFacilityByIDResponse;
+import in.projecteka.gateway.clients.model.HFRFacilityRepresentation;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.clients.model.ServiceAccount;
 import in.projecteka.gateway.registry.model.Bridge;
@@ -7,6 +10,7 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
@@ -57,5 +61,21 @@ public class TestBuilders {
 
     public static HFRBridgeResponse.HFRBridgeResponseBuilder hfrBridgeResponse() {
         return easyRandom.nextObject(HFRBridgeResponse.HFRBridgeResponseBuilder.class);
+    }
+
+    public static FacilityRepresentation.FacilityRepresentationBuilder facilityRepresentationBuilder() {
+        return easyRandom.nextObject(FacilityRepresentation.FacilityRepresentationBuilder.class);
+    }
+
+    public static FacilitySearchResponse.FacilitySearchResponseBuilder facilitySearchResponseBuilder() {
+        return easyRandom.nextObject(FacilitySearchResponse.FacilitySearchResponseBuilder.class);
+    }
+
+    public static HFRFacilityRepresentation.HFRFacilityRepresentationBuilder hfrFacilityRepresentationBuilder() {
+        return easyRandom.nextObject(HFRFacilityRepresentation.HFRFacilityRepresentationBuilder.class);
+    }
+
+    public static FindFacilityByIDResponse.FindFacilityByIDResponseBuilder facilityByIDResponseBuilder() {
+        return easyRandom.nextObject(FindFacilityByIDResponse.FindFacilityByIDResponseBuilder.class);
     }
 }

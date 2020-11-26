@@ -70,7 +70,7 @@ public class IdentityServiceClient {
                                     logger.error(keyCloakError.getError(), keyCloakError);
                                     return error(invalidRequest(keyCloakError.getErrorDescription()));
                                 }))
-                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                         .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
                                 clientResponse.statusCode(),
                                 properties))
@@ -84,7 +84,7 @@ public class IdentityServiceClient {
                         uriBuilder.path("/realms/{realm}/protocol/openid-connect/certs").build(Map.of("realm", realm)))
                 .accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(Properties.class)
+                .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
                         .doOnNext(properties -> logger.error("Error Status Code: {} and error: {} ",
                                 clientResponse.statusCode(),
                                 properties))
