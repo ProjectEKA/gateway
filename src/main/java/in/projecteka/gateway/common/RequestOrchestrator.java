@@ -75,7 +75,7 @@ public class RequestOrchestrator<T extends ServiceClient> {
                     .flatMap(updatedRequest -> {
                         logger.info("About to call a target {} {}", keyValue("requestId", upstreamRequestId)
                                 , keyValue("gatewayId", gatewayRequestId));
-                        return requestAction.execute(validatedRequest.getClientId(), updatedRequest, targetRoutingKey);
+                        return requestAction.execute(clientId, validatedRequest.getClientId(), updatedRequest, targetRoutingKey);
                     })
                     .onErrorMap(ClientError.class,
                             clientError -> {

@@ -76,7 +76,7 @@ class ServiceClientTest {
             }
         };
 
-        StepVerifier.create(serviceClient.routeRequest(request, string(), string())).verifyComplete();
+        StepVerifier.create(serviceClient.routeRequest(request, string(), string(), string())).verifyComplete();
         assertThat(captor.getValue().url()).hasPath(url);
         assertThat(captor.getValue().headers().get(HttpHeaders.AUTHORIZATION).get(0)).isEqualTo(token);
     }
