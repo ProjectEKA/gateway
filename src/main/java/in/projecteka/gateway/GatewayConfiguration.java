@@ -15,6 +15,7 @@ import in.projecteka.gateway.clients.ConsentRequestServiceClient;
 import in.projecteka.gateway.clients.ConsentStatusServiceClient;
 import in.projecteka.gateway.clients.DataFlowRequestServiceClient;
 import in.projecteka.gateway.clients.DiscoveryServiceClient;
+import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.GlobalExceptionHandler;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
@@ -53,6 +54,7 @@ import in.projecteka.gateway.common.heartbeat.Heartbeat;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.registry.BridgeRegistry;
 import in.projecteka.gateway.registry.CMRegistry;
+import in.projecteka.gateway.registry.FacilityRegistryProperties;
 import in.projecteka.gateway.registry.RegistryRepository;
 import in.projecteka.gateway.registry.RegistryService;
 import in.projecteka.gateway.registry.ServiceType;
@@ -102,6 +104,8 @@ import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 
 @Configuration
 public class GatewayConfiguration {
+    @Value("${webclient.maxInMemorySize}")
+    private int maxInMemorySize;
 
     @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean("accessToken")
@@ -128,6 +132,23 @@ public class GatewayConfiguration {
             IdentityProperties identityProperties) {
         return new RedisCacheAdapter(redisClient,
                 identityProperties.getAccessTokenExpiryInMinutes(),
+                redisOptions.getRetry());
+    }
+
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "guava", matchIfMissing = true)
+    @Bean("facilityTokenCache")
+    public CacheAdapter<String, String> createLoadingCacheAdapterForFacilityAccessToken() {
+        return new LoadingCacheAdapter<>(stringStringLoadingCache(5));
+    }
+
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("facilityTokenCache")
+    public CacheAdapter<String, String> createRedisCacheAdapterForFacilityAccessToken(
+            @Qualifier("Lettuce") RedisClient redisClient,
+            RedisOptions redisOptions,
+            FacilityRegistryProperties facilityRegistryProperties) {
+        return new RedisCacheAdapter(redisClient,
+                facilityRegistryProperties.getTokenExpiry(),
                 redisOptions.getRetry());
     }
 
@@ -972,7 +993,10 @@ public class GatewayConfiguration {
         return WebClient
                 .builder()
                 .exchangeStrategies(exchangeStrategies(objectMapper))
-                .clientConnector(clientHttpConnector);
+                .clientConnector(clientHttpConnector)
+                .codecs(configurer -> configurer
+                        .defaultCodecs()
+                        .maxInMemorySize(maxInMemorySize));
     }
 
     private ExchangeStrategies exchangeStrategies(ObjectMapper objectMapper) {
@@ -1048,8 +1072,9 @@ public class GatewayConfiguration {
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
                                            CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
-                                           AdminServiceClient adminServiceClient) {
-        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient);
+                                           AdminServiceClient adminServiceClient,
+                                           FacilityRegistryClient facilityRegistryClient) {
+        return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient, facilityRegistryClient);
     }
 
     @Bean("userAuthenticatorClient")
@@ -1330,5 +1355,12 @@ public class GatewayConfiguration {
                 validator,
                 hiuConsentNotifyServiceClient,
                 hiuSubscriptionNotifyRequestAction);
+    }
+
+    @Bean("facilityRegistryClient")
+    public FacilityRegistryClient facilityRegistryClient(@Qualifier("customBuilder") WebClient.Builder builder,
+                                                         FacilityRegistryProperties facilityRegistryProperties,
+                                                         @Qualifier("facilityTokenCache") CacheAdapter<String, String> facilityTokenCache){
+        return new FacilityRegistryClient(builder, facilityRegistryProperties, facilityTokenCache);
     }
 }

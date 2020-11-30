@@ -6,6 +6,7 @@ import in.projecteka.gateway.common.cache.RedisOptions;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import in.projecteka.gateway.common.heartbeat.RabbitmqOptions;
 import in.projecteka.gateway.common.heartbeat.CacheMethodProperty;
+import in.projecteka.gateway.registry.FacilityRegistryProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,7 +19,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		    DbOptions.class,
         WebClientOptions.class,
         CacheMethodProperty.class,
-        ShareProfile.class})
+        ShareProfile.class,
+        FacilityRegistryProperties.class})
 public class GatewayApplication {
     public static void main(String[] args) {
         SpringApplication.run(GatewayApplication.class, args);

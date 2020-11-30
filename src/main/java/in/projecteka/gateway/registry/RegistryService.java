@@ -2,7 +2,9 @@ package in.projecteka.gateway.registry;
 
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.ClientError;
+import in.projecteka.gateway.clients.FacilityRegistryClient;
 import in.projecteka.gateway.clients.model.ClientResponse;
+import in.projecteka.gateway.clients.model.HFRFacilityRepresentation;
 import in.projecteka.gateway.clients.model.RealmRole;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.Bridge;
@@ -10,11 +12,13 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
+import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -31,10 +35,12 @@ import static in.projecteka.gateway.registry.ServiceType.HIU;
 @AllArgsConstructor
 public class RegistryService {
     private static final String CM_REALM_ROLE = "CM";
+    private static final String FACILITY_ACTIVE = "Y";
     private final RegistryRepository registryRepository;
     private final CacheAdapter<String, String> consentManagerMappings;
     private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
+    private final FacilityRegistryClient facilityRegistryClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
         return Mono.just(request)
@@ -212,6 +218,46 @@ public class RegistryService {
     public Mono<HFRBridgeResponse> bridgeProfile(String bridgeId) {
         return registryRepository.bridgeProfile(bridgeId)
                 .switchIfEmpty(Mono.error(ClientError.notFound("Bridge Id not found")));
+    }
+
+    public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
+        if(StringUtils.isEmpty(name)){
+            return Mono.just(List.of());
+        }
+        return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
+                .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
+                .flatMap(this::toFacilityRepresentation)
+                .collectList();
+    }
+
+    private Mono<FacilityRepresentation> toFacilityRepresentation(HFRFacilityRepresentation facility) {
+        var facilityRepresentationBuilder = FacilityRepresentation.builder()
+                .isHIP(false)
+                .identifier(new FacilityRepresentation.Identifier(facility.getName(), facility.getId()))
+                .telephone(facility.getContactNumber())
+                .facilityType(List.of())
+                .city(facility.getAddress().getCity());
+
+        return registryRepository.fetchServiceEntries(facility.getId())
+                .map(serviceProfile -> {
+                    var isActive = facility.getActive().equals(FACILITY_ACTIVE);
+                    var isHIP = serviceProfile.getTypes().contains(HIP) && isActive;
+                    return facilityRepresentationBuilder
+                            .isHIP(isHIP)
+                            .facilityType(serviceProfile.getTypes())
+                            .build();
+                })
+                .switchIfEmpty(Mono.just(facilityRepresentationBuilder.build()));
+    }
+
+    public Mono<FacilityRepresentation> getFacilityById(String serviceId) {
+        return facilityRegistryClient.getFacilityById(serviceId)
+                .flatMap(response -> {
+                    if (StringUtils.isEmpty(response.getFacility().getId())) {
+                        return Mono.error(ClientError.notFound("Could not find facility with given ID"));
+                    }
+                    return toFacilityRepresentation(response.getFacility());
+                });
     }
 }
 
