@@ -21,11 +21,7 @@
       "name": "gw.dlq",
       "routing_key": "#",
       "exchange": "gw.dead-letter-exchange",
-      "arguments": {
-        "x-dead-letter-exchange": "gw.exchange",
-        "x-message-ttl": 10000,
-        "x-queue-type": "classic"
-      }
+      "arguments": {}
     },
     {
       "name": "gw.parkinglot",
