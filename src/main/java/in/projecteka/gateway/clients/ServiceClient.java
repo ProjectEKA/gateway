@@ -24,6 +24,7 @@ import static in.projecteka.gateway.clients.ClientError.unableToConnect;
 import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
 import static in.projecteka.gateway.common.Constants.X_HIU_ID;
+import static in.projecteka.gateway.common.Constants.X_ORIGIN_ID;
 import static in.projecteka.gateway.common.Serializer.from;
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
@@ -31,6 +32,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.error;
+import static reactor.core.publisher.Mono.subscriberContext;
 
 @AllArgsConstructor
 public abstract class ServiceClient {
@@ -41,16 +43,16 @@ public abstract class ServiceClient {
     protected final WebClient.Builder webClientBuilder;
     protected final IdentityService identityService;
 
-    public Mono<Void> routeRequest(Map<String, Object> request, String clientId, String routingKey) {
-        return routeCommon(request, clientId, this::getRequestUrl, routingKey);
+    public Mono<Void> routeRequest(Map<String, Object> request, String clientId, String routingKey, String sourceId) {
+        return routeCommon(request, clientId, this::getRequestUrl, routingKey, sourceId);
     }
 
     public Mono<Void> routeResponse(JsonNode request, String clientId, String routingKey) {
-        return routeCommon(request, clientId, this::getResponseUrl, routingKey);
+        return routeCommon(request, clientId, this::getResponseUrl, routingKey, null);
     }
 
     public Mono<Void> notifyError(String clientId, String sourceRoutingKey, ErrorResult request) {
-        return routeCommon(request, clientId, this::getResponseUrl, sourceRoutingKey);
+        return routeCommon(request, clientId, this::getResponseUrl, sourceRoutingKey, null);
     }
 
     protected abstract Mono<String> getResponseUrl(String clientId, ServiceType routingKey);
@@ -59,36 +61,38 @@ public abstract class ServiceClient {
 
 
     private <T> Mono<Void> routeCommon(T requestBody,
-                                       String clientId,
+                                       String targetId,
                                        BiFunction<String,ServiceType, Mono<String>> urlGetter,
-                                       String routingKey) {
+                                       String routingKey,
+                                       String sourceId) {
         var serviceType = routingKey.equals(X_HIP_ID)? ServiceType.HIP : ServiceType.HIU;
-        return urlGetter.apply(clientId, serviceType)
+        return urlGetter.apply(targetId, serviceType)
                 .switchIfEmpty(Mono.defer(() -> {
-                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, clientId));
-                    return error(mappingNotFoundForId(clientId));
+                    logger.error(format(NO_MAPPING_FOUND_FOR_CLIENT, targetId));
+                    return error(mappingNotFoundForId(targetId));
                 }))
                 .flatMap(url -> from(requestBody)
-                        .map(serialized -> route(serialized, url, routingKey, clientId))
+                        .map(serialized -> route(serialized, url, routingKey, targetId, sourceId))
                         .orElse(empty()));
 
     }
 
-    private <T> Mono<Void> route(T request, String url, String routingKey, String clientId) {
+    private <T> Mono<Void> route(T request, String url, String routingKey, String targetId, String sourceId) {
         return routingKey.equals(X_HIP_ID) || routingKey.equals(X_HIU_ID)
                ? identityService.authenticate()
-                       .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, clientId)).then()
+                       .flatMap(token -> bridgeWebClientBuilder(request, url, token, routingKey, targetId)).then()
                : identityService.authenticate()
-                       .flatMap(token -> cmWebClientBuilder(request, url, token)).then();
+                       .flatMap(token -> cmWebClientBuilder(request, url, token, sourceId)).then();
     }
 
-    private <T> Mono<ResponseEntity<Void>> cmWebClientBuilder(T request, String url, String token) {
+    private <T> Mono<ResponseEntity<Void>> cmWebClientBuilder(T request, String url, String token, String sourceId) {
         return webClientBuilder.build()
                 .post()
                 .uri(url)
                 .contentType(APPLICATION_JSON)
                 .header(AUTHORIZATION, token)
                 .header(CORRELATION_ID, MDC.get(CORRELATION_ID))
+                .header(X_ORIGIN_ID, sourceId)
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(httpStatus -> !httpStatus.is2xxSuccessful(),
