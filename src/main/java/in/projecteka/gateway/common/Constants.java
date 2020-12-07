@@ -15,6 +15,7 @@ public class Constants {
     public static final String GW_DATAFLOW_QUEUE = "gw.dataflow";
     public static final String BRIDGE_ID_PREFIX = "bridge_";
     public static final String CORRELATION_ID = "CORRELATION-ID";
+    public static final String UNSPECIFIED_SERVICE_TYPE = "UNSPECIFIED";
 
     public static final Map<String, String> nameMap = new HashMap<>() {
         {
