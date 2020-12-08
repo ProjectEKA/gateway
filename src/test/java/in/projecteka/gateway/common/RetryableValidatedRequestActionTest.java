@@ -10,20 +10,18 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessagePostProcessor;
-import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.core.ParameterizedTypeReference;
 import reactor.core.publisher.Mono;
+import reactor.rabbitmq.AcknowledgableDelivery;
+import reactor.rabbitmq.Receiver;
+import reactor.rabbitmq.Sender;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static in.projecteka.gateway.common.Constants.X_ORIGIN_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
@@ -36,16 +34,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RetryableValidatedRequestActionTest {
-    @Mock
-    private AmqpTemplate amqpTemplate;
+
+    private Receiver receiver;
 
     @Mock
-    private Jackson2JsonMessageConverter converter;
+    private Sender sender;
 
     @Mock
     private JsonNode jsonNode;
-
-    private Message message;
 
     @Mock
     private Map<String, Object> map;
@@ -54,15 +50,16 @@ class RetryableValidatedRequestActionTest {
     private DefaultValidatedRequestAction<ServiceClient> defaultValidatedRequestAction;
 
     private RetryableValidatedRequestAction<ServiceClient> retryableValidatedRequestAction;
+
     @Captor
-    private ArgumentCaptor<MessagePostProcessor> messagePostProcessorArgumentCaptor;
+    private ArgumentCaptor<Consumer<AcknowledgableDelivery>> deliveryConsumerCaptor;
 
     @BeforeEach
     public void init() {
         MockitoAnnotations.initMocks(this);
-        message = Mockito.mock(Message.class, RETURNS_DEEP_STUBS);
-        retryableValidatedRequestAction = Mockito.spy(new RetryableValidatedRequestAction<>(amqpTemplate,
-                converter,
+        receiver = Mockito.mock(Receiver.class, RETURNS_DEEP_STUBS);
+        retryableValidatedRequestAction = Mockito.spy(new RetryableValidatedRequestAction<>(receiver,
+                sender,
                 defaultValidatedRequestAction,
                 serviceOptions().responseMaxRetryAttempts(5).build(),
                 Constants.GW_DATAFLOW_QUEUE,

@@ -1,70 +1,83 @@
 package in.projecteka.gateway.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.LongString;
 import in.projecteka.gateway.clients.ServiceClient;
 import in.projecteka.gateway.common.cache.ServiceOptions;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageListener;
-import org.springframework.amqp.core.MessagePostProcessor;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.core.ParameterizedTypeReference;
 import reactor.core.publisher.Mono;
+import reactor.rabbitmq.AcknowledgableDelivery;
+import reactor.rabbitmq.OutboundMessage;
+import reactor.rabbitmq.Receiver;
+import reactor.rabbitmq.Sender;
+import reactor.util.retry.Retry;
+import reactor.util.retry.RetryBackoffSpec;
 
-import java.util.List;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 
 import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
-import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
+import static in.projecteka.gateway.common.Constants.GW_EXCHANGE;
 import static in.projecteka.gateway.common.Constants.X_ORIGIN_ID;
 
 @AllArgsConstructor
 public class RetryableValidatedRequestAction<T extends ServiceClient>
-        implements MessageListener, ValidatedRequestAction {
+        implements ValidatedRequestAction {
     private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
-    private final AmqpTemplate amqpTemplate;
-    private final Jackson2JsonMessageConverter converter;
+    private final Receiver receiver;
+    private final Sender sender;
     private final DefaultValidatedRequestAction<T> defaultValidatedRequestAction;
     private final ServiceOptions serviceOptions;
-    private final String deadLetterRoutingKey;
+    private final String rabbitMQRoutingKey;
     private final String clientIdRequestHeader;
 
-    @Override
-    public void onMessage(Message message) {
-        var map = (Map<String, Object>) converter.fromMessage(message,
-                ParameterizedTypeReference.forType(Map.class));
-        String clientIdHeader = message.getMessageProperties().getHeader(clientIdRequestHeader);
-        String sourceId = message.getMessageProperties().getHeader(X_ORIGIN_ID);
-        try {
-            String correlationId = MDC.get(CORRELATION_ID);
-            routeRequest(sourceId, clientIdHeader, map, clientIdRequestHeader).block();
-            MDC.put(CORRELATION_ID, correlationId);
-        } catch (Exception e) {
-            if (hasExceededRetryCount(message)) {
-                logger.error("Exceeded retry attempts; parking the message");
-                amqpTemplate.convertAndSend("gw.parking.exchange",
-                        message.getMessageProperties().getReceivedRoutingKey(),
-                        message);
-            } else {
-                logger.error("Failed to routeResponse; pushing to DLQ");
-                throw new AmqpRejectAndDontRequeueException(e);
-            }
-        }
+    @PostConstruct
+    public void subscribe() {
+        receiver.consumeManualAck(rabbitMQRoutingKey)
+                .subscribe(delivery -> {
+                    TraceableMessage traceableMessage = Serializer.to(delivery.getBody(), TraceableMessage.class);
+                    var targetId = (LongString) delivery.getProperties().getHeaders().get(clientIdRequestHeader);
+                    var sourceId = (LongString) delivery.getProperties().getHeaders().get(X_ORIGIN_ID);
+                    Mono.just(traceableMessage)
+                            .map(this::extractRequestData)
+                            .flatMap((requestData) -> this.routeRequest(sourceId.toString(), targetId.toString(), requestData, clientIdRequestHeader))
+                            .doOnSuccess(unused -> delivery.ack())
+                            .doOnError(throwable -> logger.error("Error while processing retryable request", throwable))
+                            .doFinally(signalType -> MDC.clear())
+                            .retryWhen(retryConfig(delivery))
+                            .subscriberContext(ctx -> ctx.put(CORRELATION_ID, traceableMessage.getCorrelationId()))
+                            .subscribe();
+                });
     }
 
-    boolean hasExceededRetryCount(Message in) {
-        List<Map<String, ?>> xDeathHeader = in.getMessageProperties().getXDeathHeader();
-        if (xDeathHeader != null && !xDeathHeader.isEmpty()) {
-            Long count = (Long) xDeathHeader.get(0).get("count");
-            logger.info("[GW] Number of attempts {}", count);
-            return count >= serviceOptions.getResponseMaxRetryAttempts();
-        }
-        logger.warn("xDeathHeader not found in message");
-        return false;
+    @PreDestroy
+    public void closeConnection() {
+        receiver.close();
+        sender.close();
+    }
+
+    private RetryBackoffSpec retryConfig(AcknowledgableDelivery delivery) {
+        return Retry
+                .fixedDelay(serviceOptions.getResponseMaxRetryAttempts(), Duration.ofMillis(1000))
+                .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
+                    logger.info("Exhausted Retries");
+                    delivery.nack(false);
+                    return new Exception("Failed to route response even after retries");
+                });
+    }
+
+    private Map<String, Object> extractRequestData(TraceableMessage traceableMessage){
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper.convertValue(traceableMessage.getMessage(), Map.class);
     }
 
     @Override
@@ -75,17 +88,19 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
    // Todo: need to route response back to the caller ( callerDetails (id,response api) )
     @Override
     public Mono<Void> handleError(Throwable throwable, String id, Map<String, Object> map, String sourceId) {
-        logger.error("Error in sending request to bridge; pushing to DLQ for retry", throwable);
-        MessagePostProcessor messagePostProcessor = message -> {
-            Map<String, Object> headers = message.getMessageProperties().getHeaders();
+        logger.error("Error in notifying bridge with result; Will push for retry", throwable);
+        TraceableMessage traceableMessage = TraceableMessage.builder()
+                .correlationId(MDC.get(CORRELATION_ID))
+                .message(map)
+                .build();
+
+        return Serializer.from(traceableMessage).map(message -> {
+            var headers = new HashMap<String, Object>();
             headers.put(clientIdRequestHeader, id);
             headers.put(X_ORIGIN_ID, sourceId);
-            return message;
-        };
-        return Mono.create(monoSink -> {
-            // TODO check queue names
-            amqpTemplate.convertAndSend(GW_DEAD_LETTER_EXCHANGE, deadLetterRoutingKey, map, messagePostProcessor);
-            monoSink.success();
-        });
+            var messageProperties = new AMQP.BasicProperties.Builder().headers(headers).build();
+            OutboundMessage outboundMessage = new OutboundMessage(GW_EXCHANGE, rabbitMQRoutingKey, messageProperties, message.getBytes());
+            return sender.send(Mono.just(outboundMessage));
+        }).orElse(Mono.empty());
     }
 }

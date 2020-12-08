@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import in.projecteka.gateway.clients.AdminServiceClient;
 import in.projecteka.gateway.clients.AuthConfirmServiceClient;
 import in.projecteka.gateway.clients.AuthModeFetchClient;
@@ -65,10 +67,6 @@ import io.lettuce.core.SocketOptions;
 import io.vertx.pgclient.PgConnectOptions;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.PoolOptions;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -90,9 +88,17 @@ import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.WebFilter;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
+import reactor.rabbitmq.ChannelPoolFactory;
+import reactor.rabbitmq.ChannelPoolOptions;
+import reactor.rabbitmq.RabbitFlux;
+import reactor.rabbitmq.Receiver;
+import reactor.rabbitmq.ReceiverOptions;
+import reactor.rabbitmq.SenderOptions;
 
+import javax.swing.plaf.basic.BasicRadioButtonMenuItemUI;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
@@ -101,6 +107,7 @@ import static in.projecteka.gateway.common.Constants.GW_DATAFLOW_QUEUE;
 import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static reactor.rabbitmq.Utils.singleConnectionMono;
 
 @Configuration
 public class GatewayConfiguration {
@@ -388,19 +395,15 @@ public class GatewayConfiguration {
         return new DefaultValidatedResponseAction<>(linkConfirmServiceClient);
     }
 
-    @Bean
-    public Jackson2JsonMessageConverter converter() {
-        return new Jackson2JsonMessageConverter();
-    }
-
     @Bean("retryableLinkConfirmResponseAction")
     public RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction(
             DefaultValidatedResponseAction<LinkConfirmServiceClient> linkConfirmResponseAction,
-            AmqpTemplate amqpTemplate,
-            Jackson2JsonMessageConverter converter,
+            ReceiverOptions receiverOptions,
+            SenderOptions senderOptions,
             ServiceOptions serviceOptions) {
-        return new RetryableValidatedResponseAction<>(amqpTemplate,
-                converter,
+        return new RetryableValidatedResponseAction<>(
+                RabbitFlux.createReceiver(receiverOptions),
+                RabbitFlux.createSender(senderOptions),
                 linkConfirmResponseAction,
                 serviceOptions,
                 GW_LINK_QUEUE,
@@ -838,11 +841,11 @@ public class GatewayConfiguration {
     @Bean("hipDataflowRequestAction")
     public RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction(
             DefaultValidatedRequestAction<HipDataFlowServiceClient> defaultHipDataflowRequestAction,
-            AmqpTemplate amqpTemplate,
-            Jackson2JsonMessageConverter converter,
+            ReceiverOptions receiverOptions,
+            SenderOptions senderOptions,
             ServiceOptions serviceOptions) {
-        return new RetryableValidatedRequestAction<>(amqpTemplate,
-                converter,
+        return new RetryableValidatedRequestAction<>(RabbitFlux.createReceiver(receiverOptions),
+                RabbitFlux.createSender(senderOptions),
                 defaultHipDataflowRequestAction,
                 serviceOptions,
                 GW_DATAFLOW_QUEUE,
@@ -907,17 +910,47 @@ public class GatewayConfiguration {
     }
 
 
+//    @Bean
+//    SimpleMessageListenerContainer container(
+//            ConnectionFactory connectionFactory,
+//            RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction,
+//            RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
+//        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
+//        container.setConnectionFactory(connectionFactory);
+//        container.setQueueNames(GW_LINK_QUEUE, GW_DATAFLOW_QUEUE);
+//        container.setMessageListener(retryableLinkResponseAction);
+//        container.setMessageListener(hipDataflowRequestAction);
+//        return container;
+//    }
+
     @Bean
-    SimpleMessageListenerContainer container(
-            ConnectionFactory connectionFactory,
-            RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction,
-            RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
-        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.setQueueNames(GW_LINK_QUEUE, GW_DATAFLOW_QUEUE);
-        container.setMessageListener(retryableLinkResponseAction);
-        container.setMessageListener(hipDataflowRequestAction);
-        return container;
+    public ConnectionFactory connectionFactory(RabbitmqOptions rabbitmqOptions) {
+        ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setHost(rabbitmqOptions.getHost());
+        connectionFactory.setPort(rabbitmqOptions.getPort());
+        connectionFactory.setUsername(rabbitmqOptions.getUsername());
+        connectionFactory.setPassword(rabbitmqOptions.getPassword());
+        connectionFactory.useNio();
+        return connectionFactory;
+    }
+
+    @Bean
+    public ReceiverOptions receiverOptions(ConnectionFactory connectionFactory){
+        return new ReceiverOptions()
+                .connectionFactory(connectionFactory)
+                .connectionSubscriptionScheduler(Schedulers.elastic());
+    }
+
+    @Bean
+    public SenderOptions senderOptions(ConnectionFactory connectionFactory, RabbitmqOptions rabbitmqOptions) {
+        Mono<? extends Connection> connection = singleConnectionMono(connectionFactory);
+        return new SenderOptions()
+                .connectionFactory(connectionFactory)
+                .channelPool(ChannelPoolFactory.createChannelPool(
+                        connection,
+                        new ChannelPoolOptions().maxCacheSize(rabbitmqOptions.getChannelPoolMaxCacheSize()))
+                )
+                .resourceManagementScheduler(Schedulers.elastic());
     }
 
     @Bean("hipDataFlowRequestResponseAction")
