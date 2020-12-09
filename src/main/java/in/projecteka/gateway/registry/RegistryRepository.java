@@ -23,8 +23,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import static in.projecteka.gateway.common.Serializer.to;
@@ -184,7 +184,7 @@ public class RegistryRepository {
                 "Failed to fetch bridge service");
     }
 
-    private String preapareInsertBridgeServiceQuery(HashMap<ServiceType, Boolean> typeActive) {
+    private String prepareInsertBridgeServiceQuery(Map<ServiceType, Boolean> typeActive) {
         StringBuilder typeColumns = new StringBuilder();
         StringBuilder typeValues = new StringBuilder();
         for(Entry<ServiceType, Boolean> entry : typeActive.entrySet()) {
@@ -196,8 +196,8 @@ public class RegistryRepository {
         return "INSERT INTO bridge_service (bridge_id, service_id, name, active" + typeColumns + ") VALUES ($1, $2, $3, $4" + typeValues + ")";
     }
 
-    public Mono<Void> insertBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, HashMap<ServiceType, Boolean> typeActive) {
-        return Mono.create(monoSink -> readWriteClient.preparedQuery(preapareInsertBridgeServiceQuery(typeActive))
+    public Mono<Void> insertBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareInsertBridgeServiceQuery(typeActive))
                 .execute(Tuple.of(bridgeId, serviceId, serviceName, true),
                         handler -> {
                             if (handler.failed()) {
@@ -209,7 +209,7 @@ public class RegistryRepository {
                         }));
     }
 
-    private String preapareUpdateBridgeServiceQuery(HashMap<ServiceType, Boolean> typeActive) {
+    private String preapareUpdateBridgeServiceQuery(Map<ServiceType, Boolean> typeActive) {
         StringBuilder setType = new StringBuilder();
         for(Entry<ServiceType, Boolean> entry : typeActive.entrySet()) {
             String result = "is_" + entry.getKey().toString().toLowerCase() + " = " + entry.getValue() + ", ";
@@ -221,7 +221,7 @@ public class RegistryRepository {
                 "bridge_service.service_id = $4";
     }
 
-    public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, HashMap<ServiceType, Boolean> typeActive) {
+    public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
         return Mono.create(monoSink -> readWriteClient.preparedQuery(preapareUpdateBridgeServiceQuery(typeActive))
                 .execute(Tuple.of(bridgeId, serviceName, true, serviceId),
                         handler -> {

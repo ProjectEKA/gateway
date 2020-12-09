@@ -23,8 +23,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
@@ -164,29 +164,32 @@ public class RegistryService {
                                                         ? Mono.error(invalidBridgeServiceRequest())
                                                         : addRole(bridgeId, request.getType().toString()))
                                                 : Mono.empty())
-                                        .then(upsertBridgeServiceEntry(bridgeId, services)))).then();
+                                        .then(upsertBridgeServiceEntries(bridgeId, services)))).then();
     }
 
-    private Mono<Void> upsertBridgeServiceEntry(String bridgeId, List<BridgeServiceRequest> services) {
-        HashMap<ServiceType, Boolean> typeActiveMap = new HashMap<>();
-        Flux.fromIterable(services)
-                .flatMap(service -> {
-                    if (service != null) {
-                        typeActiveMap.put(service.getType(), service.isActive());
-                    }
-                    return Mono.empty();
-                }).subscribe();
-        BridgeServiceRequest service = services.get(0);
-        return registryRepository.ifBridgeServicePresent(bridgeId, service.getId())
-                .flatMap(result -> Boolean.TRUE.equals(result)
-                        ? registryRepository.updateBridgeServiceEntry(bridgeId, service.getId(), service.getName(), typeActiveMap)
-                        .then(invalidateBridgeMappings(service.getId(), typeActiveMap))
-                        : registryRepository.insertBridgeServiceEntry(bridgeId, service.getId(), service.getName(), typeActiveMap));
+    private Mono<Void> upsertBridgeServiceEntries(String bridgeId, List<BridgeServiceRequest> services) {
+        BridgeServiceRequest serviceDetails = services.get(0);
+
+        return Flux.fromIterable(services)
+                .collectMap(BridgeServiceRequest::getType, BridgeServiceRequest::isActive)
+                .flatMap(serviceTypeActiveMap ->
+                        registryRepository.ifBridgeServicePresent(bridgeId, serviceDetails.getId())
+                                .flatMap(result -> upsertServiceForBridge(bridgeId, serviceDetails, serviceTypeActiveMap, result))
+                                .then());
+
     }
 
-    private Mono<Void> invalidateBridgeMappings(String serviceId, HashMap<ServiceType, Boolean> typeActiveMap) {
-        typeActiveMap.keySet().forEach(type -> bridgeMappings.invalidate(Pair.of(serviceId, type)));
-        return Mono.empty();
+    private Mono<Void> upsertServiceForBridge(String bridgeId, BridgeServiceRequest serviceDetails, Map<ServiceType, Boolean> serviceTypeActiveMap, Boolean result) {
+        return Boolean.TRUE.equals(result) ?
+                registryRepository.updateBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), serviceTypeActiveMap)
+                        .then(invalidateBridgeMappings(serviceDetails.getId(), serviceTypeActiveMap)) :
+                registryRepository.insertBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), serviceTypeActiveMap);
+    }
+
+    private Mono<Void> invalidateBridgeMappings(String serviceId, Map<ServiceType, Boolean> typeActiveMap) {
+        return Flux.fromIterable(typeActiveMap.keySet())
+                .map(type -> bridgeMappings.invalidate(Pair.of(serviceId, type)))
+                .then();
     }
 
     private Mono<Void> addRole(String clientId, String type) {
