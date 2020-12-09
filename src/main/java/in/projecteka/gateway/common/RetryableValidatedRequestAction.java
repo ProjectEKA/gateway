@@ -31,7 +31,7 @@ import static in.projecteka.gateway.common.Constants.X_ORIGIN_ID;
 @AllArgsConstructor
 public class RetryableValidatedRequestAction<T extends ServiceClient>
         implements ValidatedRequestAction {
-    private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedResponseAction.class);
+    private static final Logger logger = LoggerFactory.getLogger(RetryableValidatedRequestAction.class);
     private final Receiver receiver;
     private final Sender sender;
     private final DefaultValidatedRequestAction<T> defaultValidatedRequestAction;
@@ -42,20 +42,7 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
     @PostConstruct
     public void subscribe() {
         receiver.consumeManualAck(rabbitMQRoutingKey)
-                .subscribe(delivery -> {
-                    TraceableMessage traceableMessage = Serializer.to(delivery.getBody(), TraceableMessage.class);
-                    var targetId = (LongString) delivery.getProperties().getHeaders().get(clientIdRequestHeader);
-                    var sourceId = (LongString) delivery.getProperties().getHeaders().get(X_ORIGIN_ID);
-                    Mono.just(traceableMessage)
-                            .map(this::extractRequestData)
-                            .flatMap((requestData) -> this.routeRequest(sourceId.toString(), targetId.toString(), requestData, clientIdRequestHeader))
-                            .doOnSuccess(unused -> delivery.ack())
-                            .doOnError(throwable -> logger.error("Error while processing retryable request", throwable))
-                            .doFinally(signalType -> MDC.clear())
-                            .retryWhen(retryConfig(delivery))
-                            .subscriberContext(ctx -> ctx.put(CORRELATION_ID, traceableMessage.getCorrelationId()))
-                            .subscribe();
-                });
+                .subscribe(delivery -> processDelivery(delivery).subscribe());
     }
 
     @PreDestroy
@@ -66,11 +53,13 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
 
     private RetryBackoffSpec retryConfig(AcknowledgableDelivery delivery) {
         return Retry
-                .fixedDelay(serviceOptions.getResponseMaxRetryAttempts(), Duration.ofMillis(1000))
+                .fixedDelay(serviceOptions.getResponseMaxRetryAttempts(), Duration.ofMillis(serviceOptions.getRetryAttemptsDelay()))
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
                     logger.info("Exhausted Retries");
                     delivery.nack(false);
-                    return new Exception("Failed to route response even after retries");
+                    return new RetryLimitExceededException("Retry limit exceeded for routing the request");
+                }).doBeforeRetry(retrySignal -> {
+                    logger.info("Before retry");
                 });
     }
 
@@ -102,5 +91,19 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
             OutboundMessage outboundMessage = new OutboundMessage(GW_EXCHANGE, rabbitMQRoutingKey, messageProperties, message.getBytes());
             return sender.send(Mono.just(outboundMessage));
         }).orElse(Mono.empty());
+    }
+
+    public Mono<Void> processDelivery(AcknowledgableDelivery delivery) {
+        TraceableMessage traceableMessage = Serializer.to(delivery.getBody(), TraceableMessage.class);
+        var targetId = (LongString) delivery.getProperties().getHeaders().get(clientIdRequestHeader);
+        var sourceId = (LongString) delivery.getProperties().getHeaders().get(X_ORIGIN_ID);
+        return Mono.just(traceableMessage)
+                .map(this::extractRequestData)
+                .flatMap((requestData) -> this.routeRequest(sourceId.toString(), targetId.toString(), requestData, clientIdRequestHeader))
+                .doOnSuccess(unused -> delivery.ack())
+                .doOnError(throwable -> logger.error("Error while processing retryable request", throwable))
+                .doFinally(signalType -> MDC.clear())
+                .retryWhen(retryConfig(delivery))
+                .subscriberContext(ctx -> ctx.put(CORRELATION_ID, traceableMessage.getCorrelationId()));
     }
 }

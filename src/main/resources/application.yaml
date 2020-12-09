@@ -20,6 +20,7 @@ gateway:
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
+    retryAttemptsDelay: ${LISTENER_RETRY_ATTEMTPS_DELAY:1000}
   db:
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT:5432}
