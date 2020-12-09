@@ -58,8 +58,6 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
                     logger.info("Exhausted Retries");
                     delivery.nack(false);
                     return new RetryLimitExceededException("Retry limit exceeded for routing the request");
-                }).doBeforeRetry(retrySignal -> {
-                    logger.info("Before retry");
                 });
     }
 

@@ -94,11 +94,9 @@ import reactor.netty.resources.ConnectionProvider;
 import reactor.rabbitmq.ChannelPoolFactory;
 import reactor.rabbitmq.ChannelPoolOptions;
 import reactor.rabbitmq.RabbitFlux;
-import reactor.rabbitmq.Receiver;
 import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.SenderOptions;
 
-import javax.swing.plaf.basic.BasicRadioButtonMenuItemUI;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
@@ -908,20 +906,6 @@ public class GatewayConfiguration {
             DefaultValidatedResponseAction<AuthConfirmServiceClient> authConfirmResponseAction) {
         return new ResponseOrchestrator(validator, authConfirmResponseAction);
     }
-
-
-//    @Bean
-//    SimpleMessageListenerContainer container(
-//            ConnectionFactory connectionFactory,
-//            RetryableValidatedResponseAction<LinkConfirmServiceClient> retryableLinkResponseAction,
-//            RetryableValidatedRequestAction<HipDataFlowServiceClient> hipDataflowRequestAction) {
-//        SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
-//        container.setConnectionFactory(connectionFactory);
-//        container.setQueueNames(GW_LINK_QUEUE, GW_DATAFLOW_QUEUE);
-//        container.setMessageListener(retryableLinkResponseAction);
-//        container.setMessageListener(hipDataflowRequestAction);
-//        return container;
-//    }
 
     @Bean
     public ConnectionFactory connectionFactory(RabbitmqOptions rabbitmqOptions) {
