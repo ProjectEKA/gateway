@@ -35,10 +35,10 @@ public class MappingRepository {
                 "Failed to fetch Bridge host");
     }
 
-    private String prepareSelectBridgeMappingQuery(String isType) {
+    private String prepareSelectBridgeMappingQuery(String typeColumnName) {
         return "SELECT bridge.url FROM bridge " +
                 "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
-                "AND bridge_service.service_id = $1 AND "+ isType + " = $2 " +
+                "AND bridge_service.service_id = $1 AND "+ typeColumnName + " = $2 " +
                 "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
     }
 
