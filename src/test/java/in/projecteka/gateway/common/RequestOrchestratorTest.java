@@ -102,15 +102,16 @@ class RequestOrchestratorTest {
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
         String clientId = string();
+        var sourceId = string();
 
         var apiCalled = string();
         when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(requestIdCaptor.capture(), eq(requestId.toString()))).thenReturn(empty());
         when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId), captor.capture(), eq(routingKey))).thenReturn(empty());
+        when(validatedRequestAction.execute(eq(sourceId), eq(targetClientId), captor.capture(), eq(routingKey))).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, sourceId)
                 .subscriberContext(context -> context.put("apiCalled", apiCalled)))
                 .verifyComplete();
         Assertions.assertEquals(requestIdCaptor.getValue(), captor.getValue().get(REQUEST_ID).toString());
@@ -126,16 +127,17 @@ class RequestOrchestratorTest {
         var requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
         var apiCalled = string();
+        var sourceId = string();
         when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
         when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId), captor.capture(), eq(routingKey)))
+        when(validatedRequestAction.execute(eq(sourceId) ,eq(targetClientId), captor.capture(), eq(routingKey)))
                 .thenReturn(error(new TimeoutException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
+        when(discoveryServiceClient.notifyError(eq(sourceId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, sourceId)
                 .subscriberContext(context -> context.put("apiCalled", apiCalled)))
                 .verifyComplete();
 
@@ -155,17 +157,18 @@ class RequestOrchestratorTest {
         var requestBody = new HashMap<String, Object>(Map.of(REQUEST_ID, requestId, TIMESTAMP, timestamp));
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var targetClientId = string();
+        var sourceId = string();
         when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
         when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId), captor.capture(), eq(routingKey)))
+        when(validatedRequestAction.execute(eq(sourceId), eq(targetClientId), captor.capture(), eq(routingKey)))
                 .thenReturn(error(new RuntimeException()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture()))
+        when(discoveryServiceClient.notifyError(eq(sourceId), eq(routingKey), errorResult.capture()))
                 .thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, sourceId)
                 .subscriberContext(context -> context.put("apiCalled", apiCalled)))
                 .verifyComplete();
 
@@ -185,16 +188,17 @@ class RequestOrchestratorTest {
         HttpEntity<String> requestEntity = new HttpEntity<>(OBJECT_MAPPER.writeValueAsString(requestBody));
         var apiCalled = string();
         var targetClientId = string();
+        var sourceId = string();
         when(validator.validateRequest(requestEntity, routingKey))
                 .thenReturn(just(new ValidatedRequest(requestId, requestBody, targetClientId)));
         when(requestIdMappings.put(any(), eq(requestId.toString()))).thenReturn(empty());
         when(requestIdTimestampMappings.put(requestId.toString(), timestamp)).thenReturn(empty());
-        when(validatedRequestAction.execute(eq(targetClientId), captor.capture(), eq(routingKey)))
+        when(validatedRequestAction.execute(eq(sourceId), eq(targetClientId), captor.capture(), eq(routingKey)))
                 .thenReturn(error(ClientError.unableToConnect()));
         var errorResult = ArgumentCaptor.forClass(ErrorResult.class);
-        when(discoveryServiceClient.notifyError(eq(clientId), eq(routingKey), errorResult.capture())).thenReturn(empty());
+        when(discoveryServiceClient.notifyError(eq(sourceId), eq(routingKey), errorResult.capture())).thenReturn(empty());
 
-        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, clientId)
+        StepVerifier.create(requestOrchestrator.handleThis(requestEntity, routingKey, routingKey, sourceId)
                 .subscriberContext(context -> context.put("apiCalled", apiCalled)))
                 .verifyComplete();
 

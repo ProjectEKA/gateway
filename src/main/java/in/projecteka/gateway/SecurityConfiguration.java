@@ -113,8 +113,6 @@ public class SecurityConfiguration {
             PATH_LINK_ON_CONFIRM,
             PATH_CONSENTS_HIP_ON_NOTIFY,
             PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
-            USERS_AUTH_CONFIRM,
-            PATH_USERS_AUTH_INIT,
             PATH_ADD_CARE_CONTEXTS,
             PATH_PATIENT_ON_SHARE
     };
@@ -122,7 +120,9 @@ public class SecurityConfiguration {
     protected static final String[] HIU_HIP_APIS = new String[]{
             PATH_HEALTH_INFORMATION_NOTIFY,
             PATH_FETCH_AUTH_MODES,
-            PATH_USERS_AUTH_ON_NOTIFY
+            PATH_USERS_AUTH_ON_NOTIFY,
+            USERS_AUTH_CONFIRM,
+            PATH_USERS_AUTH_INIT
     };
 
     protected static final String[] CM_APIS = new String[]{

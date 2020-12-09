@@ -6,12 +6,12 @@ import java.util.Map;
 
 public interface ValidatedRequestAction {
 
-    default Mono<Void> execute(String clientId, Map<String, Object> updatedRequest, String routingKey) {
-        return routeRequest(clientId, updatedRequest, routingKey)
-                .onErrorResume(throwable -> handleError(throwable, clientId, updatedRequest));
+    default Mono<Void> execute(String sourceId, String targetId, Map<String, Object> updatedRequest, String routingKey) {
+        return routeRequest(sourceId, targetId, updatedRequest, routingKey)
+                .onErrorResume(throwable -> handleError(throwable, targetId, updatedRequest, sourceId));
     }
 
-    Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest, String routingKey);
+    Mono<Void> routeRequest(String sourceId, String targetId, Map<String, Object> updatedRequest, String routingKey);
 
-    Mono<Void> handleError(Throwable throwable, String id, Map<String, Object> map);
+    Mono<Void> handleError(Throwable throwable, String id, Map<String, Object> map, String sourceId);
 }

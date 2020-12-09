@@ -33,9 +33,10 @@ class DefaultValidatedRequestActionTest {
         String cmId = string();
         var mockRequest = (Map<String, Object>) Mockito.mock(Map.class);
         String routingKey = string();
+        var sourceId = string();
 
-        when(serviceClient.routeRequest(mockRequest, cmId, routingKey)).thenReturn(Mono.empty());
+        when(serviceClient.routeRequest(mockRequest, cmId, routingKey, sourceId)).thenReturn(Mono.empty());
 
-        create(defaultValidatedRequestAction.routeRequest(cmId, mockRequest, routingKey)).verifyComplete();
+        create(defaultValidatedRequestAction.routeRequest(sourceId, cmId, mockRequest, routingKey)).verifyComplete();
     }
 }

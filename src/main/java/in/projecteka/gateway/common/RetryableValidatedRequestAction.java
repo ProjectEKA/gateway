@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static in.projecteka.gateway.common.Constants.GW_DEAD_LETTER_EXCHANGE;
+import static in.projecteka.gateway.common.Constants.X_ORIGIN_ID;
 
 @AllArgsConstructor
 public class RetryableValidatedRequestAction<T extends ServiceClient>
@@ -37,9 +38,10 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
         var map = (Map<String, Object>) converter.fromMessage(message,
                 ParameterizedTypeReference.forType(Map.class));
         String clientIdHeader = message.getMessageProperties().getHeader(clientIdRequestHeader);
+        String sourceId = message.getMessageProperties().getHeader(X_ORIGIN_ID);
         try {
             String correlationId = MDC.get(CORRELATION_ID);
-            routeRequest(clientIdHeader, map, clientIdRequestHeader).block();
+            routeRequest(sourceId, clientIdHeader, map, clientIdRequestHeader).block();
             MDC.put(CORRELATION_ID, correlationId);
         } catch (Exception e) {
             if (hasExceededRetryCount(message)) {
@@ -66,17 +68,18 @@ public class RetryableValidatedRequestAction<T extends ServiceClient>
     }
 
     @Override
-    public Mono<Void> routeRequest(String id, Map<String, Object> updatedRequest, String routingKey) {
-        return defaultValidatedRequestAction.routeRequest(id,updatedRequest, routingKey);
+    public Mono<Void> routeRequest(String sourceId, String targetId, Map<String, Object> updatedRequest, String routingKey) {
+        return defaultValidatedRequestAction.routeRequest(sourceId, targetId, updatedRequest, routingKey);
     }
 
    // Todo: need to route response back to the caller ( callerDetails (id,response api) )
     @Override
-    public Mono<Void> handleError(Throwable throwable, String id, Map<String, Object> map) {
+    public Mono<Void> handleError(Throwable throwable, String id, Map<String, Object> map, String sourceId) {
         logger.error("Error in sending request to bridge; pushing to DLQ for retry", throwable);
         MessagePostProcessor messagePostProcessor = message -> {
             Map<String, Object> headers = message.getMessageProperties().getHeaders();
             headers.put(clientIdRequestHeader, id);
+            headers.put(X_ORIGIN_ID, sourceId);
             return message;
         };
         return Mono.create(monoSink -> {
