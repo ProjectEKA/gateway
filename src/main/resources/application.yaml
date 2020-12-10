@@ -20,6 +20,7 @@ gateway:
   serviceoptions:
     timeout: ${SERVICE_TIMEOUT:5}
     responseMaxRetryAttempts: ${RESPONSE_MAX_RETRY_ATTEMPTS:2}
+    retryAttemptsDelay: ${LISTENER_RETRY_ATTEMTPS_DELAY:1000}
   db:
     host: ${POSTGRES_HOST}
     port: ${POSTGRES_PORT:5432}
@@ -40,6 +41,7 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
+    channelPoolMaxCacheSize: ${RABBITMQ_CHANNEL_POOL_SIZE:10}
 identity:
   clientId: ${GATEWAY_CLIENT_ID}
   clientSecret: ${GATEWAY_CLIENT_SECRET}

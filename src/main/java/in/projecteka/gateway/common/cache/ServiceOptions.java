@@ -13,4 +13,5 @@ public class ServiceOptions {
     public final int timeout;
     public final String registryPath;
     public final int responseMaxRetryAttempts;
+    public final int retryAttemptsDelay;
 }
