@@ -72,8 +72,8 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
     }
 
     @Override
-    public Mono<Void> handleError(Throwable throwable, String xCmId, JsonNode jsonNode) {
-        logger.error("Error in notifying CM with result; pushing to DLQ for retry", throwable);
+    public Mono<Void> handleError(Throwable throwable, String xClientId, JsonNode jsonNode) {
+        logger.error("Error in notifying CM with result; Publishing to queue for retry", throwable);
         TraceableMessage traceableMessage = TraceableMessage.builder()
                 .correlationId(MDC.get(CORRELATION_ID))
                 .message(jsonNode)
@@ -81,7 +81,7 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
 
         return Serializer.from(traceableMessage).map(message -> {
             var headers = new HashMap<String, Object>();
-            headers.put(clientIdRequestHeader, xCmId);
+            headers.put(clientIdRequestHeader, xClientId);
             var messageProperties = new AMQP.BasicProperties.Builder().headers(headers).build();
             OutboundMessage outboundMessage = new OutboundMessage(GW_EXCHANGE, rabbitMQRoutingKey, messageProperties, message.getBytes());
             return sender.send(Mono.just(outboundMessage));
@@ -90,10 +90,10 @@ public class RetryableValidatedResponseAction<T extends ServiceClient> implement
 
     public Mono<Void> processDelivery(AcknowledgableDelivery delivery) {
         TraceableMessage traceableMessage = Serializer.to(delivery.getBody(), TraceableMessage.class);
-        var xCmId = (LongString) delivery.getProperties().getHeaders().get(clientIdRequestHeader);
+        var xClientId = (LongString) delivery.getProperties().getHeaders().get(clientIdRequestHeader);
         return Mono.just(traceableMessage)
                 .map(this::extractRequestData)
-                .flatMap((requestData) -> this.routeResponse(xCmId.toString(), requestData, clientIdRequestHeader))
+                .flatMap((requestData) -> this.routeResponse(xClientId.toString(), requestData, clientIdRequestHeader))
                 .doOnSuccess(unused -> delivery.ack())
                 .doOnError(throwable -> logger.error("Error while processing retryable response", throwable))
                 .doFinally(signalType -> MDC.clear())
