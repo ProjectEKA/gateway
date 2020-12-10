@@ -344,7 +344,7 @@ class RegistryServiceTest {
     void shouldThrowInvalidBridgeServiceRequest() {
         var request = bridgeServiceRequest().active(true).build();
         var bridgeId = string();
-        when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId()))
+        when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(true));
 
         var producer = registryService.populateBridgeServicesEntries(bridgeId, List.of(request));
@@ -352,8 +352,7 @@ class RegistryServiceTest {
                 .verifyErrorSatisfies(throwable ->
                         assertThat(throwable).isEqualToComparingFieldByField(invalidBridgeServiceRequest()));
 
-        verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
-
+        verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
     }
 
     @Test
