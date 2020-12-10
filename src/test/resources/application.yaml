@@ -23,3 +23,6 @@ gateway:
 webclient:
   maxInMemorySize: ${MAX_IN_MEMORY_SIZE:1048576}
   use-connection-pool: ${USE_HTTP_CONNECTION_POOL:false}
+spring:
+  rabbitmq:
+    channelPoolMaxCacheSize: 10
