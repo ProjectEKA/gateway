@@ -28,12 +28,12 @@ import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
+import static in.projecteka.gateway.common.Constants.UNSPECIFIED_SERVICE_TYPE;
 
 
 @AllArgsConstructor
 @RestController
 public class RegistryController {
-    private static final String UNSPECIFIED_SERVICE_TYPE = "UNSPECIFIED";
     private final RegistryService registryService;
 
     @PutMapping(INTERNAL_CM)

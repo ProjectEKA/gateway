@@ -18,10 +18,6 @@ public class MappingRepository {
     private static final Logger logger = LoggerFactory.getLogger(MappingRepository.class);
     private static final String SELECT_CM_MAPPING = "SELECT url FROM consent_manager " +
             "WHERE suffix = $1 AND active = $2 AND blocklisted = $3";
-    private static final String SELECT_BRIDGE_MAPPING = "SELECT bridge.url FROM bridge " +
-            "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
-            "AND bridge_service.service_id = $1 AND bridge_service.type = $2 " +
-            "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
     private static final String SELECT_BRIDGE_URL = "SELECT url FROM bridge " +
             "WHERE bridge_id = $1 AND active = $2 AND blocklisted = $3";
     private static final String SELECT_BRIDGE_PROPERTIES = "SELECT name, bridge_id, url FROM bridge";
@@ -34,9 +30,16 @@ public class MappingRepository {
     }
 
     public Mono<String> bridgeHost(Pair<String, ServiceType> bridge) {
-        return select(SELECT_BRIDGE_MAPPING,
-                Tuple.of(bridge.getFirst(), bridge.getSecond().toString(), true, false, true),
+        return select(prepareSelectBridgeMappingQuery("is_"+ bridge.getSecond().toString().toLowerCase()),
+                Tuple.of(bridge.getFirst(), true, true, false, true),
                 "Failed to fetch Bridge host");
+    }
+
+    private String prepareSelectBridgeMappingQuery(String typeColumnName) {
+        return "SELECT bridge.url FROM bridge " +
+                "INNER JOIN bridge_service ON bridge_service.bridge_id = bridge.bridge_id " +
+                "AND bridge_service.service_id = $1 AND "+ typeColumnName + " = $2 " +
+                "WHERE bridge.active = $3 AND bridge.blocklisted = $4 AND bridge_service.active = $5";
     }
 
     public Mono<String> bridgeHost(String bridgeId) {

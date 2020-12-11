@@ -4,7 +4,6 @@ import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeService;
-import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.Endpoint;
@@ -25,6 +24,8 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import static in.projecteka.gateway.common.Serializer.to;
 
@@ -49,22 +50,12 @@ public class RegistryRepository {
     private static final String UPDATE_BRIDGE_ENTRY = "UPDATE bridge SET name = $1, url = $2, active = $3, " +
             "blocklisted = $4, date_modified = timezone('utc'::text, now()) WHERE bridge.bridge_id = $5";
 
-    private static final String SELECT_ACTIVE_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
-            "WHERE service_id = $1 AND type = $2 AND active = $3 AND bridge_id != $4";
     private static final String SELECT_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
-            "WHERE service_id = $1 AND type = $2";
-    private static final String INSERT_BRIDGE_SERVICE_ENTRY = "INSERT INTO " +
-            "bridge_service (bridge_id, type, active, service_id, name) VALUES ($1, $2, $3, $4, $5)";
-    private static final String UPDATE_BRIDGE_SERVICE_ENTRY = "UPDATE bridge_service SET bridge_id = $1, " +
-            "active = $2, name = $3, date_modified = timezone('utc'::text, now()) FROM bridge " +
-            "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $4 AND " +
-            "bridge_service.service_id = $5 AND bridge_service.type = $6";
-    private static final String SELECT_BRIDGE_SERVICES = "select service_id, type FROM bridge_service " +
+            "WHERE bridge_id = $1 AND service_id = $2";
+    private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, type FROM bridge_service " +
             "WHERE bridge_id = $1 AND active = $2";
-    private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "select service_id, name, type, active, endpoints " +
-            "FROM bridge_service WHERE service_id = $1 AND active = $2";
-    private static final String SELECT_BRIDGE_SERVICES_OF_TYPE = "SELECT service_id, name, type, active, endpoints " +
-            "FROM bridge_service WHERE type = $1 AND active = $2";
+    private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "SELECT service_id, name, is_hip, is_hiu," +
+            " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1";
     private static final String SELECT_BRIDGE_PROFILE = "SELECT name, url, bridge_id, active, blocklisted, " +
             "date_created, date_modified FROM bridge WHERE bridge_id = $1";
 
@@ -177,22 +168,37 @@ public class RegistryRepository {
                         }));
     }
 
+    private String prepareSelectActiveBridgeServiceQuery(String typeColumnName) {
+        return "SELECT service_id FROM bridge_service WHERE service_id = $1 AND " + typeColumnName + " = $2 AND bridge_id != $3";
+    }
+
     public Mono<Boolean> ifPresent(String serviceId, ServiceType type, boolean active, String bridgeId) {
-        return select(SELECT_ACTIVE_BRIDGE_SERVICE,
-                Tuple.of(serviceId, type.toString(), active, bridgeId),
+        return select(prepareSelectActiveBridgeServiceQuery(getColumnName(type)),
+                Tuple.of(serviceId, active, bridgeId),
                 "Failed to fetch active bridge service");
     }
 
-    public Mono<Boolean> ifPresent(String serviceId, ServiceType type) {
+    public Mono<Boolean> ifBridgeServicePresent(String bridgeId, String serviceId) {
         return select(SELECT_BRIDGE_SERVICE,
-                Tuple.of(serviceId, type.toString()),
+                Tuple.of(bridgeId, serviceId),
                 "Failed to fetch bridge service");
     }
 
-    public Mono<Void> insertBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
-        return Mono.create(monoSink -> readWriteClient.preparedQuery(INSERT_BRIDGE_SERVICE_ENTRY)
-                .execute(Tuple.of(bridgeId, request.getType().toString(), request.isActive(),
-                        request.getId(), request.getName()),
+    private String prepareInsertBridgeServiceQuery(Map<ServiceType, Boolean> typeActive) {
+        StringBuilder typeColumnNames = new StringBuilder();
+        StringBuilder typeValues = new StringBuilder();
+        for(Entry<ServiceType, Boolean> entry : typeActive.entrySet()) {
+            String colName = ", " + getColumnName(entry.getKey());
+            String colVal = ", " + entry.getValue();
+            typeColumnNames.append(colName);
+            typeValues.append(colVal);
+        }
+        return "INSERT INTO bridge_service (bridge_id, service_id, name, active" + typeColumnNames + ") VALUES ($1, $2, $3, $4" + typeValues + ")";
+    }
+
+    public Mono<Void> insertBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareInsertBridgeServiceQuery(typeActive))
+                .execute(Tuple.of(bridgeId, serviceId, serviceName, true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -203,10 +209,21 @@ public class RegistryRepository {
                         }));
     }
 
-    public Mono<Void> updateBridgeServiceEntry(String bridgeId, BridgeServiceRequest request) {
-        return Mono.create(monoSink -> readWriteClient.preparedQuery(UPDATE_BRIDGE_SERVICE_ENTRY)
-                .execute(Tuple.of(bridgeId, request.isActive(), request.getName(), true,
-                        request.getId(), request.getType().toString()),
+    private String prepareUpdateBridgeServiceQuery(Map<ServiceType, Boolean> typeActive) {
+        StringBuilder setTypeColumnValues = new StringBuilder();
+        for(Entry<ServiceType, Boolean> entry : typeActive.entrySet()) {
+            String result = getColumnName(entry.getKey()) + " = " + entry.getValue() + ", ";
+            setTypeColumnValues.append(result);
+        }
+        return "UPDATE bridge_service SET bridge_id = $1, " +
+                "name = $2, " + setTypeColumnValues.toString() + "date_modified = timezone('utc'::text, now()) FROM bridge " +
+                "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $3 AND " +
+                "bridge_service.service_id = $4";
+    }
+
+    public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
+        return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareUpdateBridgeServiceQuery(typeActive))
+                .execute(Tuple.of(bridgeId, serviceName, true, serviceId),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -259,7 +276,7 @@ public class RegistryRepository {
 
     public Mono<ServiceProfile> fetchServiceEntries(String serviceId) {
         return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_SERVICES_BY_SERVICE_ID)
-                .execute(Tuple.of(serviceId, true),
+                .execute(Tuple.of(serviceId),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -281,7 +298,18 @@ public class RegistryRepository {
                                             .id(row.getString("service_id"))
                                             .name(row.getString("name"))
                                             .active(row.getBoolean("active"));
-                                    types.add(ServiceType.valueOf(row.getString("type")));
+                                    var isHip = row.getBoolean("is_hip");
+                                    var isHiu = row.getBoolean("is_hiu");
+                                    var isHealthLocker = row.getBoolean("is_health_locker");
+                                    if(Boolean.TRUE.equals(isHip)) {
+                                        types.add(ServiceType.HIP);
+                                    }
+                                    if(Boolean.TRUE.equals(isHiu)) {
+                                        types.add(ServiceType.HIU);
+                                    }
+                                    if(Boolean.TRUE.equals(isHealthLocker)) {
+                                        types.add(ServiceType.HEALTH_LOCKER);
+                                    }
                                     endpoints.addAll(endpointList);
                                 });
                                 serviceProfile[0].types(types);
@@ -294,9 +322,14 @@ public class RegistryRepository {
                         }));
     }
 
+    private String prepareSelectBridgeServicesOfTypeQuery(String typeColumnName) {
+        return "SELECT service_id, name, active, endpoints FROM bridge_service WHERE " + typeColumnName + " = $1";
+    }
+
     public Mono<List<ServiceProfileResponse>> fetchServicesOfType(String serviceType) {
-        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_SERVICES_OF_TYPE)
-                .execute(Tuple.of(serviceType, true),
+        return Mono.create(monoSink -> this.readOnlyClient
+                .preparedQuery(prepareSelectBridgeServicesOfTypeQuery(getColumnName(ServiceType.valueOf(serviceType))))
+                .execute(Tuple.of(true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -312,7 +345,7 @@ public class RegistryRepository {
                                             .id(row.getString("service_id"))
                                             .name(row.getString("name"))
                                             .active(row.getBoolean("active"))
-                                            .type(ServiceRole.valueOf(row.getString("type")))
+                                            .type(ServiceRole.valueOf(serviceType))
                                             .endpoints(endpointJson != null ? to(endpointJson) : Collections.emptyList())
                                             .build());
                                 });
@@ -320,6 +353,10 @@ public class RegistryRepository {
                             monoSink.success(results);
                         })
         );
+    }
+
+    private static String getColumnName(ServiceType serviceType) {
+        return "is_" + serviceType.toString().toLowerCase();
     }
 
     public Mono<HFRBridgeResponse> bridgeProfile(String bridgeId) {
