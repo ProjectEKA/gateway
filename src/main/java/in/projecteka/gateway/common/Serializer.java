@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import in.projecteka.gateway.registry.model.Endpoint;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
@@ -15,11 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+
 public class Serializer {
     private static final Logger logger = LoggerFactory.getLogger(Serializer.class);
     public static final String ERROR_IN_DE_SERIALISE = "Error while de-serialise";
     public static final String ERROR_IN_SERIALIZING_REQUEST_BODY = "Error while serializing request body";
-    static ObjectMapper objectMapper = new ObjectMapper(); //TODO
+    static ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()); //TODO
 
     private Serializer() {
     }
@@ -60,6 +62,11 @@ public class Serializer {
             logger.error(ERROR_IN_SERIALIZING_REQUEST_BODY, e);
             return Optional.empty();
         }
+    }
+
+    @SneakyThrows
+    public static <T> T to(byte[] value, Class<T> type) {
+        return objectMapper.readValue(value, type);
     }
 
     @SneakyThrows
