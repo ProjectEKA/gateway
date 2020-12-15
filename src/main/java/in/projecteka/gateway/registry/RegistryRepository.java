@@ -215,15 +215,16 @@ public class RegistryRepository {
             String result = getColumnName(entry.getKey()) + " = " + entry.getValue() + ", ";
             setTypeColumnValues.append(result);
         }
-        return "UPDATE bridge_service SET bridge_id = $1, " +
-                "name = $2, " + setTypeColumnValues.toString() + "date_modified = timezone('utc'::text, now()) FROM bridge " +
-                "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge.active = $3 AND " +
-                "bridge_service.service_id = $4";
+
+        return "UPDATE bridge_service SET name = $2, " + setTypeColumnValues.toString() +
+                "date_modified = timezone('utc'::text, now()) FROM bridge " +
+                "WHERE bridge_service.bridge_id = bridge.bridge_id AND bridge_service.bridge_id = $1 " +
+                "AND bridge.active = $3 AND bridge_service.service_id = $4 AND bridge_service.active = $5";
     }
 
     public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
         return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareUpdateBridgeServiceQuery(typeActive))
-                .execute(Tuple.of(bridgeId, serviceName, true, serviceId),
+                .execute(Tuple.of(bridgeId, serviceName, true, serviceId, true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
