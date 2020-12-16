@@ -48,7 +48,7 @@ public class RegistryController {
 
     @PutMapping(value = {INTERNAL_BRIDGES_BRIDGE_ID_SERVICES, HFR_BRIDGES_BRIDGE_ID_SERVICES})
     public Mono<Void> bridgeServiceEntries(@PathVariable("bridgeId") String bridgeId,
-                                           @RequestBody List<BridgeServiceRequest> bridgeServicesRequest) {
+                                           @Valid @RequestBody List<BridgeServiceRequest> bridgeServicesRequest) {
         return registryService.populateBridgeServicesEntries(bridgeId, bridgeServicesRequest);
     }
 

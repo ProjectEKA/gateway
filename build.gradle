@@ -18,6 +18,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 task bootRunLocal {
@@ -43,7 +44,7 @@ dependencies {
     compile 'net.logstash.logback:logstash-logback-encoder:6.3'
     implementation 'com.nimbusds:nimbus-jose-jwt:8.15'
     implementation 'com.google.guava:guava:29.0-jre'
-    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation "io.projectreactor.rabbitmq:reactor-rabbitmq:1.4.3.RELEASE"
     testImplementation 'org.jeasy:easy-random-core:4.2.0'
     implementation 'io.vertx:vertx-pg-client:3.9.0'
 }

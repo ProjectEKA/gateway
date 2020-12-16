@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Supplier;
 
 import static in.projecteka.gateway.clients.ClientError.clientAlreadyExists;
@@ -100,6 +99,36 @@ public class AdminServiceClient {
                         .toBodilessEntity())
                 .then();
     }
+
+//    public Mono<String> getId(String clientId) {
+//        return tokenGenerator.get()
+//                .flatMap(token -> webClient
+//                        .get()
+//                        .uri(uriBuilder ->
+//                                uriBuilder.path("/admin/realms/{realm}/clients/{clientId}")
+//                                        .build(Map.of(REALM_NAME, realm, "clientId", clientId)))
+//                        .header(AUTHORIZATION, token)
+//                        .accept(APPLICATION_JSON)
+//                        .retrieve()
+//                        .onStatus(httpStatus -> httpStatus.value() == 401,
+//                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+//                                        .flatMap(keyCloakError -> {
+//                                            logger.error(keyCloakError.getError(), keyCloakError);
+//                                            return error(unknownUnAuthorizedError(keyCloakError.getError()));
+//                                        }))
+//                        .onStatus(httpStatus -> httpStatus.value() == 404,
+//                                clientResponse -> clientResponse.bodyToMono(KeyCloakError.class)
+//                                        .flatMap(keyCloakError -> {
+//                                            logger.error(keyCloakError.getError(), keyCloakError);
+//                                            return error(notFound(keyCloakError.getError()));
+//                                        }))
+//                        .onStatus(HttpStatus::isError, clientResponse -> clientResponse.bodyToMono(String.class)
+//                                .doOnNext(properties -> logger.error(ERROR_MESSAGE,
+//                                        clientResponse.statusCode(),
+//                                        properties))
+//                                .then(error(unableToConnect())))
+//                        .bodyToMono(Client.class));
+//    }
 
     public Mono<ServiceAccount> getServiceAccount(String id) {
         return tokenGenerator.get()

@@ -1,6 +1,9 @@
 package in.projecteka.gateway.common;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.rabbitmq.client.LongString;
+import com.rabbitmq.client.impl.LongStringHelper;
 import in.projecteka.gateway.clients.ServiceClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,144 +13,127 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
-import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessagePostProcessor;
-import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.core.ParameterizedTypeReference;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.rabbitmq.AcknowledgableDelivery;
+import reactor.rabbitmq.OutboundMessage;
+import reactor.rabbitmq.Receiver;
+import reactor.rabbitmq.Sender;
 import reactor.test.StepVerifier;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
+import static in.projecteka.gateway.clients.ClientError.mappingNotFoundForId;
+import static in.projecteka.gateway.common.Constants.GW_LINK_QUEUE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.testcommon.TestBuilders.serviceOptions;
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static reactor.core.publisher.Mono.empty;
+import static reactor.core.publisher.Mono.error;
 
 class RetryableValidatedResponseActionTest {
     @Mock
-    private AmqpTemplate amqpTemplate;
+    private Receiver receiver;
 
     @Mock
-    private Jackson2JsonMessageConverter converter;
+    private Sender sender;
 
-    @Mock
     private JsonNode jsonNode;
-
-    private Message message;
 
     @Mock
     private DefaultValidatedResponseAction<ServiceClient> defaultValidatedResponseAction;
 
     private RetryableValidatedResponseAction<ServiceClient> retryableValidatedResponseAction;
+
+    private AcknowledgableDelivery acknowledgableDelivery;
+
     @Captor
-    private ArgumentCaptor<MessagePostProcessor> messagePostProcessorArgumentCaptor;
+    private ArgumentCaptor<Mono<OutboundMessage>> outboundMessageCaptor;
+
 
     @BeforeEach
-    public void init() {
+    public void init() throws JsonProcessingException {
         MockitoAnnotations.initMocks(this);
-        message = Mockito.mock(Message.class, RETURNS_DEEP_STUBS);
-        retryableValidatedResponseAction = Mockito.spy(new RetryableValidatedResponseAction<>(amqpTemplate,
-                converter,
+        jsonNode = Serializer.objectMapper.readValue("{}", JsonNode.class);
+        acknowledgableDelivery = Mockito.mock(AcknowledgableDelivery.class, RETURNS_DEEP_STUBS);
+        when(receiver.consumeManualAck(GW_LINK_QUEUE)).thenReturn(Flux.just(acknowledgableDelivery));
+        retryableValidatedResponseAction = Mockito.spy(new RetryableValidatedResponseAction<>(receiver,
+                sender,
                 defaultValidatedResponseAction,
-                serviceOptions().responseMaxRetryAttempts(5).build(),
-                Constants.GW_LINK_QUEUE,
+                serviceOptions().responseMaxRetryAttempts(5).retryAttemptsDelay(100).build(),
+                GW_LINK_QUEUE,
                 X_CM_ID));
     }
 
     @Test
     void shouldRouteResponseAndNotRetryWhenSuccessful() {
-        MessageProperties props = new MessageProperties();
-        String testCmId = "testCmId";
+
+        LongString testCmId = LongStringHelper.asLongString("testCmId");
         var routingKey = X_CM_ID;
-        props.setHeader(routingKey, testCmId);
-        when(converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class))).thenReturn(jsonNode);
-        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testCmId);
-        doReturn(Mono.empty()).when(retryableValidatedResponseAction).routeResponse(testCmId, jsonNode, routingKey);
 
-        retryableValidatedResponseAction.onMessage(message);
+        TraceableMessage traceableMessage = TraceableMessage.builder()
+                .correlationId(UUID.randomUUID().toString())
+                .message(jsonNode).build();
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId, jsonNode, routingKey);
+        when(acknowledgableDelivery.getProperties().getHeaders().get(routingKey)).thenReturn(testCmId);
+        when(acknowledgableDelivery.getBody()).thenReturn(Serializer.from(traceableMessage).get().getBytes());
+
+        doReturn(Mono.empty()).when(retryableValidatedResponseAction).routeResponse(testCmId.toString(), jsonNode, routingKey);
+
+        StepVerifier.create(retryableValidatedResponseAction.processDelivery(acknowledgableDelivery))
+                .verifyComplete();
+
+        verify(retryableValidatedResponseAction).routeResponse(testCmId.toString(), jsonNode, routingKey);
     }
 
     @Test
-    void shouldPushToDLQUponFailureWhenMaxRetryHasNotExceeded() {
-        MessageProperties props = new MessageProperties();
-        String testCmId = "testCmId";
-        var routingKey = X_CM_ID;
-        props.setHeader(routingKey, testCmId);
-        when(converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class))).thenReturn(jsonNode);
-        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testCmId);
-        doReturn(false).when(retryableValidatedResponseAction).hasExceededRetryCount(message);
-        doReturn(Mono.error(new RuntimeException()))
+    void shouldRetryIfFailsToRouteResponse() {
+        String routingKey = X_CM_ID;
+        LongString testCmId = LongStringHelper.asLongString("testCmId");
+
+        TraceableMessage traceableMessage = TraceableMessage.builder()
+                .correlationId(UUID.randomUUID().toString())
+                .message(jsonNode).build();
+
+        when(acknowledgableDelivery.getProperties().getHeaders().get(routingKey)).thenReturn(testCmId);
+        when(acknowledgableDelivery.getBody()).thenReturn(Serializer.from(traceableMessage).get().getBytes());
+
+        doReturn(error(mappingNotFoundForId(testCmId.toString())), empty())
                 .when(retryableValidatedResponseAction)
-                .routeResponse(testCmId, jsonNode, routingKey);
+                .routeResponse(testCmId.toString(), jsonNode, routingKey);
 
-        Assertions.assertThrows(AmqpRejectAndDontRequeueException.class,
-                () -> retryableValidatedResponseAction.onMessage(message));
+        StepVerifier.create(retryableValidatedResponseAction.processDelivery(acknowledgableDelivery))
+                .verifyComplete();
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId, jsonNode, routingKey);
-        verify(retryableValidatedResponseAction).hasExceededRetryCount(message);
+        verify(retryableValidatedResponseAction, times(2)).routeResponse(testCmId.toString(), jsonNode, routingKey);
     }
 
     @Test
-    void shouldPushToParkingLotUponFailureWhenMaxRetryHasExceeded() {
-        MessageProperties props = new MessageProperties();
-        String testCmId = "testCmId";
-        var routingKey = X_CM_ID;
-        props.setHeader(routingKey, testCmId);
-        when(converter.fromMessage(message, ParameterizedTypeReference.forType(JsonNode.class))).thenReturn(jsonNode);
-        when(message.getMessageProperties().getHeader(routingKey)).thenReturn(testCmId);
-        String testRoutingKey = "testRoutingKey";
-        when(message.getMessageProperties().getReceivedRoutingKey()).thenReturn(testRoutingKey);
-        doNothing().when(amqpTemplate).convertAndSend("gw.parking.exchange", testRoutingKey, message);
-        doReturn(true).when(retryableValidatedResponseAction).hasExceededRetryCount(message);
-        doReturn(Mono.error(new RuntimeException()))
+    void shouldThrowExceptionWhenRetryLimitExceeds() {
+        String routingKey = X_CM_ID;
+        LongString testCmId = LongStringHelper.asLongString("testCmId");
+
+        TraceableMessage traceableMessage = TraceableMessage.builder()
+                .correlationId(UUID.randomUUID().toString())
+                .message(jsonNode).build();
+
+        when(acknowledgableDelivery.getProperties().getHeaders().get(routingKey)).thenReturn(testCmId);
+        when(acknowledgableDelivery.getBody()).thenReturn(Serializer.from(traceableMessage).get().getBytes());
+
+        doReturn(error(mappingNotFoundForId(testCmId.toString())))
                 .when(retryableValidatedResponseAction)
-                .routeResponse(testCmId, jsonNode, routingKey);
+                .routeResponse(testCmId.toString(), jsonNode, routingKey);
 
-        retryableValidatedResponseAction.onMessage(message);
+        StepVerifier.create(retryableValidatedResponseAction.processDelivery(acknowledgableDelivery))
+                .expectError(RetryLimitExceededException.class)
+                .verify();
 
-        verify(retryableValidatedResponseAction).routeResponse(testCmId, jsonNode, routingKey);
-        verify(retryableValidatedResponseAction).hasExceededRetryCount(message);
-        verify(amqpTemplate).convertAndSend("gw.parking.exchange", testRoutingKey, message);
-    }
-
-    @Test
-    void shouldReturnFalseWhenDeathHeaderCountIsLessThanMaxAttempts() {
-        List<Map<String, ?>> xDeathHeaders = new ArrayList<>();
-        Map<String, Long> xDeathHeader = new HashMap<>();
-        xDeathHeader.put("count", 1L);
-        xDeathHeaders.add(xDeathHeader);
-        when(message.getMessageProperties().getXDeathHeader()).thenReturn(xDeathHeaders);
-
-        boolean hasExceededRetryCount = retryableValidatedResponseAction.hasExceededRetryCount(message);
-
-        Assertions.assertFalse(hasExceededRetryCount);
-    }
-
-    @Test
-    void shouldReturnTrueWhenDeathHeaderCountEqualsMaxAttempts() {
-        List<Map<String, ?>> xDeathHeaders = new ArrayList<>();
-        Map<String, Long> xDeathHeader = new HashMap<>();
-        xDeathHeader.put("count", 5L);
-        xDeathHeaders.add(xDeathHeader);
-        when(message.getMessageProperties().getXDeathHeader()).thenReturn(xDeathHeaders);
-
-        boolean hasExceededRetryCount = retryableValidatedResponseAction.hasExceededRetryCount(message);
-
-        Assertions.assertTrue(hasExceededRetryCount);
+        verify(retryableValidatedResponseAction, times(6)).routeResponse(testCmId.toString(), jsonNode, routingKey);
     }
 
     @Test
@@ -164,19 +150,16 @@ class RetryableValidatedResponseActionTest {
 
     @Test
     void shouldHandleError() {
+        String routingKey = X_CM_ID;
         String testCmId = "testCmId";
-        Map<String, Object> headers = new HashMap<>();
-        doNothing().when(amqpTemplate).convertAndSend(eq("gw.dead-letter-exchange"),
-                eq(Constants.GW_LINK_QUEUE),
-                eq(jsonNode),
-                messagePostProcessorArgumentCaptor.capture());
-        when(message.getMessageProperties().getHeaders()).thenReturn(headers);
+
+        when(sender.send(outboundMessageCaptor.capture())).thenReturn(Mono.empty());
 
         StepVerifier.create(retryableValidatedResponseAction.handleError(new RuntimeException(), testCmId, jsonNode))
                 .verifyComplete();
 
-        MessagePostProcessor messagePostProcessor = messagePostProcessorArgumentCaptor.getValue();
-        messagePostProcessor.postProcessMessage(message);
-        Assertions.assertEquals(testCmId, headers.get("X-CM-ID"));
+        var outboundMessage = outboundMessageCaptor.getValue().block();
+        var headers = outboundMessage.getProperties().getHeaders();
+        Assertions.assertEquals(testCmId, headers.get(routingKey));
     }
 }

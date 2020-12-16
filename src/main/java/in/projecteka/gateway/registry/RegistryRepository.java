@@ -6,11 +6,12 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
-import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
+import io.vertx.core.json.JsonObject;
 import io.vertx.pgclient.PgPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
@@ -22,11 +23,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
+import static in.projecteka.gateway.common.Serializer.serializeObject;
 import static in.projecteka.gateway.common.Serializer.to;
 
 
@@ -55,9 +57,11 @@ public class RegistryRepository {
     private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, type FROM bridge_service " +
             "WHERE bridge_id = $1 AND active = $2";
     private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "SELECT service_id, name, is_hip, is_hiu," +
-            " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1";
+            " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1 AND active = $2";
     private static final String SELECT_BRIDGE_PROFILE = "SELECT name, url, bridge_id, active, blocklisted, " +
             "date_created, date_modified FROM bridge WHERE bridge_id = $1";
+    private static final String SELECT_ENDPOINTS_OF_SERVICE = "SELECT endpoints FROM bridge_service " +
+            "WHERE bridge_id = $1 AND service_id = $2";
 
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
@@ -193,12 +197,12 @@ public class RegistryRepository {
             typeColumnNames.append(colName);
             typeValues.append(colVal);
         }
-        return "INSERT INTO bridge_service (bridge_id, service_id, name, active" + typeColumnNames + ") VALUES ($1, $2, $3, $4" + typeValues + ")";
+        return "INSERT INTO bridge_service (bridge_id, service_id, name, active, endpoints" + typeColumnNames + ") VALUES ($1, $2, $3, $4, $5" + typeValues + ")";
     }
 
-    public Mono<Void> insertBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
+    public Mono<Void> insertBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Endpoints endpoints, Map<ServiceType, Boolean> typeActive) {
         return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareInsertBridgeServiceQuery(typeActive))
-                .execute(Tuple.of(bridgeId, serviceId, serviceName, true),
+                .execute(Tuple.of(bridgeId, serviceId, serviceName, true, new JsonObject(Objects.requireNonNull(serializeObject(endpoints)))),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -221,9 +225,9 @@ public class RegistryRepository {
                 "bridge_service.service_id = $4";
     }
 
-    public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Map<ServiceType, Boolean> typeActive) {
+    public Mono<Void> updateBridgeServiceEntry(String bridgeId, String serviceId, String serviceName, Endpoints endpoints, Map<ServiceType, Boolean> typeActive) {
         return Mono.create(monoSink -> readWriteClient.preparedQuery(prepareUpdateBridgeServiceQuery(typeActive))
-                .execute(Tuple.of(bridgeId, serviceName, true, serviceId),
+                .execute(Tuple.of(bridgeId, serviceName, true, serviceId, new JsonObject(Objects.requireNonNull(serializeObject(endpoints)))),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -276,7 +280,7 @@ public class RegistryRepository {
 
     public Mono<ServiceProfile> fetchServiceEntries(String serviceId) {
         return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_BRIDGE_SERVICES_BY_SERVICE_ID)
-                .execute(Tuple.of(serviceId),
+                .execute(Tuple.of(serviceId, true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -285,32 +289,35 @@ public class RegistryRepository {
                             }
                             RowSet<Row> results = handler.result();
                             List<ServiceType> types = new ArrayList<>();
-                            List<Endpoint> endpoints = new ArrayList<>();
+                            Endpoints endpoints = new Endpoints();
                             final ServiceProfile.ServiceProfileBuilder[] serviceProfile = new ServiceProfile.ServiceProfileBuilder[1];
                             if (results.iterator().hasNext()) {
                                 results.forEach(row -> {
-                                    Object endpointJson = row.getValue("endpoints");
-                                    List<Endpoint> endpointList = new ArrayList<>();
-                                    if (endpointJson != null) {
-                                        endpointList = to(endpointJson);
-                                    }
                                     serviceProfile[0] = ServiceProfile.builder()
                                             .id(row.getString("service_id"))
                                             .name(row.getString("name"))
                                             .active(row.getBoolean("active"));
+                                    Object endpointJson = row.getValue("endpoints");
+                                    Endpoints endpointsObj = Endpoints.builder().build();
+                                    if(endpointJson != null) {
+                                        endpointsObj = to(endpointJson);
+                                    }
                                     var isHip = row.getBoolean("is_hip");
                                     var isHiu = row.getBoolean("is_hiu");
                                     var isHealthLocker = row.getBoolean("is_health_locker");
-                                    if(Boolean.TRUE.equals(isHip)) {
+                                    if (Boolean.TRUE.equals(isHip)) {
                                         types.add(ServiceType.HIP);
+                                        endpoints.setHip_endpoints(endpointsObj.getHip_endpoints());
                                     }
-                                    if(Boolean.TRUE.equals(isHiu)) {
+                                    if (Boolean.TRUE.equals(isHiu)) {
                                         types.add(ServiceType.HIU);
+                                        endpoints.setHiu_endpoints(endpointsObj.getHiu_endpoints());
+
                                     }
-                                    if(Boolean.TRUE.equals(isHealthLocker)) {
+                                    if (Boolean.TRUE.equals(isHealthLocker)) {
                                         types.add(ServiceType.HEALTH_LOCKER);
+                                        endpoints.setHealth_locker_endpoints(endpointsObj.getHealth_locker_endpoints());
                                     }
-                                    endpoints.addAll(endpointList);
                                 });
                                 serviceProfile[0].types(types);
                                 serviceProfile[0].endpoints(endpoints);
@@ -323,13 +330,13 @@ public class RegistryRepository {
     }
 
     private String prepareSelectBridgeServicesOfTypeQuery(String typeColumnName) {
-        return "SELECT service_id, name, active, endpoints FROM bridge_service WHERE " + typeColumnName + " = $1";
+        return "SELECT service_id, name, active, endpoints FROM bridge_service WHERE " + typeColumnName + " = $1 AND active = $2";
     }
 
     public Mono<List<ServiceProfileResponse>> fetchServicesOfType(String serviceType) {
         return Mono.create(monoSink -> this.readOnlyClient
                 .preparedQuery(prepareSelectBridgeServicesOfTypeQuery(getColumnName(ServiceType.valueOf(serviceType))))
-                .execute(Tuple.of(true),
+                .execute(Tuple.of(true, true),
                         handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
@@ -346,7 +353,7 @@ public class RegistryRepository {
                                             .name(row.getString("name"))
                                             .active(row.getBoolean("active"))
                                             .type(ServiceRole.valueOf(serviceType))
-                                            .endpoints(endpointJson != null ? to(endpointJson) : Collections.emptyList())
+                                            .endpoints(endpointJson != null ? to(endpointJson) : null)
                                             .build());
                                 });
                             }
@@ -384,6 +391,27 @@ public class RegistryRepository {
                                     .modifiedAt(row.getLocalDateTime("date_modified"))
                                     .build();
                             monoSink.success(bridgeProfile);
+                        }));
+    }
+
+    public Mono<Endpoints> fetchEndpoints(String bridgeId, String serviceId) {
+        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_ENDPOINTS_OF_SERVICE)
+                .execute(Tuple.of(bridgeId, serviceId),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                monoSink.error(new DbOperationError("Failed to fetch endpoints from bridge service"));
+                                return;
+                            }
+                            var iterator = handler.result().iterator();
+                            if (!iterator.hasNext()) {
+                                monoSink.success();
+                                return;
+                            }
+                            var row = iterator.next();
+                            var endpointJson = row.getValue("endpoints");
+                            var endpoints = endpointJson != null ? to(endpointJson) : null;
+                            monoSink.success(endpoints);
                         }));
     }
 }

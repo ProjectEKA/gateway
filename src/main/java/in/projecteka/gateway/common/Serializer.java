@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.Endpoints;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -63,7 +62,17 @@ public class Serializer {
     }
 
     @SneakyThrows
-    public static <T> List<Endpoint> to(Object value) {
-        return objectMapper.readValue(value.toString(), new TypeReference<List<Endpoint>>(){});
+    public static Endpoints to(Object value) {
+        return objectMapper.readValue(value.toString(), new TypeReference<>(){});
+    }
+
+    @SneakyThrows
+    public static <T> String serializeObject(T data) {
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (JsonProcessingException e) {
+            logger.error("Can not serialize data", e);
+            return null;
+        }
     }
 }
