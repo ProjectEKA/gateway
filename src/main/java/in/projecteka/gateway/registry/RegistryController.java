@@ -6,6 +6,7 @@ import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
+import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -58,7 +59,7 @@ public class RegistryController {
     }
 
     @GetMapping(GW_PATH_HI_SERVICES)
-    public Mono<List<ServiceProfileResponse>> serviceProfilesForType(@RequestParam(defaultValue = UNSPECIFIED_SERVICE_TYPE) String type) {
+    public Mono<List<ServiceDetailsResponse>> serviceProfilesForType(@RequestParam(defaultValue = UNSPECIFIED_SERVICE_TYPE) String type) {
         return registryService.servicesOfType(type);
     }
 

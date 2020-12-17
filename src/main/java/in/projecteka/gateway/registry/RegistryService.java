@@ -16,6 +16,7 @@ import in.projecteka.gateway.registry.model.EndpointDetails;
 import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
+import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
@@ -28,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
@@ -202,56 +202,57 @@ public class RegistryService {
 
     private Mono<Void> upsertServiceForBridge(String bridgeId, BridgeServiceRequest serviceDetails, Map<ServiceType, Boolean> serviceTypeActiveMap, Endpoints endpoints, Boolean result) {
         return Boolean.TRUE.equals(result) ?
-                registryRepository.fetchEndpoints(bridgeId, serviceDetails.getId())
-                        .flatMap(existingEndpoints -> prepareVaildEndpointsWith(existingEndpoints, endpoints))
+                registryRepository.fetchExistingEndpoints(bridgeId, serviceDetails.getId())
+                        .flatMap(existingEndpoints -> prepareVaildEndpointsToStoreWith(existingEndpoints, endpoints))
                         .flatMap(endpointsToBeSaved -> registryRepository.updateBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), endpointsToBeSaved, serviceTypeActiveMap))
                         .then(invalidateBridgeMappings(serviceDetails.getId(), serviceTypeActiveMap)) :
                 registryRepository.insertBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), endpoints, serviceTypeActiveMap);
     }
 
-    private Mono<Endpoints> prepareVaildEndpointsWith(Endpoints existingEndpoints, Endpoints endpoints) {
-//        Endpoints endpointsToBeSaved = existingEndpoints;
-//        endpoints.getHip_endpoints().stream()
-//                .map(hipEndpoint -> getMatchedExistingEndpoint(hipEndpoint, existingEndpoints.getHip_endpoints())
-//                .map(matchedExistingEndpoint -> endpointsToBeSaved.getHip_endpoints().remove(matchedExistingEndpoint)
-//                && endpointsToBeSaved.getHip_endpoints().add(hipEndpoint)));
-
-        var hipEndpoints = prepareEndpoints(endpoints.getHip_endpoints(), existingEndpoints.getHip_endpoints());
-        var hiuEndpoints = prepareEndpoints(endpoints.getHiu_endpoints(), existingEndpoints.getHiu_endpoints());
-        var healthLockerEndpoints = prepareEndpoints(endpoints.getHealth_locker_endpoints(), existingEndpoints.getHealth_locker_endpoints());
-
-        return just(Endpoints.builder()
-                .hip_endpoints(hipEndpoints)
-                .hiu_endpoints(hiuEndpoints)
-                .health_locker_endpoints(healthLockerEndpoints)
-                .build());
+    private Mono<Endpoints> prepareVaildEndpointsToStoreWith(Endpoints existingEndpoints, Endpoints endpoints) {
+        Endpoints endpointsToBeSaved = new Endpoints();
+        return prepareEndpoints(endpoints.getHip_endpoints(), existingEndpoints.getHip_endpoints())
+                .flatMap(hipEndpoints -> {
+                    endpointsToBeSaved.setHip_endpoints(hipEndpoints);
+                    return Mono.empty();
+                })
+                .then(prepareEndpoints(endpoints.getHiu_endpoints(), existingEndpoints.getHiu_endpoints()))
+                .flatMap(hiuEndpoints -> {
+                    endpointsToBeSaved.setHiu_endpoints(hiuEndpoints);
+                    return Mono.empty();
+                })
+                .then(prepareEndpoints(endpoints.getHealth_locker_endpoints(), existingEndpoints.getHealth_locker_endpoints()))
+                .flatMap(healthLockerEndpoints -> {
+                    endpointsToBeSaved.setHealth_locker_endpoints(healthLockerEndpoints);
+                    return Mono.empty();
+                })
+                .then(just(endpointsToBeSaved));
     }
 
-    private List<EndpointDetails> prepareEndpoints(List<EndpointDetails> endpoints, List<EndpointDetails> existingEndpoints) {
-        List<EndpointDetails> endpointDetailsList = new ArrayList<>();
-        endpoints.stream().map(hipEndpoint ->
-                existingEndpoints.stream()
-                        .map(existingHipEndpoint -> {
-                            var result = isEndpointExistsInDB(hipEndpoint, existingHipEndpoint);
-                            if (result) {
-                                return existingEndpoints.remove(existingHipEndpoint);
-                            }
-                            return Mono.empty();
-                        })
-                        .map(res -> existingEndpoints.add(hipEndpoint)));
-        return endpointDetailsList;
+    private Mono<List<EndpointDetails>> prepareEndpoints(List<EndpointDetails> endpoints, List<EndpointDetails> existingEndpoints) {
+        if (endpoints != null) {
+            if (existingEndpoints != null) {
+                List<EndpointDetails> endpointDetailsList = new ArrayList<>(existingEndpoints);
+                return Flux.fromIterable(endpoints).flatMap(endpoint ->
+                        Flux.fromIterable(existingEndpoints)
+                                .map(existingEndpoint -> {
+                                    var result = isEndpointExistsInDB(endpoint, existingEndpoint);
+                                    if (result) {
+                                        return endpointDetailsList.remove(existingEndpoint);
+                                    }
+                                    return Mono.empty();
+                                })
+                                .then(just(endpointDetailsList.add(endpoint))))
+                        .then(just(endpointDetailsList));
+            }
+            return just(endpoints);
+        }
+        return Mono.empty();
     }
 
-    private boolean isEndpointExistsInDB(EndpointDetails hipEndpoint, EndpointDetails existingHipEndpoint) {
-        return hipEndpoint.getUse().getValue().equals(existingHipEndpoint.getUse().getValue()) &&
-                hipEndpoint.getConnectionType().name().equals(existingHipEndpoint.getConnectionType().name());
-    }
-
-    private Optional<EndpointDetails> getMatchedExistingEndpoint(EndpointDetails endpointSpecificToType, List<EndpointDetails> existingEndpointsSpecificToType) {
-        return existingEndpointsSpecificToType.stream()
-                .filter(existingEndpointSpecificToType -> existingEndpointSpecificToType.getUse().getValue().equals(endpointSpecificToType.getUse().getValue())
-                    && existingEndpointSpecificToType.getConnectionType().name().equals(endpointSpecificToType.getConnectionType().name()))
-                .findFirst();
+    private boolean isEndpointExistsInDB(EndpointDetails endpoint, EndpointDetails existingEndpoint) {
+        return endpoint.getUse().getValue().equals(existingEndpoint.getUse().getValue()) &&
+                endpoint.getConnectionType().name().equals(existingEndpoint.getConnectionType().name());
     }
 
     private Mono<Void> invalidateBridgeMappings(String serviceId, Map<ServiceType, Boolean> typeActiveMap) {
@@ -295,7 +296,7 @@ public class RegistryService {
                 .switchIfEmpty(Mono.error(ClientError.notFound("Service Id not found")));
     }
 
-    public Mono<List<ServiceProfileResponse>> servicesOfType(String serviceType) {
+    public Mono<List<ServiceDetailsResponse>> servicesOfType(String serviceType) {
         return Arrays.stream(ServiceType.values()).noneMatch(type -> type.name().equals(serviceType))
                 ? just(List.of())
                 : registryRepository.fetchServicesOfType(serviceType);
