@@ -12,8 +12,11 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
+import in.projecteka.gateway.registry.model.EndpointDetails;
+import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
+import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
@@ -22,6 +25,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +37,7 @@ import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest
 import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
+import static reactor.core.publisher.Mono.just;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -45,7 +50,7 @@ public class RegistryService {
     private final FacilityRegistryClient facilityRegistryClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
-        return Mono.just(request)
+        return just(request)
                 .filterWhen(this::validateRequest)
                 .flatMap(req -> updateCMRequest(request))
                 .flatMap(updatedRequest -> registryRepository.getCMEntryIfActive(updatedRequest.getSuffix())
@@ -63,7 +68,7 @@ public class RegistryService {
         if (request.getIsBlocklisted() == null)
             updateCMServiceRequest.isBlocklisted(false);
 
-        return Mono.just(updateCMServiceRequest.build());
+        return just(updateCMServiceRequest.build());
     }
 
     private Mono<Boolean> validateRequest(CMServiceRequest request) {
@@ -72,7 +77,7 @@ public class RegistryService {
                 || (request.getUrl() == null || request.getUrl().isBlank())) )
             return Mono.error(invalidCMRegistryRequest());
 
-        return Mono.just(true);
+        return just(true);
     }
 
     private Mono<ClientResponse> updateCMEntry(CMEntry cmEntry, CMServiceRequest request) {
@@ -139,7 +144,7 @@ public class RegistryService {
                 .active(request.getActive() == null ? bridge.getActive() : request.getActive())
                 .blocklisted(request.getBlocklisted() == null ? bridge.getBlocklisted() : request.getBlocklisted())
                 .build();
-        return Mono.just(bridgeRequest);
+        return just(bridgeRequest);
     }
 
     private Mono<ClientResponse> createClient(String bridgeId) {
@@ -156,34 +161,98 @@ public class RegistryService {
                 .groupBy(BridgeServiceRequest::getId)
                 .flatMap(serviceIdFlux -> serviceIdFlux
                         .collectList()
-                        .flatMap(services ->
-                                Flux.fromIterable(services)
-                                        .flatMap(request -> request.isActive()
-                                                ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId)
-                                                .flatMap(result -> Boolean.TRUE.equals(result)
-                                                        ? Mono.error(invalidBridgeServiceRequest())
-                                                        : addRole(bridgeId, request.getType().toString()))
-                                                : Mono.empty())
-                                        .then(upsertBridgeServiceEntries(bridgeId, services)))).then();
+                        .flatMap(services -> {
+                            Endpoints endpoints = new Endpoints();
+                            return Flux.fromIterable(services)
+                                    .flatMap(request -> {
+                                        switch (request.getType()) {
+                                            case HIP:
+                                                endpoints.setHip_endpoints(request.getEndpoints());
+                                                break;
+                                            case HIU:
+                                                endpoints.setHiu_endpoints(request.getEndpoints());
+                                                break;
+                                            case HEALTH_LOCKER:
+                                                endpoints.setHealth_locker_endpoints(request.getEndpoints());
+                                                break;
+                                        }
+                                        return just(request);
+                                    })
+                                    .flatMap(request -> request.isActive()
+                                            ? registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId)
+                                            .flatMap(result -> Boolean.TRUE.equals(result)
+                                                    ? Mono.error(invalidBridgeServiceRequest())
+                                                    : addRole(bridgeId, request.getType().toString()))
+                                            : Mono.empty())
+                                    .then(upsertBridgeServiceEntries(bridgeId, services, endpoints));
+                        })).then();
     }
 
-    private Mono<Void> upsertBridgeServiceEntries(String bridgeId, List<BridgeServiceRequest> services) {
+    private Mono<Void> upsertBridgeServiceEntries(String bridgeId, List<BridgeServiceRequest> services, Endpoints endpoints) {
         BridgeServiceRequest serviceDetails = services.get(0);
 
         return Flux.fromIterable(services)
                 .collectMap(BridgeServiceRequest::getType, BridgeServiceRequest::isActive)
                 .flatMap(serviceTypeActiveMap ->
                         registryRepository.ifBridgeServicePresent(bridgeId, serviceDetails.getId())
-                                .flatMap(result -> upsertServiceForBridge(bridgeId, serviceDetails, serviceTypeActiveMap, result))
+                                .flatMap(result -> upsertServiceForBridge(bridgeId, serviceDetails, serviceTypeActiveMap, endpoints, result))
                                 .then());
 
     }
 
-    private Mono<Void> upsertServiceForBridge(String bridgeId, BridgeServiceRequest serviceDetails, Map<ServiceType, Boolean> serviceTypeActiveMap, Boolean result) {
+    private Mono<Void> upsertServiceForBridge(String bridgeId, BridgeServiceRequest serviceDetails, Map<ServiceType, Boolean> serviceTypeActiveMap, Endpoints endpoints, Boolean result) {
         return Boolean.TRUE.equals(result) ?
-                registryRepository.updateBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), serviceTypeActiveMap)
+                registryRepository.fetchExistingEndpoints(bridgeId, serviceDetails.getId())
+                        .flatMap(existingEndpoints -> prepareVaildEndpointsToStoreWith(existingEndpoints, endpoints))
+                        .flatMap(endpointsToBeSaved -> registryRepository.updateBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), endpointsToBeSaved, serviceTypeActiveMap))
                         .then(invalidateBridgeMappings(serviceDetails.getId(), serviceTypeActiveMap)) :
-                registryRepository.insertBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), serviceTypeActiveMap);
+                registryRepository.insertBridgeServiceEntry(bridgeId, serviceDetails.getId(), serviceDetails.getName(), endpoints, serviceTypeActiveMap);
+    }
+
+    private Mono<Endpoints> prepareVaildEndpointsToStoreWith(Endpoints existingEndpoints, Endpoints endpoints) {
+        Endpoints endpointsToBeSaved = new Endpoints();
+        return prepareEndpoints(endpoints.getHip_endpoints(), existingEndpoints.getHip_endpoints())
+                .flatMap(hipEndpoints -> {
+                    endpointsToBeSaved.setHip_endpoints(hipEndpoints);
+                    return Mono.empty();
+                })
+                .then(prepareEndpoints(endpoints.getHiu_endpoints(), existingEndpoints.getHiu_endpoints()))
+                .flatMap(hiuEndpoints -> {
+                    endpointsToBeSaved.setHiu_endpoints(hiuEndpoints);
+                    return Mono.empty();
+                })
+                .then(prepareEndpoints(endpoints.getHealth_locker_endpoints(), existingEndpoints.getHealth_locker_endpoints()))
+                .flatMap(healthLockerEndpoints -> {
+                    endpointsToBeSaved.setHealth_locker_endpoints(healthLockerEndpoints);
+                    return Mono.empty();
+                })
+                .then(just(endpointsToBeSaved));
+    }
+
+    private Mono<List<EndpointDetails>> prepareEndpoints(List<EndpointDetails> endpoints, List<EndpointDetails> existingEndpoints) {
+        if (endpoints != null) {
+            if (existingEndpoints != null) {
+                List<EndpointDetails> endpointDetailsList = new ArrayList<>(existingEndpoints);
+                return Flux.fromIterable(endpoints).flatMap(endpoint ->
+                        Flux.fromIterable(existingEndpoints)
+                                .map(existingEndpoint -> {
+                                    var result = isEndpointExistsInDB(endpoint, existingEndpoint);
+                                    if (result) {
+                                        return endpointDetailsList.remove(existingEndpoint);
+                                    }
+                                    return Mono.empty();
+                                })
+                                .then(just(endpointDetailsList.add(endpoint))))
+                        .then(just(endpointDetailsList));
+            }
+            return just(endpoints);
+        }
+        return Mono.empty();
+    }
+
+    private boolean isEndpointExistsInDB(EndpointDetails endpoint, EndpointDetails existingEndpoint) {
+        return endpoint.getUse().getValue().equals(existingEndpoint.getUse().getValue()) &&
+                endpoint.getConnectionType().name().equals(existingEndpoint.getConnectionType().name());
     }
 
     private Mono<Void> invalidateBridgeMappings(String serviceId, Map<ServiceType, Boolean> typeActiveMap) {
@@ -222,14 +291,14 @@ public class RegistryService {
                         type = ServiceRole.HIU;
                     }
                     serviceProfileResponse.type(type);
-                    return Mono.just(serviceProfileResponse.build());
+                    return just(serviceProfileResponse.build());
                 })
                 .switchIfEmpty(Mono.error(ClientError.notFound("Service Id not found")));
     }
 
-    public Mono<List<ServiceProfileResponse>> servicesOfType(String serviceType) {
+    public Mono<List<ServiceDetailsResponse>> servicesOfType(String serviceType) {
         return Arrays.stream(ServiceType.values()).noneMatch(type -> type.name().equals(serviceType))
-                ? Mono.just(List.of())
+                ? just(List.of())
                 : registryRepository.fetchServicesOfType(serviceType);
     }
 
@@ -240,7 +309,7 @@ public class RegistryService {
 
     public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
         if(StringUtils.isEmpty(name)){
-            return Mono.just(List.of());
+            return just(List.of());
         }
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
                 .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
@@ -265,7 +334,7 @@ public class RegistryService {
                             .facilityType(serviceProfile.getTypes())
                             .build();
                 })
-                .switchIfEmpty(Mono.just(facilityRepresentationBuilder.build()));
+                .switchIfEmpty(just(facilityRepresentationBuilder.build()));
     }
 
     public Mono<FacilityRepresentation> getFacilityById(String serviceId) {

@@ -5,14 +5,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.Endpoints;
 import lombok.SneakyThrows;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,7 +19,7 @@ import java.util.Optional;
 public class Serializer {
     private static final Logger logger = LoggerFactory.getLogger(Serializer.class);
     public static final String ERROR_IN_DE_SERIALISE = "Error while de-serialise";
-    public static final String ERROR_IN_SERIALIZING_REQUEST_BODY = "Error while serializing request body";
+    public static final String ERROR_IN_SERIALIZING_REQUEST_BODY = "Error while serialise";
     static ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule()); //TODO
 
     private Serializer() {
@@ -70,7 +69,7 @@ public class Serializer {
     }
 
     @SneakyThrows
-    public static <T> List<Endpoint> to(Object value) {
-        return objectMapper.readValue(value.toString(), new TypeReference<List<Endpoint>>(){});
+    public static Endpoints to(Object value) {
+        return objectMapper.readValue(value.toString(), Endpoints.class);
     }
 }

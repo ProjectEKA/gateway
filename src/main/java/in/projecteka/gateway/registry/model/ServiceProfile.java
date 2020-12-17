@@ -12,6 +12,6 @@ public class ServiceProfile {
     String id;
     String name;
     List<ServiceType> types;
-    List<Endpoint> endpoints;
+    Endpoints endpoints;
     boolean active;
 }
