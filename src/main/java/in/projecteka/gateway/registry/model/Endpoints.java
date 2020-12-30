@@ -17,7 +17,7 @@ import java.util.List;
 @Setter
 @Builder
 public class Endpoints {
-    List<EndpointDetails> hip_endpoints;
-    List<EndpointDetails> hiu_endpoints;
-    List<EndpointDetails> health_locker_endpoints;
+    List<EndpointDetails> hipEndpoints;
+    List<EndpointDetails> hiuEndpoints;
+    List<EndpointDetails> healthLockerEndpoints;
 }

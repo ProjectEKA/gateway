@@ -398,7 +398,7 @@ class RegistryServiceTest {
         var realmRoles = List.of(realmRole().name("HIP").build(), realmRole().name("HIU").build());
         var hipEndpointDetails1 = EndpointDetails.builder().use(REGISTRATION).connectionType(HTTPS).address("https://registration").build();
         var hipEndpointDetails2 = EndpointDetails.builder().use(DATA_UPLOAD).connectionType(HTTPS).address("https://data-upload").build();
-        var existingEndpoints = Endpoints.builder().hip_endpoints(List.of(hipEndpointDetails1, hipEndpointDetails2)).build();
+        var existingEndpoints = Endpoints.builder().hipEndpoints(List.of(hipEndpointDetails1, hipEndpointDetails2)).build();
         when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(true));

@@ -167,13 +167,13 @@ public class RegistryService {
                                     .flatMap(request -> {
                                         switch (request.getType()) {
                                             case HIP:
-                                                endpoints.setHip_endpoints(request.getEndpoints());
+                                                endpoints.setHipEndpoints(request.getEndpoints());
                                                 break;
                                             case HIU:
-                                                endpoints.setHiu_endpoints(request.getEndpoints());
+                                                endpoints.setHiuEndpoints(request.getEndpoints());
                                                 break;
                                             case HEALTH_LOCKER:
-                                                endpoints.setHealth_locker_endpoints(request.getEndpoints());
+                                                endpoints.setHealthLockerEndpoints(request.getEndpoints());
                                                 break;
                                         }
                                         return just(request);
@@ -211,43 +211,43 @@ public class RegistryService {
 
     private Mono<Endpoints> prepareVaildEndpointsToStoreWith(Endpoints existingEndpoints, Endpoints endpoints) {
         Endpoints endpointsToBeSaved = new Endpoints();
-        return prepareEndpoints(endpoints.getHip_endpoints(), existingEndpoints.getHip_endpoints())
+        return prepareEndpoints(endpoints.getHipEndpoints(), existingEndpoints.getHipEndpoints())
                 .flatMap(hipEndpoints -> {
-                    endpointsToBeSaved.setHip_endpoints(hipEndpoints);
+                    endpointsToBeSaved.setHipEndpoints(hipEndpoints);
                     return Mono.empty();
                 })
-                .then(prepareEndpoints(endpoints.getHiu_endpoints(), existingEndpoints.getHiu_endpoints()))
+                .then(prepareEndpoints(endpoints.getHiuEndpoints(), existingEndpoints.getHiuEndpoints()))
                 .flatMap(hiuEndpoints -> {
-                    endpointsToBeSaved.setHiu_endpoints(hiuEndpoints);
+                    endpointsToBeSaved.setHiuEndpoints(hiuEndpoints);
                     return Mono.empty();
                 })
-                .then(prepareEndpoints(endpoints.getHealth_locker_endpoints(), existingEndpoints.getHealth_locker_endpoints()))
+                .then(prepareEndpoints(endpoints.getHealthLockerEndpoints(), existingEndpoints.getHealthLockerEndpoints()))
                 .flatMap(healthLockerEndpoints -> {
-                    endpointsToBeSaved.setHealth_locker_endpoints(healthLockerEndpoints);
+                    endpointsToBeSaved.setHealthLockerEndpoints(healthLockerEndpoints);
                     return Mono.empty();
                 })
                 .then(just(endpointsToBeSaved));
     }
 
     private Mono<List<EndpointDetails>> prepareEndpoints(List<EndpointDetails> endpoints, List<EndpointDetails> existingEndpoints) {
-        if (endpoints != null) {
-            if (existingEndpoints != null) {
-                List<EndpointDetails> endpointDetailsList = new ArrayList<>(existingEndpoints);
-                return Flux.fromIterable(endpoints).flatMap(endpoint ->
-                        Flux.fromIterable(existingEndpoints)
-                                .map(existingEndpoint -> {
-                                    var result = isEndpointExistsInDB(endpoint, existingEndpoint);
-                                    if (result) {
-                                        return endpointDetailsList.remove(existingEndpoint);
-                                    }
-                                    return Mono.empty();
-                                })
-                                .then(just(endpointDetailsList.add(endpoint))))
-                        .then(just(endpointDetailsList));
-            }
+        if (endpoints == null) {
+            return existingEndpoints != null ? just(existingEndpoints) : Mono.empty();
+        }
+        if (existingEndpoints == null) {
             return just(endpoints);
         }
-        return Mono.empty();
+        List<EndpointDetails> endpointDetailsList = new ArrayList<>(existingEndpoints);
+        return Flux.fromIterable(endpoints).flatMap(endpoint ->
+                Flux.fromIterable(existingEndpoints)
+                        .map(existingEndpoint -> {
+                            var result = isEndpointExistsInDB(endpoint, existingEndpoint);
+                            if (result) {
+                                return endpointDetailsList.remove(existingEndpoint);
+                            }
+                            return Mono.empty();
+                        })
+                        .then(just(endpointDetailsList.add(endpoint))))
+                .then(just(endpointDetailsList));
     }
 
     private boolean isEndpointExistsInDB(EndpointDetails endpoint, EndpointDetails existingEndpoint) {

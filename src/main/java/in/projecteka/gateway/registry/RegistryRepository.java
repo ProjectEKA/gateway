@@ -310,16 +310,16 @@ public class RegistryRepository {
                                     var isHealthLocker = row.getBoolean("is_health_locker");
                                     if (Boolean.TRUE.equals(isHip)) {
                                         types.add(HIP);
-                                        endpoints.setHip_endpoints(endpointsObj.getHip_endpoints());
+                                        endpoints.setHipEndpoints(endpointsObj.getHipEndpoints());
                                     }
                                     if (Boolean.TRUE.equals(isHiu)) {
                                         types.add(HIU);
-                                        endpoints.setHiu_endpoints(endpointsObj.getHiu_endpoints());
+                                        endpoints.setHiuEndpoints(endpointsObj.getHiuEndpoints());
 
                                     }
                                     if (Boolean.TRUE.equals(isHealthLocker)) {
                                         types.add(ServiceType.HEALTH_LOCKER);
-                                        endpoints.setHealth_locker_endpoints(endpointsObj.getHealth_locker_endpoints());
+                                        endpoints.setHealthLockerEndpoints(endpointsObj.getHealthLockerEndpoints());
                                     }
                                 });
                                 serviceProfile[0].types(types);
@@ -357,11 +357,11 @@ public class RegistryRepository {
                                     }
                                     List<EndpointDetails> endpointsSpecificToType;
                                     switch (ServiceType.valueOf(serviceType)) {
-                                        case HIP : endpointsSpecificToType = endpoints.getHip_endpoints();
+                                        case HIP : endpointsSpecificToType = endpoints.getHipEndpoints();
                                         break;
-                                        case HIU : endpointsSpecificToType = endpoints.getHiu_endpoints();
+                                        case HIU : endpointsSpecificToType = endpoints.getHiuEndpoints();
                                         break;
-                                        default : endpointsSpecificToType = endpoints.getHealth_locker_endpoints();
+                                        default : endpointsSpecificToType = endpoints.getHealthLockerEndpoints();
                                     }
                                     results.add(ServiceDetailsResponse.builder()
                                             .id(row.getString("service_id"))
