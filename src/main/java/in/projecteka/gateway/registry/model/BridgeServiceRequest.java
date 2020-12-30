@@ -6,6 +6,7 @@ import lombok.Value;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @Value
 @Builder
@@ -15,5 +16,6 @@ public class BridgeServiceRequest {
     String id;
     String name;
     ServiceType type;
+    List<EndpointDetails> endpoints;
     boolean active;
 }

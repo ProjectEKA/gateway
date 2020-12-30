@@ -8,6 +8,8 @@ import in.projecteka.gateway.clients.model.ClientSecret;
 import in.projecteka.gateway.common.cache.CacheAdapter;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.CMEntry;
+import in.projecteka.gateway.registry.model.EndpointDetails;
+import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,9 @@ import static in.projecteka.gateway.registry.TestBuilders.realmRole;
 import static in.projecteka.gateway.registry.TestBuilders.serviceAccount;
 import static in.projecteka.gateway.registry.TestBuilders.serviceProfile;
 import static in.projecteka.gateway.registry.TestBuilders.string;
+import static in.projecteka.gateway.registry.model.EndpointConnectionType.HTTPS;
+import static in.projecteka.gateway.registry.model.EndpointUse.DATA_UPLOAD;
+import static in.projecteka.gateway.registry.model.EndpointUse.REGISTRATION;
 import static in.projecteka.gateway.testcommon.TestBuilders.clientSecret;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -313,14 +318,14 @@ class RegistryServiceTest {
         var request = bridgeServiceRequest().active(false).build();
         var bridgeId = string();
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(false));
-        when(registryRepository.insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any())).thenReturn(empty());
+        when(registryRepository.insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any())).thenReturn(empty());
 
         var producer = registryService.populateBridgeServicesEntries(bridgeId, List.of(request));
         StepVerifier.create(producer)
                 .verifyComplete();
 
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
-        verify(registryRepository).insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any());
+        verify(registryRepository).insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
     }
 
     @Test
@@ -328,7 +333,8 @@ class RegistryServiceTest {
         var request = bridgeServiceRequest().active(false).build();
         var bridgeId = string();
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(true));
-        when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any())).thenReturn(empty());
+        when(registryRepository.fetchExistingEndpoints(bridgeId, request.getId())).thenReturn(just(new Endpoints()));
+        when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any())).thenReturn(empty());
         when(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType()))).thenReturn(empty());
 
         var producer = registryService.populateBridgeServicesEntries(bridgeId, List.of(request));
@@ -336,7 +342,8 @@ class RegistryServiceTest {
                 .verifyComplete();
 
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
-        verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any());
+        verify(registryRepository).fetchExistingEndpoints(bridgeId, request.getId());
+        verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
         verify(bridgeMappings).invalidate(Pair.of(request.getId(), request.getType()));
     }
 
@@ -364,7 +371,7 @@ class RegistryServiceTest {
         when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(false));
-        when(registryRepository.insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any()))
+        when(registryRepository.insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any()))
                 .thenReturn(empty());
         when(adminServiceClient.getServiceAccount(bridgeId)).thenReturn(just(serviceAccount));
         when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
@@ -377,7 +384,7 @@ class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
-        verify(registryRepository).insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any());
+        verify(registryRepository).insertBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
         verify(adminServiceClient).getServiceAccount(bridgeId);
         verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());
         verify(adminServiceClient).assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId());
@@ -389,10 +396,14 @@ class RegistryServiceTest {
         var bridgeId = string();
         var serviceAccount = serviceAccount().build();
         var realmRoles = List.of(realmRole().name("HIP").build(), realmRole().name("HIU").build());
+        var hipEndpointDetails1 = EndpointDetails.builder().use(REGISTRATION).connectionType(HTTPS).address("https://registration").build();
+        var hipEndpointDetails2 = EndpointDetails.builder().use(DATA_UPLOAD).connectionType(HTTPS).address("https://data-upload").build();
+        var existingEndpoints = Endpoints.builder().hipEndpoints(List.of(hipEndpointDetails1, hipEndpointDetails2)).build();
         when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(true));
-        when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any()))
+        when(registryRepository.fetchExistingEndpoints(bridgeId, request.getId())).thenReturn(just(existingEndpoints));
+        when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any()))
                 .thenReturn(empty());
         when(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType()))).thenReturn(empty());
         when(adminServiceClient.getServiceAccount(bridgeId)).thenReturn(just(serviceAccount));
@@ -406,7 +417,8 @@ class RegistryServiceTest {
 
         verify(registryRepository).ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId);
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
-        verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any());
+        verify(registryRepository).fetchExistingEndpoints(bridgeId, request.getId());
+        verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
         verify(bridgeMappings).invalidate(Pair.of(request.getId(), request.getType()));
         verify(adminServiceClient).getServiceAccount(bridgeId);
         verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());

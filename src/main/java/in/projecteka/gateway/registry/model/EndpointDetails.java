@@ -5,8 +5,8 @@ import lombok.Value;
 
 @Value
 @Builder
-public class Endpoint {
-    String use;
-    String connectionType;
+public class EndpointDetails {
+    EndpointUse use;
+    EndpointConnectionType connectionType;
     String address;
 }
