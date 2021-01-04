@@ -21,6 +21,7 @@ import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
 import org.springframework.data.util.Pair;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -167,22 +168,22 @@ public class RegistryService {
                             Endpoints endpoints = new Endpoints();
                             return Flux.fromIterable(services)
                                     .flatMap(request -> {
-                                        if(request.getEndpoints() != null && request.getEndpoints().size() > 0) {
-                                        if(request.getEndpoints().stream().anyMatch(endpoint ->
-                                                endpoint.getUse() == null || endpoint.getConnectionType() == null || !StringUtils.hasText(endpoint.getAddress()))) {
-                                            return error(invalidRequest("Invalid endpoints specified"));
+                                        if (!CollectionUtils.isEmpty(request.getEndpoints())) {
+                                            if (isInvalid(request.getEndpoints())) {
+                                                return error(invalidRequest("Invalid endpoints specified"));
+                                            }
+                                            switch (request.getType()) {
+                                                case HIP:
+                                                    endpoints.setHipEndpoints(request.getEndpoints());
+                                                    break;
+                                                case HIU:
+                                                    endpoints.setHiuEndpoints(request.getEndpoints());
+                                                    break;
+                                                case HEALTH_LOCKER:
+                                                    endpoints.setHealthLockerEndpoints(request.getEndpoints());
+                                                    break;
+                                            }
                                         }
-                                        switch (request.getType()) {
-                                            case HIP:
-                                                endpoints.setHipEndpoints(request.getEndpoints());
-                                                break;
-                                            case HIU:
-                                                endpoints.setHiuEndpoints(request.getEndpoints());
-                                                break;
-                                            case HEALTH_LOCKER:
-                                                endpoints.setHealthLockerEndpoints(request.getEndpoints());
-                                                break;
-                                        }}
                                         return just(request);
                                     })
                                     .flatMap(request -> request.isActive()
@@ -193,6 +194,11 @@ public class RegistryService {
                                             : Mono.empty())
                                     .then(upsertBridgeServiceEntries(bridgeId, services, endpoints));
                         })).then();
+    }
+
+    private boolean isInvalid(List<EndpointDetails> endpoints) {
+        return endpoints.stream().anyMatch(endpoint ->
+                endpoint.getUse() == null || endpoint.getConnectionType() == null || !StringUtils.hasText(endpoint.getAddress()));
     }
 
     private Mono<Void> upsertBridgeServiceEntries(String bridgeId, List<BridgeServiceRequest> services, Endpoints endpoints) {
