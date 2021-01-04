@@ -34,9 +34,11 @@ import static in.projecteka.gateway.clients.ClientError.invalidBridgeRegistryReq
 import static in.projecteka.gateway.clients.ClientError.invalidBridgeServiceRequest;
 import static in.projecteka.gateway.clients.ClientError.invalidCMEntry;
 import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest;
+import static in.projecteka.gateway.clients.ClientError.invalidRequest;
 import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
+import static reactor.core.publisher.Mono.error;
 import static reactor.core.publisher.Mono.just;
 
 @AllArgsConstructor
@@ -165,6 +167,11 @@ public class RegistryService {
                             Endpoints endpoints = new Endpoints();
                             return Flux.fromIterable(services)
                                     .flatMap(request -> {
+                                        if(request.getEndpoints() != null && request.getEndpoints().size() > 0) {
+                                        if(request.getEndpoints().stream().anyMatch(endpoint ->
+                                                endpoint.getUse() == null || endpoint.getConnectionType() == null || !StringUtils.hasText(endpoint.getAddress()))) {
+                                            return error(invalidRequest("Invalid endpoints specified"));
+                                        }
                                         switch (request.getType()) {
                                             case HIP:
                                                 endpoints.setHipEndpoints(request.getEndpoints());
@@ -175,7 +182,7 @@ public class RegistryService {
                                             case HEALTH_LOCKER:
                                                 endpoints.setHealthLockerEndpoints(request.getEndpoints());
                                                 break;
-                                        }
+                                        }}
                                         return just(request);
                                     })
                                     .flatMap(request -> request.isActive()
