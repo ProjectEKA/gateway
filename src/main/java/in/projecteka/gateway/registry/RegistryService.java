@@ -33,6 +33,7 @@ import static in.projecteka.gateway.clients.ClientError.invalidCMRegistryRequest
 import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
+import static reactor.core.publisher.Mono.just;
 
 @AllArgsConstructor
 public class RegistryService {
@@ -45,7 +46,7 @@ public class RegistryService {
     private final FacilityRegistryClient facilityRegistryClient;
 
     public Mono<ClientResponse> populateCMEntry(CMServiceRequest request) {
-        return Mono.just(request)
+        return just(request)
                 .filterWhen(this::validateRequest)
                 .flatMap(req -> updateCMRequest(request))
                 .flatMap(updatedRequest -> registryRepository.getCMEntryIfActive(updatedRequest.getSuffix())
@@ -63,7 +64,7 @@ public class RegistryService {
         if (request.getIsBlocklisted() == null)
             updateCMServiceRequest.isBlocklisted(false);
 
-        return Mono.just(updateCMServiceRequest.build());
+        return just(updateCMServiceRequest.build());
     }
 
     private Mono<Boolean> validateRequest(CMServiceRequest request) {
@@ -72,7 +73,7 @@ public class RegistryService {
                 || (request.getUrl() == null || request.getUrl().isBlank())) )
             return Mono.error(invalidCMRegistryRequest());
 
-        return Mono.just(true);
+        return just(true);
     }
 
     private Mono<ClientResponse> updateCMEntry(CMEntry cmEntry, CMServiceRequest request) {
@@ -139,7 +140,7 @@ public class RegistryService {
                 .active(request.getActive() == null ? bridge.getActive() : request.getActive())
                 .blocklisted(request.getBlocklisted() == null ? bridge.getBlocklisted() : request.getBlocklisted())
                 .build();
-        return Mono.just(bridgeRequest);
+        return just(bridgeRequest);
     }
 
     private Mono<ClientResponse> createClient(String bridgeId) {
@@ -222,14 +223,14 @@ public class RegistryService {
                         type = ServiceRole.HIU;
                     }
                     serviceProfileResponse.type(type);
-                    return Mono.just(serviceProfileResponse.build());
+                    return just(serviceProfileResponse.build());
                 })
                 .switchIfEmpty(Mono.error(ClientError.notFound("Service Id not found")));
     }
 
     public Mono<List<ServiceProfileResponse>> servicesOfType(String serviceType) {
         return Arrays.stream(ServiceType.values()).noneMatch(type -> type.name().equals(serviceType))
-                ? Mono.just(List.of())
+                ? just(List.of())
                 : registryRepository.fetchServicesOfType(serviceType);
     }
 
@@ -240,7 +241,17 @@ public class RegistryService {
 
     public Mono<List<FacilityRepresentation>> searchFacilityByName(String name, String stateCode, String districtCode) {
         if(StringUtils.isEmpty(name)){
-            return Mono.just(List.of());
+            return just(List.of()   );
+        }
+        return registryRepository.searchFacilityByName(name).collectList();
+    }
+
+
+    //INFO: Use this method for searching facilities with Facility Registry
+    //INFO: Tests are also disabled for this method
+    public Mono<List<FacilityRepresentation>> searchFacilityByNameWithFacilityRegistry(String name, String stateCode, String districtCode) {
+        if(StringUtils.isEmpty(name)){
+            return just(List.of());
         }
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
                 .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
@@ -265,16 +276,19 @@ public class RegistryService {
                             .facilityType(serviceProfile.getTypes())
                             .build();
                 })
-                .switchIfEmpty(Mono.just(facilityRepresentationBuilder.build()));
+                .switchIfEmpty(just(facilityRepresentationBuilder.build()));
     }
 
     public Mono<FacilityRepresentation> getFacilityById(String serviceId) {
-        return facilityRegistryClient.getFacilityById(serviceId)
-                .flatMap(response -> {
-                    if (StringUtils.isEmpty(response.getFacility().getId())) {
-                        return Mono.error(ClientError.notFound("Could not find facility with given ID"));
-                    }
-                    return toFacilityRepresentation(response.getFacility());
+        return registryRepository.fetchServiceEntries(serviceId)
+                .switchIfEmpty(Mono.error(ClientError.notFound("Could not find facility with given ID")))
+                .map(serviceProfile -> {
+                    var isHIP = serviceProfile.getTypes().contains(HIP);
+                    return FacilityRepresentation.builder()
+                            .identifier(new FacilityRepresentation.Identifier(serviceProfile.getName(), serviceProfile.getId()))
+                            .isHIP(isHIP)
+                            .facilityType(serviceProfile.getTypes())
+                            .build();
                 });
     }
 }

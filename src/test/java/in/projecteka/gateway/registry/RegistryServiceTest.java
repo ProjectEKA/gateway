@@ -10,6 +10,7 @@ import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -34,7 +35,6 @@ import static in.projecteka.gateway.registry.TestBuilders.bridgeRegistryRequest;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeService;
 import static in.projecteka.gateway.registry.TestBuilders.bridgeServiceRequest;
 import static in.projecteka.gateway.registry.TestBuilders.cmServiceRequest;
-import static in.projecteka.gateway.registry.TestBuilders.facilityByIDResponseBuilder;
 import static in.projecteka.gateway.registry.TestBuilders.facilitySearchResponseBuilder;
 import static in.projecteka.gateway.registry.TestBuilders.hfrBridgeResponse;
 import static in.projecteka.gateway.registry.TestBuilders.hfrFacilityRepresentationBuilder;
@@ -473,6 +473,49 @@ class RegistryServiceTest {
                 .verifyComplete();
     }
 
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredAsHIPWhenFetchingFacilityById() {
+        var facilityId = string();
+        var serviceProfile = serviceProfile().id(facilityId).types(List.of(HIU)).build();
+
+        when(registryRepository.fetchServiceEntries(eq(facilityId))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .expectNextMatches(facility ->
+                        facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(facilityId)
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldReturnIsHIPAsFalseIfTheFacilityIsRegisteredAsHIPWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        var serviceProfile = serviceProfile().id(facilityId).types(List.of(HIP)).build();
+
+        when(registryRepository.fetchServiceEntries(eq(facilityId))).thenReturn(Mono.just(serviceProfile));
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .expectNextMatches(facility ->
+                        facility.getIsHIP() && facility.getIdentifier().getId().equals(facilityId)
+                )
+                .verifyComplete();
+    }
+
+    @Test
+    void shouldThrowErrorIfFacilityNotFoundWhenFetchingFacilityById() {
+        var facilityId = string();
+
+        when(registryRepository.fetchServiceEntries(eq(facilityId))).thenReturn(Mono.empty());
+
+        StepVerifier.create(registryService.getFacilityById(facilityId))
+                .verifyErrorMatches(throwable -> throwable instanceof ClientError &&
+                        ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND);
+    }
+
+    //TODO: Enable these tests when start searching with Facility Registry
+    @Disabled
     @Test
     void shouldReturnIsHIPAsTrueIfTheSearchedFacilityIsRegisteredAsHIPWhenSearchingFacility() {
         var name = string();
@@ -494,6 +537,7 @@ class RegistryServiceTest {
                 .verifyComplete();
     }
 
+    @Disabled
     @Test
     void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotRegisteredAsHIPWhenSearchingFacility() {
         var name = string();
@@ -515,6 +559,7 @@ class RegistryServiceTest {
                 .verifyComplete();
     }
 
+    @Disabled
     @Test
     void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotRegisteredOnGatewayWhenSearchingFacility() {
         var name = string();
@@ -535,6 +580,7 @@ class RegistryServiceTest {
                 .verifyComplete();
     }
 
+    @Disabled
     @Test
     void shouldReturnIsHIPAsFalseIfTheSearchedFacilityIsNotActiveWhenSearchingFacility() {
         var name = string();
@@ -554,74 +600,5 @@ class RegistryServiceTest {
                     return facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId());
                 })
                 .verifyComplete();
-    }
-
-    @Test
-    void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredOnGatewayWhenFetchingFacilityById() {
-        var facilityId = string();
-
-        var facilityByIdResponse = facilityByIDResponseBuilder().build();
-        var hfrFacility = facilityByIdResponse.getFacility();
-
-        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
-        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.empty());
-
-        StepVerifier.create(registryService.getFacilityById(facilityId))
-                .expectNextMatches(facility ->
-                        facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId())
-                )
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldReturnIsHIPAsFalseIfTheFacilityIsNotRegisteredAsHIPWhenFetchingFacilityById() {
-        var facilityId = string();
-
-        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
-        var facilityByIdResponse = facilityByIDResponseBuilder().facility(hfrFacility).build();
-        var serviceProfile = serviceProfile().types(List.of(HIU)).build();
-
-        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
-        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
-
-        StepVerifier.create(registryService.getFacilityById(facilityId))
-                .expectNextMatches(facility ->
-                        facility.getIsHIP().equals(false) && facility.getIdentifier().getId().equals(hfrFacility.getId())
-                )
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldReturnIsHIPAsFalseIfTheFacilityIsRegisteredAsHIPWhenFetchingFacilityById() {
-        var facilityId = string();
-
-        var hfrFacility = hfrFacilityRepresentationBuilder().active("Y").build();
-        var facilityByIdResponse = facilityByIDResponseBuilder().facility(hfrFacility).build();
-        var serviceProfile = serviceProfile().types(List.of(HIP)).build();
-
-        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
-        when(registryRepository.fetchServiceEntries(eq(hfrFacility.getId()))).thenReturn(Mono.just(serviceProfile));
-
-        StepVerifier.create(registryService.getFacilityById(facilityId))
-                .expectNextMatches(facility ->
-                        facility.getIsHIP() && facility.getIdentifier().getId().equals(hfrFacility.getId())
-                )
-                .verifyComplete();
-    }
-
-    @Test
-    void shouldThrowErrorIfFacilityNotFoundWhenFetchingFacilityById() {
-        var facilityId = string();
-
-        var hfrFacility = hfrFacilityRepresentationBuilder().id(null).build();
-        var facilityByIdResponse = facilityByIDResponseBuilder()
-                .facility(hfrFacility)
-                .build();
-
-        when(facilityRegistryClient.getFacilityById(eq(facilityId))).thenReturn(Mono.just(facilityByIdResponse));
-
-        StepVerifier.create(registryService.getFacilityById(facilityId))
-                .verifyErrorMatches(throwable -> throwable instanceof ClientError &&
-                        ((ClientError) throwable).getHttpStatus() == HttpStatus.NOT_FOUND);
     }
 }

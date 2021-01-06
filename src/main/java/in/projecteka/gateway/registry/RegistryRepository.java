@@ -7,6 +7,7 @@ import in.projecteka.gateway.registry.model.BridgeService;
 import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.Endpoint;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
@@ -28,6 +29,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import static in.projecteka.gateway.common.Serializer.to;
+import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
+import static in.projecteka.gateway.registry.ServiceType.HIP;
+import static in.projecteka.gateway.registry.ServiceType.HIU;
 
 
 @AllArgsConstructor
@@ -58,6 +62,9 @@ public class RegistryRepository {
             " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1";
     private static final String SELECT_BRIDGE_PROFILE = "SELECT name, url, bridge_id, active, blocklisted, " +
             "date_created, date_modified FROM bridge WHERE bridge_id = $1";
+
+    private static final String SELECT_FACILITIES_BY_NAME = "SELECT service_id, name, is_hip, is_hiu, is_health_locker " +
+            "FROM bridge_service WHERE UPPER(name) LIKE $1";
 
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
@@ -303,13 +310,13 @@ public class RegistryRepository {
                                     var isHiu = row.getBoolean("is_hiu");
                                     var isHealthLocker = row.getBoolean("is_health_locker");
                                     if(Boolean.TRUE.equals(isHip)) {
-                                        types.add(ServiceType.HIP);
+                                        types.add(HIP);
                                     }
                                     if(Boolean.TRUE.equals(isHiu)) {
-                                        types.add(ServiceType.HIU);
+                                        types.add(HIU);
                                     }
                                     if(Boolean.TRUE.equals(isHealthLocker)) {
-                                        types.add(ServiceType.HEALTH_LOCKER);
+                                        types.add(HEALTH_LOCKER);
                                     }
                                     endpoints.addAll(endpointList);
                                 });
@@ -386,5 +393,45 @@ public class RegistryRepository {
                                     .build();
                             monoSink.success(bridgeProfile);
                         }));
+    }
+
+    public Flux<FacilityRepresentation> searchFacilityByName(String serviceName) {
+        var searchQuery = "%" + serviceName.toUpperCase() + "%";
+        return Flux.create(fluxSink -> this.readOnlyClient.preparedQuery(SELECT_FACILITIES_BY_NAME)
+                .execute(Tuple.of(searchQuery),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                fluxSink.error(new DbOperationError("Failed to search facilities by name"));
+                                return;
+                            }
+
+                            var rows = handler.result();
+
+                            for (var row: rows) {
+                                    fluxSink.next(toFacilityRepresentation(row));
+                            }
+
+                            fluxSink.complete();
+                        }));
+    }
+
+    private FacilityRepresentation toFacilityRepresentation(Row row) {
+        var facilityName = row.getString("name");
+        var facilityId = row.getString("service_id");
+        var isHIP = Boolean.TRUE.equals(row.getBoolean("is_hip"));
+        var isHIU = Boolean.TRUE.equals(row.getBoolean("is_hiu"));
+        var isLocker = Boolean.TRUE.equals(row.getBoolean("is_health_locker"));
+        var serviceTypes = new ArrayList<ServiceType>();
+
+        if(isHIP) serviceTypes.add(HIP);
+        if(isHIU) serviceTypes.add(HIU);
+        if(isLocker) serviceTypes.add(HEALTH_LOCKER);
+
+        return  FacilityRepresentation.builder()
+                .isHIP(isHIP)
+                .identifier(new FacilityRepresentation.Identifier(facilityName, facilityId))
+                .facilityType(serviceTypes)
+                .build();
     }
 }
