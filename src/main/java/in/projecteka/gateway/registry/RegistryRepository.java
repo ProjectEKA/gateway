@@ -1,5 +1,6 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import static in.projecteka.gateway.common.Serializer.to;
 import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
@@ -56,7 +58,7 @@ public class RegistryRepository {
 
     private static final String SELECT_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
             "WHERE bridge_id = $1 AND service_id = $2";
-    private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, type FROM bridge_service " +
+    private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, is_hip, is_hiu, is_health_locker FROM bridge_service " +
             "WHERE bridge_id = $1 AND active = $2";
     private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "SELECT service_id, name, is_hip, is_hiu," +
             " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1";
@@ -272,9 +274,21 @@ public class RegistryRepository {
                             RowSet<Row> results = handler.result();
                             if (results.iterator().hasNext()) {
                                 results.forEach(row -> {
+                                    var isHIU = Boolean.TRUE.equals(row.getBoolean("is_hiu"));
+                                    var isHIP = Boolean.TRUE.equals(row.getBoolean("is_hip"));
+                                    var isLocker = Boolean.TRUE.equals(row.getBoolean("is_health_locker"));
+
+                                    ServiceType type = null;
+                                    if(isHIU) type = HIU;
+                                    if(isHIP) type = HIP;
+                                    if(isLocker) type = HEALTH_LOCKER;
+
+                                    if (Objects.isNull(type))
+                                        fluxSink.error(ClientError.serviceTypeNoAssignedToService());
+
                                     fluxSink.next(BridgeService.builder()
                                             .id(row.getString("service_id"))
-                                            .type(ServiceType.valueOf(row.getString("type")))
+                                            .type(type)
                                             .build());
                                 });
                             }
