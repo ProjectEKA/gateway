@@ -64,7 +64,7 @@ public class RegistryRepository {
             "date_created, date_modified FROM bridge WHERE bridge_id = $1";
 
     private static final String SELECT_FACILITIES_BY_NAME = "SELECT service_id, name, is_hip, is_hiu, is_health_locker " +
-            "FROM bridge_service WHERE UPPER(name) LIKE $1";
+            "FROM bridge_service WHERE UPPER(name) LIKE $1 AND is_hip = true";
 
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
