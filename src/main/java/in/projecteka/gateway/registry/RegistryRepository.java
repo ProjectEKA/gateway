@@ -282,18 +282,26 @@ public class RegistryRepository {
                                     var isHIP = Boolean.TRUE.equals(row.getBoolean("is_hip"));
                                     var isLocker = Boolean.TRUE.equals(row.getBoolean("is_health_locker"));
 
-                                    ServiceType type = null;
-                                    if(isHIU) type = HIU;
-                                    if(isHIP) type = HIP;
-                                    if(isLocker) type = HEALTH_LOCKER;
+                                    if(isHIU){
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HIU)
+                                                .build());
+                                    }
 
-                                    if (Objects.isNull(type))
-                                        fluxSink.error(ClientError.serviceTypeNoAssignedToService());
+                                    if(isHIP) {
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HIP)
+                                                .build());
+                                    }
 
-                                    fluxSink.next(BridgeService.builder()
-                                            .id(row.getString("service_id"))
-                                            .type(type)
-                                            .build());
+                                    if(isLocker) {
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HEALTH_LOCKER)
+                                                .build());
+                                    }
                                 });
                             }
                             fluxSink.complete();
