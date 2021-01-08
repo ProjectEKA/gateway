@@ -157,11 +157,11 @@ public class SecurityConfiguration {
             PATH_HEARTBEAT,
             PATH_READINESS,
             PATH_SERVICE_URLS,
-            USER_SESSION
+            USER_SESSION,
+            INTERNAL_BRIDGES
     };
 
     protected static final String[] INTERNAL_APIS = {
-            INTERNAL_BRIDGES,
             INTERNAL_BRIDGES_BRIDGE_ID_SERVICES,
             INTERNAL_CM
     };

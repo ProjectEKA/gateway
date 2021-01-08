@@ -78,6 +78,10 @@ public class ClientError extends Throwable {
         return internalServerError("Unknown error occurred");
     }
 
+    public static ClientError serviceTypeNoAssignedToService() {
+        return internalServerError("No service type found for the service");
+    }
+
     private static ClientError internalServerError(String message) {
         return new ClientError(INTERNAL_SERVER_ERROR, errorOf(message, UNKNOWN_ERROR_OCCURRED));
     }

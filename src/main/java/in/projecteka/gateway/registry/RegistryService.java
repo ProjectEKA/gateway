@@ -77,7 +77,7 @@ public class RegistryService {
     private Mono<Boolean> validateRequest(CMServiceRequest request) {
         if (request != null
                 && ((request.getSuffix() == null || request.getSuffix().isBlank())
-                || (request.getUrl() == null || request.getUrl().isBlank())) )
+                || (request.getUrl() == null || request.getUrl().isBlank())))
             return Mono.error(invalidCMRegistryRequest());
 
         return just(true);
@@ -123,9 +123,9 @@ public class RegistryService {
                         ? bridgeRequest(bridge, bridgeRegistryRequest)
                         .flatMap(req -> registryRepository.updateBridgeEntry(req)
                                 .then(registryRepository.fetchBridgeServicesIfPresent(req.getId()).collectList()
-                                .flatMap(services -> Flux.fromIterable(services)
-                                        .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
-                                                service.getType()))).then()))
+                                        .flatMap(services -> Flux.fromIterable(services)
+                                                .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
+                                                        service.getType()))).then()))
                                 .then(req.getActive()
                                         ? createClient(bridgeRegistryRequest.getId())
                                         : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
@@ -331,7 +331,7 @@ public class RegistryService {
     //INFO: Use this method for searching facilities with Facility Registry
     //INFO: Tests are also disabled for this method
     public Mono<List<FacilityRepresentation>> searchFacilityByNameWithFacilityRegistry(String name, String stateCode, String districtCode) {
-        if(StringUtils.isEmpty(name)){
+        if (StringUtils.isEmpty(name)) {
             return just(List.of());
         }
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
