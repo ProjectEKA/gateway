@@ -5,6 +5,7 @@ import in.projecteka.gateway.clients.model.ErrorRepresentation;
 import in.projecteka.gateway.common.DbOperationError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -22,8 +23,11 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
+
 import static in.projecteka.gateway.clients.ClientError.unknownErrorOccurred;
 import static in.projecteka.gateway.clients.model.ErrorCode.UNKNOWN_ERROR_OCCURRED;
+import static in.projecteka.gateway.common.Constants.CORRELATION_ID;
 import static java.lang.String.format;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -46,12 +50,7 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
     }
 
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
-        Throwable error = getError(request);
-        var message = format("Error happened for path: %s, method: %s, message: %s",
-                request.path(),
-                request.method(),
-                error.getMessage());
-        logger.error(message, error);
+        Throwable error = extractAndLogError(request);
         // Default error response
         HttpStatus status = INTERNAL_SERVER_ERROR;
         var bodyInserter = fromValue(unknownErrorOccurred().getError());
@@ -90,4 +89,16 @@ public class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
 
         return ServerResponse.status(status).contentType(MediaType.APPLICATION_JSON).body(bodyInserter);
     }
-}
+
+    private Throwable extractAndLogError(ServerRequest request) {
+        String correlationId = request.attribute(CORRELATION_ID).orElse(UUID.randomUUID()).toString();
+        MDC.put(CORRELATION_ID, correlationId);
+        Throwable error = getError(request);
+        var message = format("Error happened for path: %s, method: %s, message: %s",
+                request.path(),
+                request.method(),
+                error.getMessage());
+        logger.error(message, error);
+        MDC.clear();
+        return error;
+    }}
