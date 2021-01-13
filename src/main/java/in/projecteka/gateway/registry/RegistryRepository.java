@@ -1,5 +1,6 @@
 package in.projecteka.gateway.registry;
 
+import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -8,6 +9,7 @@ import in.projecteka.gateway.registry.model.CMEntry;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.EndpointDetails;
 import in.projecteka.gateway.registry.model.Endpoints;
+import in.projecteka.gateway.registry.model.FacilityRepresentation;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
@@ -27,9 +29,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 
 import static in.projecteka.gateway.common.Serializer.from;
 import static in.projecteka.gateway.common.Serializer.to;
+import static in.projecteka.gateway.registry.ServiceType.HEALTH_LOCKER;
 import static in.projecteka.gateway.registry.ServiceType.HIP;
 import static in.projecteka.gateway.registry.ServiceType.HIU;
 
@@ -56,7 +60,7 @@ public class RegistryRepository {
 
     private static final String SELECT_BRIDGE_SERVICE = "SELECT service_id FROM bridge_service " +
             "WHERE bridge_id = $1 AND service_id = $2";
-    private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, type FROM bridge_service " +
+    private static final String SELECT_BRIDGE_SERVICES = "SELECT service_id, is_hip, is_hiu, is_health_locker FROM bridge_service " +
             "WHERE bridge_id = $1 AND active = $2";
     private static final String SELECT_BRIDGE_SERVICES_BY_SERVICE_ID = "SELECT service_id, name, is_hip, is_hiu," +
             " is_health_locker, active, endpoints FROM bridge_service WHERE service_id = $1 AND active = $2";
@@ -64,6 +68,9 @@ public class RegistryRepository {
             "date_created, date_modified FROM bridge WHERE bridge_id = $1";
     private static final String SELECT_ENDPOINTS_OF_SERVICE = "SELECT endpoints FROM bridge_service " +
             "WHERE bridge_id = $1 AND service_id = $2";
+
+    private static final String SELECT_FACILITIES_BY_NAME = "SELECT service_id, name, is_hip, is_hiu, is_health_locker " +
+            "FROM bridge_service WHERE UPPER(name) LIKE $1 AND is_hip = true";
 
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
@@ -271,10 +278,30 @@ public class RegistryRepository {
                             RowSet<Row> results = handler.result();
                             if (results.iterator().hasNext()) {
                                 results.forEach(row -> {
-                                    fluxSink.next(BridgeService.builder()
-                                            .id(row.getString("service_id"))
-                                            .type(ServiceType.valueOf(row.getString("type")))
-                                            .build());
+                                    var isHIU = Boolean.TRUE.equals(row.getBoolean("is_hiu"));
+                                    var isHIP = Boolean.TRUE.equals(row.getBoolean("is_hip"));
+                                    var isLocker = Boolean.TRUE.equals(row.getBoolean("is_health_locker"));
+
+                                    if(isHIU){
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HIU)
+                                                .build());
+                                    }
+
+                                    if(isHIP) {
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HIP)
+                                                .build());
+                                    }
+
+                                    if(isLocker) {
+                                        fluxSink.next(BridgeService.builder()
+                                                .id(row.getString("service_id"))
+                                                .type(HEALTH_LOCKER)
+                                                .build());
+                                    }
                                 });
                             }
                             fluxSink.complete();
@@ -428,5 +455,45 @@ public class RegistryRepository {
                             var endpoints = endpointJson != null ? to(endpointJson) : new Endpoints();
                             monoSink.success(endpoints);
                         }));
+    }
+
+    public Flux<FacilityRepresentation> searchFacilityByName(String serviceName) {
+        var searchQuery = "%" + serviceName.toUpperCase() + "%";
+        return Flux.create(fluxSink -> this.readOnlyClient.preparedQuery(SELECT_FACILITIES_BY_NAME)
+                .execute(Tuple.of(searchQuery),
+                        handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                fluxSink.error(new DbOperationError("Failed to search facilities by name"));
+                                return;
+                            }
+
+                            var rows = handler.result();
+
+                            for (var row: rows) {
+                                    fluxSink.next(toFacilityRepresentation(row));
+                            }
+
+                            fluxSink.complete();
+                        }));
+    }
+
+    private FacilityRepresentation toFacilityRepresentation(Row row) {
+        var facilityName = row.getString("name");
+        var facilityId = row.getString("service_id");
+        var isHIP = Boolean.TRUE.equals(row.getBoolean("is_hip"));
+        var isHIU = Boolean.TRUE.equals(row.getBoolean("is_hiu"));
+        var isLocker = Boolean.TRUE.equals(row.getBoolean("is_health_locker"));
+        var serviceTypes = new ArrayList<ServiceType>();
+
+        if(isHIP) serviceTypes.add(HIP);
+        if(isHIU) serviceTypes.add(HIU);
+        if(isLocker) serviceTypes.add(HEALTH_LOCKER);
+
+        return  FacilityRepresentation.builder()
+                .isHIP(isHIP)
+                .identifier(new FacilityRepresentation.Identifier(facilityName, facilityId))
+                .facilityType(serviceTypes)
+                .build();
     }
 }

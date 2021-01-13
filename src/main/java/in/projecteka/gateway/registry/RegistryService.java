@@ -77,7 +77,7 @@ public class RegistryService {
     private Mono<Boolean> validateRequest(CMServiceRequest request) {
         if (request != null
                 && ((request.getSuffix() == null || request.getSuffix().isBlank())
-                || (request.getUrl() == null || request.getUrl().isBlank())) )
+                || (request.getUrl() == null || request.getUrl().isBlank())))
             return Mono.error(invalidCMRegistryRequest());
 
         return just(true);
@@ -123,9 +123,9 @@ public class RegistryService {
                         ? bridgeRequest(bridge, bridgeRegistryRequest)
                         .flatMap(req -> registryRepository.updateBridgeEntry(req)
                                 .then(registryRepository.fetchBridgeServicesIfPresent(req.getId()).collectList()
-                                .flatMap(services -> Flux.fromIterable(services)
-                                        .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
-                                                service.getType()))).then()))
+                                        .flatMap(services -> Flux.fromIterable(services)
+                                                .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
+                                                        service.getType()))).then()))
                                 .then(req.getActive()
                                         ? createClient(bridgeRegistryRequest.getId())
                                         : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
@@ -324,6 +324,16 @@ public class RegistryService {
         if(StringUtils.isEmpty(name)){
             return just(List.of());
         }
+        return registryRepository.searchFacilityByName(name).collectList();
+    }
+
+
+    //INFO: Use this method for searching facilities with Facility Registry
+    //INFO: Tests are also disabled for this method
+    public Mono<List<FacilityRepresentation>> searchFacilityByNameWithFacilityRegistry(String name, String stateCode, String districtCode) {
+        if (StringUtils.isEmpty(name)) {
+            return just(List.of());
+        }
         return facilityRegistryClient.searchFacilityByName(name, stateCode, districtCode)
                 .flatMapMany(response -> Flux.fromIterable(response.getFacilities()))
                 .flatMap(this::toFacilityRepresentation)
@@ -351,12 +361,15 @@ public class RegistryService {
     }
 
     public Mono<FacilityRepresentation> getFacilityById(String serviceId) {
-        return facilityRegistryClient.getFacilityById(serviceId)
-                .flatMap(response -> {
-                    if (StringUtils.isEmpty(response.getFacility().getId())) {
-                        return Mono.error(ClientError.notFound("Could not find facility with given ID"));
-                    }
-                    return toFacilityRepresentation(response.getFacility());
+        return registryRepository.fetchServiceEntries(serviceId)
+                .switchIfEmpty(Mono.error(ClientError.notFound("Could not find facility with given ID")))
+                .map(serviceProfile -> {
+                    var isHIP = serviceProfile.getTypes().contains(HIP);
+                    return FacilityRepresentation.builder()
+                            .identifier(new FacilityRepresentation.Identifier(serviceProfile.getName(), serviceProfile.getId()))
+                            .isHIP(isHIP)
+                            .facilityType(serviceProfile.getTypes())
+                            .build();
                 });
     }
 }
