@@ -422,13 +422,42 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/ServiceType'
+        endpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndpointDetails'
         active:
           type: boolean
       xml:
         name: BridgeServiceRequest
+    EndpointDetails:
+      type: object
+      properties:
+        use:
+          $ref: '#/components/schemas/EndpointUse'
+        connectionType:
+          $ref: '#/components/schemas/EndpointConnectionType'
+        address:
+          type: string
+      xml:
+        name: EndpointDetails
+    EndpointUse:
+      type: string
+      enum:
+        - registration
+        - data-upload
+      xml:
+        name: EndpointUse
+    EndpointConnectionType:
+      type: string
+      enum:
+        - HTTPS
+        - APP
+      xml:
+        name: EndpointConnectionType
     ServiceType:
       type: string
-      enum: [HIP, HIU]
+      enum: [HIP, HIU, HEALTH_LOCKER]
     ClientResponse:
       type: object
       properties:
