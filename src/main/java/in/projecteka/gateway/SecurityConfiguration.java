@@ -67,6 +67,8 @@ import static in.projecteka.gateway.common.Constants.PATH_ON_ADD_CARE_CONTEXTS;
 import static in.projecteka.gateway.common.Constants.PATH_ON_FETCH_AUTH_MODES;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_FIND;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_ON_FIND;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_SMS_NOTIFY;
+import static in.projecteka.gateway.common.Constants.PATH_PATIENTS_SMS_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_READINESS;
@@ -114,7 +116,8 @@ public class SecurityConfiguration {
             PATH_CONSENTS_HIP_ON_NOTIFY,
             PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
             PATH_ADD_CARE_CONTEXTS,
-            PATH_PATIENT_ON_SHARE
+            PATH_PATIENT_ON_SHARE,
+            PATH_PATIENTS_SMS_NOTIFY
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
@@ -147,7 +150,8 @@ public class SecurityConfiguration {
             PATH_HIU_SUBSCRIPTION_NOTIFY,
             PATH_SUBSCRIPTION_REQUESTS_NOTIFY,
             INTERNAL_SEARCH_FACILITY_BY_NAME,
-            INTERNAL_GET_FACILITY_BY_ID
+            INTERNAL_GET_FACILITY_BY_ID,
+            PATH_PATIENTS_SMS_ON_NOTIFY
     };
 
     protected static final String[] ALLOW_LIST_APIS = {

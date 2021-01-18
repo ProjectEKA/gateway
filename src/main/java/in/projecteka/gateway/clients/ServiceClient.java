@@ -32,7 +32,6 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static reactor.core.publisher.Mono.empty;
 import static reactor.core.publisher.Mono.error;
-import static reactor.core.publisher.Mono.subscriberContext;
 
 @AllArgsConstructor
 public abstract class ServiceClient {
