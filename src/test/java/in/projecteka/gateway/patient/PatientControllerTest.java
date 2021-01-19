@@ -2,6 +2,7 @@ package in.projecteka.gateway.patient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nimbusds.jose.jwk.JWKSet;
+import in.projecteka.gateway.clients.PatientSMSNotificationClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.common.Authenticator;
 import in.projecteka.gateway.common.Constants;
@@ -21,7 +22,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
@@ -47,6 +51,13 @@ public class PatientControllerTest {
     @Qualifier("patientResponseOrchestrator")
     @MockBean
     ResponseOrchestrator patientResponseOrchestrator;
+
+    @MockBean
+    RequestOrchestrator<PatientSMSNotificationClient> patientSMSNotifyRequestOrchestrator;
+
+    @MockBean
+    @Qualifier("patientSMSNotifyResponseOrchestrator")
+    ResponseOrchestrator patientSMSNotifyResponseOrchestrator;
 
     @Autowired
     WebTestClient webTestClient;
@@ -99,5 +110,42 @@ public class PatientControllerTest {
                 .exchange()
                 .expectStatus()
                 .isNotFound();
+    }
+
+    @Test
+    void shouldFireAndForgetForHIPSmsNotification() {
+        var token = string();
+        var clientId = string();
+        when(patientSMSNotifyRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(authenticator.verify(token))
+                .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_PATIENTS_SMS_NOTIFY)
+                .header(AUTHORIZATION, token)
+                .header(X_CM_ID, "CM_ID")
+                .contentType(APPLICATION_JSON)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
+    }
+
+    @Test
+    void shouldFireAndForgetForHIPSmsNotificationResponse() {
+        var token = string();
+        when(authenticator.verify(token)).thenReturn(just(caller().roles(List.of(CM)).build()));
+        when(patientSMSNotifyResponseOrchestrator.processResponse(any(), eq(X_HIP_ID))).thenReturn(Mono.empty());
+
+        webTestClient
+                .post()
+                .uri(Constants.PATH_PATIENTS_SMS_ON_NOTIFY)
+                .contentType(APPLICATION_JSON)
+                .header(AUTHORIZATION, token)
+                .bodyValue("{}")
+                .exchange()
+                .expectStatus()
+                .isAccepted();
     }
 }

@@ -84,6 +84,8 @@ public class Constants {
     public static final String PATH_SUBSCRIPTION_REQUESTS_ON_NOTIFY = CURRENT_VERSION + "/subscription-requests/hiu/on-notify";
     public static final String PATH_HIU_SUBSCRIPTION_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/notify";
     public static final String PATH_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/on-notify";
+    public static final String PATH_PATIENTS_SMS_NOTIFY = CURRENT_VERSION + "/patients/sms/notify";
+    public static final String PATH_PATIENTS_SMS_ON_NOTIFY = CURRENT_VERSION + "/patients/sms/on-notify";
     public static final String ROUTE_PATH_CM_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/on-notify";
     public static final String GW_PATH_HI_SERVICE_BY_ID = CURRENT_VERSION + "/hi-services/{service-id}";
     public static final String GW_PATH_HI_SERVICES = CURRENT_VERSION + "/hi-services";

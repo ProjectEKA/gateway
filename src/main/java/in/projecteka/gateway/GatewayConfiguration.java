@@ -29,6 +29,7 @@ import in.projecteka.gateway.clients.IdentityProperties;
 import in.projecteka.gateway.clients.IdentityServiceClient;
 import in.projecteka.gateway.clients.LinkConfirmServiceClient;
 import in.projecteka.gateway.clients.LinkInitServiceClient;
+import in.projecteka.gateway.clients.PatientSMSNotificationClient;
 import in.projecteka.gateway.clients.PatientSearchServiceClient;
 import in.projecteka.gateway.clients.PatientServiceClient;
 import in.projecteka.gateway.clients.SubscriptionRequestNotifyServiceClient;
@@ -1379,5 +1380,47 @@ public class GatewayConfiguration {
                                                          FacilityRegistryProperties facilityRegistryProperties,
                                                          @Qualifier("facilityTokenCache") CacheAdapter<String, String> facilityTokenCache){
         return new FacilityRegistryClient(builder, facilityRegistryProperties, facilityTokenCache);
+    }
+
+    @Bean("patientSMSNotificationClient")
+    public PatientSMSNotificationClient patientSMSNotificationClient(ServiceOptions serviceOptions,
+                                                                     @Qualifier("customBuilder") WebClient.Builder builder,
+                                                                     CMRegistry cmRegistry,
+                                                                     IdentityService identityService,
+                                                                     BridgeRegistry bridgeRegistry) {
+        return new PatientSMSNotificationClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("patientSMSNotifcationRequestAction")
+    public DefaultValidatedRequestAction<PatientSMSNotificationClient> patientSMSNotificationRequestAction(
+            PatientSMSNotificationClient patientSMSNotificationClient) {
+        return new DefaultValidatedRequestAction<>(patientSMSNotificationClient);
+    }
+
+    @Bean("patientSMSNotifyRequestOrchestrator")
+    public RequestOrchestrator<PatientSMSNotificationClient> patientSMSNotifyRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            PatientSMSNotificationClient patientSMSNotificationClient,
+            DefaultValidatedRequestAction<PatientSMSNotificationClient> patientSMSNotificationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                patientSMSNotificationClient,
+                patientSMSNotificationRequestAction);
+    }
+
+    @Bean("patientSMSNotificationResponseAction")
+    public DefaultValidatedResponseAction<PatientSMSNotificationClient> patientSMSNotificationResponseAction(
+            PatientSMSNotificationClient patientSMSNotificationClient) {
+        return new DefaultValidatedResponseAction<>(patientSMSNotificationClient);
+    }
+
+    @Bean("patientSMSNotifyResponseOrchestrator")
+    public ResponseOrchestrator patientSMSNotifyResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<PatientSMSNotificationClient> patientSMSNotificationResponseAction) {
+        return new ResponseOrchestrator(validator, patientSMSNotificationResponseAction);
     }
 }
