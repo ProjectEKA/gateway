@@ -23,6 +23,7 @@ import static in.projecteka.gateway.common.Constants.PATH_PATIENT_ON_SHARE;
 import static in.projecteka.gateway.common.Constants.PATH_PATIENT_SHARE;
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 
 @RestController
 @AllArgsConstructor
@@ -66,7 +67,7 @@ public class PatientController {
                 .map(securityContext -> (Caller) securityContext.getAuthentication().getPrincipal())
                 .map(Caller::getClientId)
                 .flatMap(clientId ->
-                        patientSMSNotifyRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIP_ID, clientId)
+                        patientSMSNotifyRequestOrchestrator.handleThis(requestEntity, X_CM_ID, X_HIP_ID, bridgeId(clientId))
                                 .subscriberContext(context -> context.put(API_CALLED, PATH_PATIENTS_SMS_NOTIFY)));
     }
 
