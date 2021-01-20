@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import static in.projecteka.gateway.common.Constants.X_CM_ID;
 import static in.projecteka.gateway.common.Constants.X_HIP_ID;
+import static in.projecteka.gateway.common.Constants.bridgeId;
 import static in.projecteka.gateway.common.Role.CM;
 import static in.projecteka.gateway.common.Role.HIP;
 import static in.projecteka.gateway.testcommon.TestBuilders.caller;
@@ -116,7 +117,7 @@ public class PatientControllerTest {
     void shouldFireAndForgetForHIPSmsNotification() {
         var token = string();
         var clientId = string();
-        when(patientSMSNotifyRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(clientId))).thenReturn(empty());
+        when(patientSMSNotifyRequestOrchestrator.handleThis(any(), eq(X_CM_ID), eq(X_HIP_ID), eq(bridgeId(clientId)))).thenReturn(empty());
         when(authenticator.verify(token))
                 .thenReturn(just(caller().clientId(clientId).roles(List.of(HIP)).build()));
 
