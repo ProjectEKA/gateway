@@ -8,7 +8,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.data.util.Pair;
 import reactor.core.publisher.Mono;
 
 import static in.projecteka.gateway.testcommon.TestBuilders.string;
@@ -18,7 +17,7 @@ import static org.mockito.Mockito.when;
 class PathRegistryTest {
 
     @Mock
-    CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
+    CacheAdapter<String, String> bridgeMappings;
 
     @Mock
     MappingRepository mappingRepository;
@@ -36,7 +35,7 @@ class PathRegistryTest {
     void returnHostByHittingDBWhenCacheDoesnotHoldRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = clientId + "-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.empty());
         when(mappingRepository.bridgeHost(key)).thenReturn(Mono.just(url));
         when(bridgeMappings.put(key, url)).thenReturn(Mono.empty());
@@ -51,7 +50,7 @@ class PathRegistryTest {
     void returnHostFromCacheWhenItContainsRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = clientId + "-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.just(url));
         when(mappingRepository.bridgeHost(key)).thenReturn(Mono.empty());
 

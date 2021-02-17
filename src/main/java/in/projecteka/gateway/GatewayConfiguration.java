@@ -209,37 +209,35 @@ public class GatewayConfiguration {
                 });
     }
 
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("consentManagerMappings")
+    public CacheAdapter<String, String> createRedisCacheAdapterForCMMappings(
+            @Qualifier("Lettuce") RedisClient redisClient,
+            RedisOptions redisOptions) {
+        int _12Hours = 12 * 60;
+        return new RedisCacheAdapter(redisClient, _12Hours, redisOptions.getRetry());
+    }
+
+    @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
     @Bean({"consentManagerMappings"})
     public CacheAdapter<String, String> createLoadingCacheAdapterForCMMappings() {
-        return new LoadingCacheAdapter<>(createMappingCacheForCM(12));
+        return new LoadingCacheAdapter<>(stringStringLoadingCache(12));
     }
 
-    public LoadingCache<String, String> createMappingCacheForCM(int duration) {
-        return CacheBuilder
-                .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.HOURS)
-                .build(new CacheLoader<>() {
-                    public String load(String key) {
-                        return "";
-                    }
-                });
-    }
-
-    @Bean({"bridgeMappings"})
-    public CacheAdapter<Pair<String, ServiceType>, String> createLoadingCacheAdapterForBridgeMappings(
+    @ConditionalOnProperty(value = "gateway.cacheMethod", havingValue = "redis")
+    @Bean("bridgeMappings")
+    public CacheAdapter<String, String> createRedisCacheAdapterForBridgeMappings(
+            @Qualifier("Lettuce") RedisClient redisClient,
+            RedisOptions redisOptions,
             @Value("${gateway.bridgeCacheExpiry}") int expiry) {
-        return new LoadingCacheAdapter<>(createMappingCacheForBridge(expiry));
+        return new RedisCacheAdapter(redisClient, expiry, redisOptions.getRetry());
     }
 
-    public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
-        return CacheBuilder
-                .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.MINUTES)
-                .build(new CacheLoader<>() {
-                    public String load(Pair<String, ServiceType> key) {
-                        return "";
-                    }
-                });
+    @ConditionalOnProperty(value = "guava.cacheMethod", havingValue = "guava", matchIfMissing = true)
+    @Bean({"bridgeMappings"})
+    public CacheAdapter<String, String> createLoadingCacheAdapterForBridgeMappings(
+            @Value("${gateway.bridgeCacheExpiry}") int expiry) {
+        return new LoadingCacheAdapter<>(stringStringLoadingCache(expiry));
     }
 
     @Bean
@@ -248,7 +246,7 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public BridgeRegistry bridgeRegistry(CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+    public BridgeRegistry bridgeRegistry(CacheAdapter<String, String> bridgeMappings,
                                          MappingRepository mappingRepository) {
         return new BridgeRegistry(bridgeMappings, mappingRepository);
     }
@@ -1089,7 +1087,7 @@ public class GatewayConfiguration {
     @Bean
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
-                                           CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                           CacheAdapter<String, String> bridgeMappings,
                                            AdminServiceClient adminServiceClient,
                                            FacilityRegistryClient facilityRegistryClient) {
         return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient, facilityRegistryClient);
