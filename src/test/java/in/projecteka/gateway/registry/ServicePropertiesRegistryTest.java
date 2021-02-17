@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 class ServicePropertiesRegistryTest {
 
     @Mock
-    CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
+    CacheAdapter<String, String> bridgeMappings;
 
     @Mock
     MappingRepository mappingRepository;
@@ -36,7 +36,7 @@ class ServicePropertiesRegistryTest {
     void returnHostByHittingDBWhenCacheDoesnotHoldRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = "clientId-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.empty());
         when(mappingRepository.bridgeHost(key)).thenReturn(Mono.just(url));
         when(bridgeMappings.put(key, url)).thenReturn(Mono.empty());
@@ -51,7 +51,7 @@ class ServicePropertiesRegistryTest {
     void returnHostFromCacheWhenItContainsRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = "clientId-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.just(url));
         when(mappingRepository.bridgeHost(key)).thenReturn(Mono.empty());
 
