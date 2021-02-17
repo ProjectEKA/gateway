@@ -240,17 +240,6 @@ public class GatewayConfiguration {
         return new LoadingCacheAdapter<>(stringStringLoadingCache(expiry));
     }
 
-    public LoadingCache<Pair<String, ServiceType>, String> createMappingCacheForBridge(int duration) {
-        return CacheBuilder
-                .newBuilder()
-                .expireAfterWrite(duration, TimeUnit.MINUTES)
-                .build(new CacheLoader<>() {
-                    public String load(Pair<String, ServiceType> key) {
-                        return "";
-                    }
-                });
-    }
-
     @Bean
     public CMRegistry cmRegistry(CacheAdapter<String, String> consentManagerMappings, MappingRepository mappingRepository) {
         return new CMRegistry(consentManagerMappings, mappingRepository);
@@ -1098,7 +1087,7 @@ public class GatewayConfiguration {
     @Bean
     public RegistryService registryService(RegistryRepository registryRepository,
                                            CacheAdapter<String, String> consentManagerMappings,
-                                           CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings,
+                                           CacheAdapter<String, String> bridgeMappings,
                                            AdminServiceClient adminServiceClient,
                                            FacilityRegistryClient facilityRegistryClient) {
         return new RegistryService(registryRepository, consentManagerMappings, bridgeMappings, adminServiceClient, facilityRegistryClient);
