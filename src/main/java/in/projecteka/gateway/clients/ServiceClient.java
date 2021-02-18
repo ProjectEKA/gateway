@@ -16,6 +16,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 import static in.projecteka.gateway.clients.ClientError.invalidRequest;
@@ -72,7 +74,12 @@ public abstract class ServiceClient {
                 }))
                 .flatMap(url -> from(requestBody)
                         .map(serialized -> route(serialized, url, routingKey, targetId, sourceId))
-                        .orElse(empty()));
+                        .orElse(empty()))
+                .subscriberContext(ctx -> {
+                    Optional<String> correlationId = Optional.ofNullable(MDC.get(CORRELATION_ID));
+                    return correlationId.map(id -> ctx.put(CORRELATION_ID, id))
+                            .orElseGet(() -> ctx.put(CORRELATION_ID, UUID.randomUUID().toString()));
+                });
 
     }
 
@@ -101,6 +108,7 @@ public abstract class ServiceClient {
                                 .flatMap(cmErrorResponse -> error(invalidRequest(cmErrorResponse.getError().getMessage())))
                 )
                 .toBodilessEntity()
+                .doOnSubscribe(subscription -> logger.info("About to call cm for source {}, url {}", sourceId, url))
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
 
@@ -123,6 +131,7 @@ public abstract class ServiceClient {
                                 .doOnSuccess(e -> logger.error("Error: {} {}", clientResponse.statusCode(), e))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
+                .doOnSubscribe(subscription -> logger.info("About to call bridge {} for url {}", clientId, url))
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
 }
