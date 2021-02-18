@@ -65,7 +65,7 @@ class RegistryServiceTest {
     CacheAdapter<String, String> consentManagerMappings;
 
     @Mock
-    CacheAdapter<String, String> bridgeMappings;
+    CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
 
     @Mock
     RegistryRepository registryRepository;
@@ -271,8 +271,7 @@ class RegistryServiceTest {
         when(registryRepository.ifPresent(bridgeId)).thenReturn(just(bridge));
         when(registryRepository.updateBridgeEntry(request)).thenReturn(empty());
         when(registryRepository.fetchBridgeServicesIfPresent(bridgeId)).thenReturn(Flux.just(bridgeService));
-        var key = bridgeService.getId() + "-" + bridgeService.getType().name();
-        when(bridgeMappings.invalidate(key)).thenReturn(empty());
+        when(bridgeMappings.invalidate(Pair.of(bridgeService.getId(), bridgeService.getType()))).thenReturn(empty());
         when(adminServiceClient.deleteClientIfExists(bridgeId)).thenReturn(empty());
 
         var producer = registryService.populateBridgeEntry(request);
@@ -336,8 +335,7 @@ class RegistryServiceTest {
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(true));
         when(registryRepository.fetchExistingEndpoints(bridgeId, request.getId())).thenReturn(just(new Endpoints()));
         when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any())).thenReturn(empty());
-        String key = request.getId() + "-" + request.getType().name();
-        when(bridgeMappings.invalidate(key)).thenReturn(empty());
+        when(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType()))).thenReturn(empty());
 
         var producer = registryService.populateBridgeServicesEntries(bridgeId, List.of(request));
         StepVerifier.create(producer)
@@ -346,7 +344,7 @@ class RegistryServiceTest {
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
         verify(registryRepository).fetchExistingEndpoints(bridgeId, request.getId());
         verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
-        verify(bridgeMappings).invalidate(key);
+        verify(bridgeMappings).invalidate(Pair.of(request.getId(), request.getType()));
     }
 
     @Test
@@ -401,15 +399,13 @@ class RegistryServiceTest {
         var hipEndpointDetails1 = EndpointDetails.builder().use(REGISTRATION).connectionType(HTTPS).address("https://registration").build();
         var hipEndpointDetails2 = EndpointDetails.builder().use(DATA_UPLOAD).connectionType(HTTPS).address("https://data-upload").build();
         var existingEndpoints = Endpoints.builder().hipEndpoints(List.of(hipEndpointDetails1, hipEndpointDetails2)).build();
-        String key = request.getId() + "-" + request.getType().name();
-
         when(registryRepository.ifPresent(request.getId(), request.getType(), request.isActive(), bridgeId))
                 .thenReturn(just(false));
         when(registryRepository.ifBridgeServicePresent(bridgeId, request.getId())).thenReturn(just(true));
         when(registryRepository.fetchExistingEndpoints(bridgeId, request.getId())).thenReturn(just(existingEndpoints));
         when(registryRepository.updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any()))
                 .thenReturn(empty());
-        when(bridgeMappings.invalidate(key)).thenReturn(empty());
+        when(bridgeMappings.invalidate(Pair.of(request.getId(), request.getType()))).thenReturn(empty());
         when(adminServiceClient.getServiceAccount(bridgeId)).thenReturn(just(serviceAccount));
         when(adminServiceClient.getAvailableRealmRoles(serviceAccount.getId())).thenReturn(just(realmRoles));
         when(adminServiceClient.assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId()))
@@ -423,7 +419,7 @@ class RegistryServiceTest {
         verify(registryRepository).ifBridgeServicePresent(bridgeId, request.getId());
         verify(registryRepository).fetchExistingEndpoints(bridgeId, request.getId());
         verify(registryRepository).updateBridgeServiceEntry(eq(bridgeId), eq(request.getId()), eq(request.getName()), any(), any());
-        verify(bridgeMappings).invalidate(key);
+        verify(bridgeMappings).invalidate(Pair.of(request.getId(), request.getType()));
         verify(adminServiceClient).getServiceAccount(bridgeId);
         verify(adminServiceClient).getAvailableRealmRoles(serviceAccount.getId());
         verify(adminServiceClient).assignRoleToClient(List.of(realmRoles.get(0)), serviceAccount.getId());

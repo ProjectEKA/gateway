@@ -20,6 +20,7 @@ import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
 import in.projecteka.gateway.registry.model.ServiceRole;
 import lombok.AllArgsConstructor;
+import org.springframework.data.util.Pair;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
@@ -47,7 +48,7 @@ public class RegistryService {
     private static final String FACILITY_ACTIVE = "Y";
     private final RegistryRepository registryRepository;
     private final CacheAdapter<String, String> consentManagerMappings;
-    private final CacheAdapter<String, String> bridgeMappings;
+    private final CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
     private final AdminServiceClient adminServiceClient;
     private final FacilityRegistryClient facilityRegistryClient;
 
@@ -123,7 +124,8 @@ public class RegistryService {
                         .flatMap(req -> registryRepository.updateBridgeEntry(req)
                                 .then(registryRepository.fetchBridgeServicesIfPresent(req.getId()).collectList()
                                         .flatMap(services -> Flux.fromIterable(services)
-                                                .flatMap(service -> bridgeMappings.invalidate(keyFor(service.getId(), service.getType()))).then()))
+                                                .flatMap(service -> bridgeMappings.invalidate(Pair.of(service.getId(),
+                                                        service.getType()))).then()))
                                 .then(req.getActive()
                                         ? createClient(bridgeRegistryRequest.getId())
                                         : adminServiceClient.deleteClientIfExists(bridgeRegistryRequest.getId())
@@ -135,10 +137,6 @@ public class RegistryService {
                         ? registryRepository.insertBridgeEntry(bridgeRegistryRequest)
                         .then(createClient(bridgeRegistryRequest.getId()))
                         : Mono.error(invalidBridgeRegistryRequest("can't register an inactive bridge")));
-    }
-
-    private String keyFor(String id, ServiceType serviceType) {
-        return String.join("-", id, serviceType.name());
     }
 
     private Mono<BridgeRegistryRequest> bridgeRequest(Bridge bridge, BridgeRegistryRequest request) {
@@ -272,7 +270,7 @@ public class RegistryService {
 
     private Mono<Void> invalidateBridgeMappings(String serviceId, Map<ServiceType, Boolean> typeActiveMap) {
         return Flux.fromIterable(typeActiveMap.keySet())
-                .map(type -> bridgeMappings.invalidate(keyFor(serviceId, type)))
+                .map(type -> bridgeMappings.invalidate(Pair.of(serviceId, type)))
                 .then();
     }
 
