@@ -1,6 +1,7 @@
 package in.projecteka.gateway;
 
 import lombok.extern.slf4j.Slf4j;
+import net.logstash.logback.encoder.org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -23,13 +24,12 @@ public class CorrelationIDFilter implements WebFilter {
 
         return chain.filter(exchange)
                 .subscriberContext(context -> {
-                    var correlationId = "";
-                    if (headers.containsKey(CORRELATION_ID)) {
-                        correlationId = headers.get(CORRELATION_ID);
-                    } else {
+                    String correlationId = exchange.getRequest().getHeaders().getFirst(CORRELATION_ID);
+                    if (StringUtils.isBlank(correlationId)) {
                         correlationId = generateRandomCorrelationId();
                     }
                     MDC.put(CORRELATION_ID, correlationId);
+
                     Context contextTmp = context.put(CORRELATION_ID, correlationId);
                     exchange.getAttributes().put(CORRELATION_ID, correlationId);
                     exchange.getResponse().getHeaders().add(CORRELATION_ID, correlationId);
