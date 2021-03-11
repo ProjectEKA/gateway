@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 class PathRegistryTest {
 
     @Mock
-    CacheAdapter<Pair<String, ServiceType>, String> bridgeMappings;
+    CacheAdapter<String, String> bridgeMappings;
 
     @Mock
     MappingRepository mappingRepository;
@@ -36,9 +36,9 @@ class PathRegistryTest {
     void returnHostByHittingDBWhenCacheDoesnotHoldRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = clientId + "-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.empty());
-        when(mappingRepository.bridgeHost(key)).thenReturn(Mono.just(url));
+        when(mappingRepository.bridgeHost(Pair.of(clientId, serviceType))).thenReturn(Mono.just(url));
         when(bridgeMappings.put(key, url)).thenReturn(Mono.empty());
 
         var mayBeHost = bridgeRegistry.getHostFor(clientId, serviceType);
@@ -51,9 +51,9 @@ class PathRegistryTest {
     void returnHostFromCacheWhenItContainsRequestedMappingInfo(ServiceType serviceType) {
         var clientId = string();
         var url = string();
-        var key = Pair.of(clientId, serviceType);
+        var key = clientId + "-" + serviceType.name();
         when(bridgeMappings.get(key)).thenReturn(Mono.just(url));
-        when(mappingRepository.bridgeHost(key)).thenReturn(Mono.empty());
+        when(mappingRepository.bridgeHost(Pair.of(clientId, serviceType))).thenReturn(Mono.empty());
 
         var mayBeHost = bridgeRegistry.getHostFor(clientId, serviceType);
 
