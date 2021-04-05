@@ -169,7 +169,10 @@ public class GatewayConfiguration {
     @Bean("Lettuce")
     RedisClient redis(RedisOptions redisOptions) {
         var socketOptions = SocketOptions.builder().keepAlive(redisOptions.isKeepAliveEnabled()).build();
-        ClientOptions clientOptions = ClientOptions.builder().socketOptions(socketOptions).build();
+        ClientOptions clientOptions = ClientOptions.builder()
+                .socketOptions(socketOptions)
+                .publishOnScheduler(true)
+                .build();
         RedisURI redisUri = RedisURI.Builder.
                 redis(redisOptions.getHost())
                 .withPort(redisOptions.getPort())

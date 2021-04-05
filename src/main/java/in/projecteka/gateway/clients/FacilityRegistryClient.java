@@ -15,6 +15,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -59,6 +60,7 @@ public class FacilityRegistryClient {
                         .doOnNext(logger::error)
                         .then(Mono.error(ClientError.unableToConnect())))
                 .bodyToMono(Session.class)
+                .publishOn(Schedulers.elastic())
                 .flatMap(session -> facilityTokenCache.put(FACILITY_TOKEN_CACHE_KEY, session.getAccessToken())
                         .thenReturn(session.getAccessToken()))
                 .doOnSubscribe(subscription -> logger.info("About to get token for facility registry"));
@@ -84,7 +86,8 @@ public class FacilityRegistryClient {
                                         clientResponse.statusCode(),
                                         properties))
                                 .then(error(unableToConnect())))
-                        .bodyToMono(FacilitySearchResponse.class));
+                        .bodyToMono(FacilitySearchResponse.class))
+                .publishOn(Schedulers.elastic());
     }
 
     public Mono<FindFacilityByIDResponse> getFacilityById(String facilityId) {
@@ -101,7 +104,8 @@ public class FacilityRegistryClient {
                                         clientResponse.statusCode(),
                                         properties))
                                 .then(error(unableToConnect())))
-                        .bodyToMono(FindFacilityByIDResponse.class));
+                        .bodyToMono(FindFacilityByIDResponse.class))
+                .publishOn(Schedulers.elastic());
     }
 
     private HashMap<String, Object> searchByNameRequest(String name, String state, String district) {

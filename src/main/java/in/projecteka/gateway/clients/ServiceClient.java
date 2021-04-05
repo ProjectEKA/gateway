@@ -13,6 +13,7 @@ import org.slf4j.MDC;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -108,6 +109,7 @@ public abstract class ServiceClient {
                                 .flatMap(cmErrorResponse -> error(invalidRequest(cmErrorResponse.getError().getMessage())))
                 )
                 .toBodilessEntity()
+                .publishOn(Schedulers.elastic())
                 .doOnSubscribe(subscription -> logger.info("About to call cm for source {}, url {}", sourceId, url))
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
     }
@@ -131,6 +133,7 @@ public abstract class ServiceClient {
                                 .doOnSuccess(e -> logger.error("Error: {} {}", clientResponse.statusCode(), e))
                                 .then(error(unableToConnect())))
                 .toBodilessEntity()
+                .publishOn(Schedulers.elastic())
                 .doOnSubscribe(subscription -> logger.info("About to call bridge {} for url {}", clientId, url))
                 .timeout(ofSeconds(serviceOptions.getTimeout()));
     }

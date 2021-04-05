@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Map;
 import java.util.Properties;
@@ -75,7 +76,8 @@ public class IdentityServiceClient {
                                 clientResponse.statusCode(),
                                 properties))
                         .then(error(unableToConnect())))
-                .bodyToMono(Session.class);
+                .bodyToMono(Session.class)
+                .publishOn(Schedulers.elastic());
     }
 
     public Mono<JsonNode> certs() {
@@ -89,7 +91,8 @@ public class IdentityServiceClient {
                                 clientResponse.statusCode(),
                                 properties))
                         .then(error(unableToConnect())))
-                .bodyToMono(JsonNode.class);
+                .bodyToMono(JsonNode.class)
+                .publishOn(Schedulers.elastic());
     }
 
     private MultiValueMap<String, String> loginRequestWith(String clientId, String clientSecret) {

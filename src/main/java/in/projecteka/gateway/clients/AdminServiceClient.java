@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.Map;
@@ -98,6 +99,7 @@ public class AdminServiceClient {
                                         properties))
                                 .then(error(unableToConnect())))
                         .toBodilessEntity())
+                .publishOn(Schedulers.elastic())
                 .then();
     }
 
@@ -128,7 +130,8 @@ public class AdminServiceClient {
                                         clientResponse.statusCode(),
                                         properties))
                                 .then(error(unableToConnect())))
-                        .bodyToMono(ServiceAccount.class));
+                        .bodyToMono(ServiceAccount.class))
+                .publishOn(Schedulers.elastic());
     }
 
     public Mono<List<RealmRole>> getAvailableRealmRoles(String serviceAccountId) {
@@ -159,6 +162,7 @@ public class AdminServiceClient {
                                         properties))
                                 .then(error(unableToConnect())))
                         .bodyToFlux(RealmRole.class)
+                        .publishOn(Schedulers.elastic())
                         .collectList());
     }
 
@@ -192,6 +196,7 @@ public class AdminServiceClient {
                                         properties))
                                 .then(error(unableToConnect())))
                         .toBodilessEntity())
+                .publishOn(Schedulers.elastic())
                 .then();
     }
 
@@ -223,6 +228,7 @@ public class AdminServiceClient {
                                         properties))
                                 .then(error(unableToConnect())))
                         .toBodilessEntity())
+                .publishOn(Schedulers.elastic())
                 .then();
     }
 
@@ -253,7 +259,9 @@ public class AdminServiceClient {
                                         clientResponse.statusCode(),
                                         properties))
                                 .then(error(unableToConnect())))
-                        .bodyToMono(ClientSecret.class));
+                        .bodyToMono(ClientSecret.class))
+                .publishOn(Schedulers.elastic())
+                ;
     }
 
     public Mono<Void> createClientIfNotExists(String clientId) {
