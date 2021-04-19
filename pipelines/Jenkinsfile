@@ -1,0 +1,103 @@
+pipeline {
+    agent {
+        kubernetes {
+             yaml """
+                apiVersion: v1
+                kind: Pod
+                spec:
+                  containers:
+                    - name: docker
+                      image: registry.nhadclmgm.tcl.com:5000/docker:dind
+                      securityContext:
+                        privileged: true
+                      resources:
+                        limits:
+                          cpu: '300m'
+                          memory: '500Mi'
+                        requests:
+                          cpu: '100m'
+                          memory: '300Mi'
+                    - name: java11
+                      image: adoptopenjdk/maven-openjdk11
+                      command:
+                        - sleep
+                      args:
+                        - infinity
+                      resources:
+                        limits:
+                          cpu: '1000m'
+                          memory: '2000Mi'
+                        requests:
+                          cpu: '400m'
+                          memory: '1200Mi'
+                        """
+            defaultContainer 'java11'
+        }
+    }
+
+    options {
+        skipDefaultCheckout()
+    }
+
+    environment {
+        def IMAGE_NAME= 'gateway'
+        def DOCKER_FILE_DIRECTORY = "Dockerfile"
+        def DOCKER_HARBOR_URL = "harbor.nhadclmgm.tatacommunications.com"
+        def HARBOR_REPO = "gateway"
+        def IMAGE_TAG = "latest"
+        def IMAGE_REPO = "${DOCKER_HARBOR_URL + '/' + HARBOR_REPO + '/'+ IMAGE_NAME}"
+        def IMAGE = "${IMAGE_REPO + ':' + IMAGE_TAG}"
+    }
+
+    stages {
+        stage('Get latest version of code') {
+            steps {
+                script{
+                   def scmVar =  checkout([
+                        $class: 'GitSCM', branches: scm.branches,
+                        extensions: scm.extensions + [[$class: 'CleanBeforeCheckout', deleteUntrackedNestedRepositories: true]],
+                        userRemoteConfigs: scm.userRemoteConfigs])
+                   sh "echo ${scmVar.GIT_COMMIT} | head -c7 >> commit_sha.txt"
+                   if(env.TAG_NAME){
+                       sh "echo $TAG_NAME > commit_sha.txt"
+                       sh "cat commit_sha.txt"
+                   }
+                }
+            }
+        }
+
+        stage("Run tests and Build"){
+            steps{
+                container('java11'){
+                    sh "./gradlew clean test"
+                    sh "./gradlew clean bootJar"
+                }
+            }
+        }
+
+        stage ('Build Docker Image and Push to NHA Harbor') {
+             when {
+                anyOf{
+                   branch 'master'
+                   buildingTag()
+                }
+             }
+             steps {
+                 withCredentials([
+                        usernamePassword(credentialsId: 'NDHM_HARBOR_HUB_PASSWORD_GATEWAY', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]
+                 ){
+                    container('docker'){
+                        script{
+                            def COMMIT_SHA=readFile(file: 'commit_sha.txt')
+                            dockerImage = docker.build IMAGE
+                            sh "docker login ${DOCKER_HARBOR_URL} -u ${USERNAME} -p ${PASSWORD}"
+                            sh "docker push ${IMAGE}"
+                            sh "docker tag ${IMAGE_REPO} ${IMAGE_REPO}:${COMMIT_SHA}"
+                            sh "docker push ${IMAGE_REPO}:${COMMIT_SHA}"
+                        }
+                    }
+                 }
+             }
+        }
+    }
+}
