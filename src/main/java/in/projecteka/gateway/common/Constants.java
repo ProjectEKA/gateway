@@ -93,6 +93,7 @@ public class Constants {
     public static final String HFR_BRIDGES_BRIDGE_ID_SERVICES = "/bridges/{bridgeId}/services";
     public static final String INTERNAL_SEARCH_FACILITY_BY_NAME = CURRENT_VERSION + "/internal/facilities";
     public static final String INTERNAL_GET_FACILITY_BY_ID = CURRENT_VERSION + "/internal/facilities/{serviceId}";
+    public static final String INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST = CURRENT_VERSION + "/internal/govt-programs";
 
     //API to be called on HIP/HIU bridge
     public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";

@@ -5,6 +5,7 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
+import in.projecteka.gateway.registry.model.GovtProgram;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
@@ -28,6 +29,7 @@ import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
+import static in.projecteka.gateway.common.Constants.INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST;
 import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
 import static in.projecteka.gateway.common.Constants.UNSPECIFIED_SERVICE_TYPE;
 
@@ -78,5 +80,10 @@ public class RegistryController {
     @GetMapping(INTERNAL_GET_FACILITY_BY_ID)
     public Mono<FacilityRepresentation> searchFacilityByName(@PathVariable String serviceId) {
         return registryService.getFacilityById(serviceId);
+    }
+
+    @GetMapping(INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST)
+    public Mono<List<GovtProgram>> fetchGovtPrograms() {
+        return registryService.fetchGovtPrograms();
     }
 }
