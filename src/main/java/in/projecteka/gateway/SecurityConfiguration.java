@@ -33,6 +33,7 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
 import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
@@ -151,7 +152,8 @@ public class SecurityConfiguration {
             PATH_SUBSCRIPTION_REQUESTS_NOTIFY,
             INTERNAL_SEARCH_FACILITY_BY_NAME,
             INTERNAL_GET_FACILITY_BY_ID,
-            PATH_PATIENTS_SMS_ON_NOTIFY
+            PATH_PATIENTS_SMS_ON_NOTIFY,
+            INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
