@@ -15,7 +15,6 @@ import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.EndpointDetails;
 import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
-import in.projecteka.gateway.registry.model.GovtProgram;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;

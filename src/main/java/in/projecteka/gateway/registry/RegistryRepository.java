@@ -1,6 +1,5 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -10,7 +9,6 @@ import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.EndpointDetails;
 import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
-import in.projecteka.gateway.registry.model.GovtProgram;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
@@ -30,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import static in.projecteka.gateway.common.Serializer.from;
 import static in.projecteka.gateway.common.Serializer.to;
