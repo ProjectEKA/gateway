@@ -503,7 +503,7 @@ public class RegistryRepository {
                 .execute(handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                fluxSink.error(new DbOperationError("Failed to fetch govt programs from govt_programs"));
+                                fluxSink.error(new DbOperationError("Failed to fetch govt programs"));
                                 return;
                             }
                             RowSet<Row> rowSet = handler.result();
