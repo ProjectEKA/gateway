@@ -83,7 +83,7 @@ public class RegistryController {
     }
 
     @GetMapping(INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST)
-    public Mono<List<GovtProgram>> fetchGovtPrograms() {
+    public Mono<List<FacilityRepresentation>> fetchGovtPrograms() {
         return registryService.fetchGovtPrograms();
     }
 }
