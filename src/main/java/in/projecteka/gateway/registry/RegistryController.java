@@ -5,7 +5,6 @@ import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
 import in.projecteka.gateway.registry.model.BridgeServiceRequest;
 import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
-import in.projecteka.gateway.registry.model.GovtProgram;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfileResponse;
@@ -83,7 +82,7 @@ public class RegistryController {
     }
 
     @GetMapping(INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST)
-    public Mono<List<GovtProgram>> fetchGovtPrograms() {
+    public Mono<List<FacilityRepresentation>> fetchGovtPrograms() {
         return registryService.fetchGovtPrograms();
     }
 }

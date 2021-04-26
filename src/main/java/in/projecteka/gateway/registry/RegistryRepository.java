@@ -1,6 +1,5 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -10,7 +9,6 @@ import in.projecteka.gateway.registry.model.CMServiceRequest;
 import in.projecteka.gateway.registry.model.EndpointDetails;
 import in.projecteka.gateway.registry.model.Endpoints;
 import in.projecteka.gateway.registry.model.FacilityRepresentation;
-import in.projecteka.gateway.registry.model.GovtProgram;
 import in.projecteka.gateway.registry.model.HFRBridgeResponse;
 import in.projecteka.gateway.registry.model.ServiceDetailsResponse;
 import in.projecteka.gateway.registry.model.ServiceProfile;
@@ -30,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import static in.projecteka.gateway.common.Serializer.from;
 import static in.projecteka.gateway.common.Serializer.to;
@@ -73,7 +70,9 @@ public class RegistryRepository {
     private static final String SELECT_FACILITIES_BY_NAME = "SELECT service_id, name, is_hip, is_hiu, is_health_locker " +
             "FROM bridge_service WHERE UPPER(name) LIKE $1 AND is_hip = true";
 
-    private static final String SELECT_GOVT_PROGRAMS = "SELECT hip_id, name FROM govt_programs";
+    private static final String SELECT_GOVT_PROGRAMS = "SELECT service_id, gp.name as name, is_hip, is_hiu, is_health_locker " +
+            " FROM bridge_service INNER JOIN govt_programs AS gp ON gp.hip_id = service_id" +
+            " WHERE active = true AND is_hip = true";
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
 
@@ -499,31 +498,20 @@ public class RegistryRepository {
                 .build();
     }
 
-    public Mono<List<GovtProgram>> fetchGovtPrograms() {
-        return Mono.create(monoSink -> this.readOnlyClient.preparedQuery(SELECT_GOVT_PROGRAMS)
-                .execute(
-                        handler -> {
+    public Flux<FacilityRepresentation> fetchGovtPrograms() {
+        return Flux.create(fluxSink -> this.readOnlyClient.preparedQuery(SELECT_GOVT_PROGRAMS)
+                .execute(handler -> {
                             if (handler.failed()) {
                                 logger.error(handler.cause().getMessage(), handler.cause());
-                                monoSink.error(new DbOperationError("Failed to fetch govt programs from govt_programs"));
-                                return;
-                            }
-                            var iterator = handler.result().iterator();
-                            if (!iterator.hasNext()) {
-                                monoSink.success();
+                                fluxSink.error(new DbOperationError("Failed to fetch govt programs"));
                                 return;
                             }
                             RowSet<Row> rowSet = handler.result();
-                            List<GovtProgram> results = new ArrayList<>();
-                            if (rowSet.iterator().hasNext()) {
-                                rowSet.forEach(row -> {
-                                    results.add(GovtProgram.builder()
-                                            .hipId(row.getString("hip_id"))
-                                            .name(row.getString("name"))
-                                            .build());
-                                });
+                            for (var row: rowSet) {
+                                fluxSink.next(toFacilityRepresentation(row));
                             }
-                            monoSink.success(results);
+
+                            fluxSink.complete();
                         }));
     }
 }
