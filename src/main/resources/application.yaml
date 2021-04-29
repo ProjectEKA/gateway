@@ -67,3 +67,4 @@ webclient:
 logging:
   level:
     ROOT: ${LOG_LEVEL:INFO}
+  correlation-enabled: ${LOG_CORRELATION_ID:true}
