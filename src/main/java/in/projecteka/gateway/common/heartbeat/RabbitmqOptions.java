@@ -15,4 +15,5 @@ public class RabbitmqOptions {
     private final int channelPoolMaxCacheSize;
     private final String username;
     private final String password;
+    private final boolean useSSL;
 }

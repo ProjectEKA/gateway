@@ -98,6 +98,8 @@ import reactor.rabbitmq.RabbitFlux;
 import reactor.rabbitmq.ReceiverOptions;
 import reactor.rabbitmq.SenderOptions;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
@@ -907,12 +909,15 @@ public class GatewayConfiguration {
     }
 
     @Bean
-    public ConnectionFactory connectionFactory(RabbitmqOptions rabbitmqOptions) {
+    public ConnectionFactory connectionFactory(RabbitmqOptions rabbitmqOptions) throws KeyManagementException, NoSuchAlgorithmException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setHost(rabbitmqOptions.getHost());
         connectionFactory.setPort(rabbitmqOptions.getPort());
         connectionFactory.setUsername(rabbitmqOptions.getUsername());
         connectionFactory.setPassword(rabbitmqOptions.getPassword());
+        if(rabbitmqOptions.isUseSSL()){
+            connectionFactory.useSslProtocol();
+        }
         connectionFactory.useNio();
         return connectionFactory;
     }

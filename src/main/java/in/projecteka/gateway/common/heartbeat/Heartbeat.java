@@ -10,6 +10,8 @@ import reactor.core.publisher.Mono;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeoutException;
 
 import static in.projecteka.gateway.clients.model.Error.of;
@@ -34,17 +36,20 @@ public class Heartbeat {
             return (cacheHealth.isUp() && isRabbitMQUp() && isKeycloakUp())
                    ? just(HeartbeatResponse.builder().timeStamp(now(UTC)).status(UP).build())
                    : just(HeartbeatResponse.builder().timeStamp(now(UTC)).status(DOWN).error(of(SERVICE_DOWN)).build());
-        } catch (IOException | TimeoutException e) {
+        } catch (IOException | TimeoutException | KeyManagementException | NoSuchAlgorithmException e) {
             return just(HeartbeatResponse.builder().timeStamp(now(UTC)).status(DOWN).error(of(SERVICE_DOWN)).build());
         }
     }
 
-    private boolean isRabbitMQUp() throws IOException, TimeoutException {
+    private boolean isRabbitMQUp() throws IOException, TimeoutException, KeyManagementException, NoSuchAlgorithmException {
         var factory = new ConnectionFactory();
         factory.setHost(rabbitmqOptions.getHost());
         factory.setPort(rabbitmqOptions.getPort());
         factory.setUsername(rabbitmqOptions.getUsername());
         factory.setPassword(rabbitmqOptions.getPassword());
+        if(rabbitmqOptions.isUseSSL()){
+            factory.useSslProtocol();
+        }
         try (Connection connection = factory.newConnection()) {
             return connection.isOpen();
         }

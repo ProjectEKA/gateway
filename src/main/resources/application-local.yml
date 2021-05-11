@@ -6,6 +6,7 @@ spring:
     port: 5672
     username: guest
     password: guest
+    useSSL: false
 identity:
   clientId: gateway
   clientSecret: ${CLIENT_SECRET}
