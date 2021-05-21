@@ -22,6 +22,7 @@ import in.projecteka.gateway.clients.GlobalExceptionHandler;
 import in.projecteka.gateway.clients.HealthInfoNotificationServiceClient;
 import in.projecteka.gateway.clients.HipConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HipDataFlowServiceClient;
+import in.projecteka.gateway.clients.HipDataNotificationServiceClient;
 import in.projecteka.gateway.clients.HipInitLinkServiceClient;
 import in.projecteka.gateway.clients.HiuConsentNotifyServiceClient;
 import in.projecteka.gateway.clients.HiuSubscriptionNotifyServiceClient;
@@ -1425,5 +1426,47 @@ public class GatewayConfiguration {
             Validator validator,
             DefaultValidatedResponseAction<PatientSMSNotificationClient> patientSMSNotificationResponseAction) {
         return new ResponseOrchestrator(validator, patientSMSNotificationResponseAction);
+    }
+
+    @Bean("hipDataNotificationServiceClient")
+    public HipDataNotificationServiceClient hipDataNotificationServiceClient(ServiceOptions serviceOptions,
+                                                                             @Qualifier("customBuilder") WebClient.Builder builder,
+                                                                             CMRegistry cmRegistry,
+                                                                             IdentityService identityService,
+                                                                             BridgeRegistry bridgeRegistry) {
+        return new HipDataNotificationServiceClient(serviceOptions, builder, identityService, cmRegistry, bridgeRegistry);
+    }
+
+    @Bean("hipDataNotificationRequestAction")
+    public DefaultValidatedRequestAction<HipDataNotificationServiceClient> hipDataNotificationRequestAction(
+            HipDataNotificationServiceClient hipDataNotificationServiceClient) {
+        return new DefaultValidatedRequestAction<>(hipDataNotificationServiceClient);
+    }
+
+    @Bean("hipDataNotificationRequestOrchestrator")
+    public RequestOrchestrator<HipDataNotificationServiceClient> hipDataNotificationRequestOrchestrator(
+            @Qualifier("requestIdMappings") CacheAdapter<String, String> requestIdMappings,
+            RedundantRequestValidator redundantRequestValidator,
+            Validator validator,
+            HipDataNotificationServiceClient hipDataNotificationServiceClient,
+            DefaultValidatedRequestAction<HipDataNotificationServiceClient> hipDataNotificationRequestAction) {
+        return new RequestOrchestrator<>(requestIdMappings,
+                redundantRequestValidator,
+                validator,
+                hipDataNotificationServiceClient,
+                hipDataNotificationRequestAction);
+    }
+
+    @Bean("hipDataNotificationResponseAction")
+    public DefaultValidatedResponseAction<HipDataNotificationServiceClient> hipDataNotificationResponseAction(
+            HipDataNotificationServiceClient hipDataNotificationServiceClient) {
+        return new DefaultValidatedResponseAction<>(hipDataNotificationServiceClient);
+    }
+
+    @Bean("hipDataNotificationResponseOrchestrator")
+    public ResponseOrchestrator hipDataNotificationResponseOrchestrator(
+            Validator validator,
+            DefaultValidatedResponseAction<HipDataNotificationServiceClient> hipDataNotificationResponseAction) {
+        return new ResponseOrchestrator(validator, hipDataNotificationResponseAction);
     }
 }
