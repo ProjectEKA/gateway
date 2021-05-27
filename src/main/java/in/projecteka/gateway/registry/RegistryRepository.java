@@ -1,6 +1,5 @@
 package in.projecteka.gateway.registry;
 
-import in.projecteka.gateway.clients.ClientError;
 import in.projecteka.gateway.common.DbOperationError;
 import in.projecteka.gateway.registry.model.Bridge;
 import in.projecteka.gateway.registry.model.BridgeRegistryRequest;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 
 import static in.projecteka.gateway.common.Serializer.from;
 import static in.projecteka.gateway.common.Serializer.to;
@@ -72,6 +70,9 @@ public class RegistryRepository {
     private static final String SELECT_FACILITIES_BY_NAME = "SELECT service_id, name, is_hip, is_hiu, is_health_locker " +
             "FROM bridge_service WHERE UPPER(name) LIKE $1 AND is_hip = true";
 
+    private static final String SELECT_GOVT_PROGRAMS = "SELECT service_id, gp.name as name, is_hip, is_hiu, is_health_locker " +
+            " FROM bridge_service INNER JOIN govt_programs AS gp ON gp.hip_id = service_id" +
+            " WHERE active = true AND is_hip = true";
     private final PgPool readWriteClient;
     private final PgPool readOnlyClient;
 
@@ -495,5 +496,22 @@ public class RegistryRepository {
                 .identifier(new FacilityRepresentation.Identifier(facilityName, facilityId))
                 .facilityType(serviceTypes)
                 .build();
+    }
+
+    public Flux<FacilityRepresentation> fetchGovtPrograms() {
+        return Flux.create(fluxSink -> this.readOnlyClient.preparedQuery(SELECT_GOVT_PROGRAMS)
+                .execute(handler -> {
+                            if (handler.failed()) {
+                                logger.error(handler.cause().getMessage(), handler.cause());
+                                fluxSink.error(new DbOperationError("Failed to fetch govt programs"));
+                                return;
+                            }
+                            RowSet<Row> rowSet = handler.result();
+                            for (var row: rowSet) {
+                                fluxSink.next(toFacilityRepresentation(row));
+                            }
+
+                            fluxSink.complete();
+                        }));
     }
 }

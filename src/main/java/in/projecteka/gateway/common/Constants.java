@@ -86,6 +86,8 @@ public class Constants {
     public static final String PATH_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/hiu/on-notify";
     public static final String PATH_PATIENTS_SMS_NOTIFY = CURRENT_VERSION + "/patients/sms/notify";
     public static final String PATH_PATIENTS_SMS_ON_NOTIFY = CURRENT_VERSION + "/patients/sms/on-notify";
+    public static final String PATH_HIP_DATA_NOTIFICATION = CURRENT_VERSION + "/links/context/notify";
+    public static final String PATH_HIP_DATA_NOTIFICATION_ACKNOWLEDGEMENT = CURRENT_VERSION + "/links/context/on-notify";
     public static final String ROUTE_PATH_CM_HIU_SUBSCRIPTION_ON_NOTIFY = CURRENT_VERSION + "/subscriptions/on-notify";
     public static final String GW_PATH_HI_SERVICE_BY_ID = CURRENT_VERSION + "/hi-services/{service-id}";
     public static final String GW_PATH_HI_SERVICES = CURRENT_VERSION + "/hi-services";
@@ -93,6 +95,7 @@ public class Constants {
     public static final String HFR_BRIDGES_BRIDGE_ID_SERVICES = "/bridges/{bridgeId}/services";
     public static final String INTERNAL_SEARCH_FACILITY_BY_NAME = CURRENT_VERSION + "/internal/facilities";
     public static final String INTERNAL_GET_FACILITY_BY_ID = CURRENT_VERSION + "/internal/facilities/{serviceId}";
+    public static final String INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST = CURRENT_VERSION + "/internal/govt-programs";
 
     //API to be called on HIP/HIU bridge
     public static final String PATH_BRIDGE_ON_FETCH_AUTH_MODES = CURRENT_VERSION + "/users/auth/on-fetch-modes";

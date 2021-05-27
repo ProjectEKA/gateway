@@ -374,5 +374,9 @@ public class RegistryService {
                             .build();
                 });
     }
+
+    public Mono<List<FacilityRepresentation>> fetchGovtPrograms(){
+        return registryRepository.fetchGovtPrograms().collectList();
+    }
 }
 

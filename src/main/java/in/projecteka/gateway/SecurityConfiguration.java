@@ -33,6 +33,7 @@ import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID;
 import static in.projecteka.gateway.common.Constants.HFR_BRIDGES_BRIDGE_ID_SERVICES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES;
 import static in.projecteka.gateway.common.Constants.INTERNAL_BRIDGES_BRIDGE_ID_SERVICES;
+import static in.projecteka.gateway.common.Constants.INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST;
 import static in.projecteka.gateway.common.Constants.INTERNAL_CM;
 import static in.projecteka.gateway.common.Constants.INTERNAL_GET_FACILITY_BY_ID;
 import static in.projecteka.gateway.common.Constants.INTERNAL_SEARCH_FACILITY_BY_NAME;
@@ -57,6 +58,8 @@ import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_HIP_REQUEST;
 import static in.projecteka.gateway.common.Constants.PATH_HEALTH_INFORMATION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_HEARTBEAT;
+import static in.projecteka.gateway.common.Constants.PATH_HIP_DATA_NOTIFICATION;
+import static in.projecteka.gateway.common.Constants.PATH_HIP_DATA_NOTIFICATION_ACKNOWLEDGEMENT;
 import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_HIU_SUBSCRIPTION_ON_NOTIFY;
 import static in.projecteka.gateway.common.Constants.PATH_LINK_CONFIRM;
@@ -117,7 +120,8 @@ public class SecurityConfiguration {
             PATH_HEALTH_INFORMATION_HIP_ON_REQUEST,
             PATH_ADD_CARE_CONTEXTS,
             PATH_PATIENT_ON_SHARE,
-            PATH_PATIENTS_SMS_NOTIFY
+            PATH_PATIENTS_SMS_NOTIFY,
+            PATH_HIP_DATA_NOTIFICATION
     };
 
     protected static final String[] HIU_HIP_APIS = new String[]{
@@ -147,11 +151,13 @@ public class SecurityConfiguration {
             PATH_CONSENT_REQUEST_ON_STATUS,
             PATH_PATIENT_SHARE,
             PATH_ON_FETCH_AUTH_MODES,
+            PATH_HIP_DATA_NOTIFICATION_ACKNOWLEDGEMENT,
             PATH_HIU_SUBSCRIPTION_NOTIFY,
             PATH_SUBSCRIPTION_REQUESTS_NOTIFY,
             INTERNAL_SEARCH_FACILITY_BY_NAME,
             INTERNAL_GET_FACILITY_BY_ID,
-            PATH_PATIENTS_SMS_ON_NOTIFY
+            PATH_PATIENTS_SMS_ON_NOTIFY,
+            INTERNAL_PATH_GET_GOVT_PROGRAMS_LIST
     };
 
     protected static final String[] ALLOW_LIST_APIS = {
